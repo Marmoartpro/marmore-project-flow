@@ -14,16 +14,375 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          project_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          project_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          due_date: string | null
+          id: string
+          paid: boolean | null
+          paid_at: string | null
+          project_id: string
+          receipt_url: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          due_date?: string | null
+          id?: string
+          paid?: boolean | null
+          paid_at?: string | null
+          project_id: string
+          receipt_url?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          due_date?: string | null
+          id?: string
+          paid?: boolean | null
+          paid_at?: string | null
+          project_id?: string
+          receipt_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plant_annotations: {
+        Row: {
+          author_id: string
+          comment: string
+          created_at: string
+          id: string
+          project_id: string
+          x_position: number
+          y_position: number
+        }
+        Insert: {
+          author_id: string
+          comment: string
+          created_at?: string
+          id?: string
+          project_id: string
+          x_position: number
+          y_position: number
+        }
+        Update: {
+          author_id?: string
+          comment?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+          x_position?: number
+          y_position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_annotations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          cau: string | null
+          city: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          instagram: string | null
+          office_name: string | null
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          specialty: string | null
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          cau?: string | null
+          city?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          instagram?: string | null
+          office_name?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          specialty?: string | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          cau?: string | null
+          city?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          instagram?: string | null
+          office_name?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          specialty?: string | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      project_invites: {
+        Row: {
+          accepted: boolean | null
+          architect_email: string
+          architect_name: string | null
+          architect_office: string | null
+          architect_phone: string | null
+          architect_user_id: string | null
+          created_at: string
+          id: string
+          invite_token: string
+          project_id: string
+        }
+        Insert: {
+          accepted?: boolean | null
+          architect_email: string
+          architect_name?: string | null
+          architect_office?: string | null
+          architect_phone?: string | null
+          architect_user_id?: string | null
+          created_at?: string
+          id?: string
+          invite_token?: string
+          project_id: string
+        }
+        Update: {
+          accepted?: boolean | null
+          architect_email?: string
+          architect_name?: string | null
+          architect_office?: string | null
+          architect_phone?: string | null
+          architect_user_id?: string | null
+          created_at?: string
+          id?: string
+          invite_token?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_invites_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_stages: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          project_id: string
+          stage_number: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          project_id: string
+          stage_number: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          stage_number?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_stages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          address: string | null
+          architect_logo_url: string | null
+          client_name: string | null
+          created_at: string
+          deadline: string | null
+          environment_type: string | null
+          finish: string | null
+          id: string
+          name: string
+          observations: string | null
+          owner_id: string
+          owner_logo_url: string | null
+          paid_value: number | null
+          pieces: string | null
+          status: string
+          stone_color: string | null
+          stone_type: string | null
+          thickness: string | null
+          total_value: number | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          architect_logo_url?: string | null
+          client_name?: string | null
+          created_at?: string
+          deadline?: string | null
+          environment_type?: string | null
+          finish?: string | null
+          id?: string
+          name: string
+          observations?: string | null
+          owner_id: string
+          owner_logo_url?: string | null
+          paid_value?: number | null
+          pieces?: string | null
+          status?: string
+          stone_color?: string | null
+          stone_type?: string | null
+          thickness?: string | null
+          total_value?: number | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          architect_logo_url?: string | null
+          client_name?: string | null
+          created_at?: string
+          deadline?: string | null
+          environment_type?: string | null
+          finish?: string | null
+          id?: string
+          name?: string
+          observations?: string | null
+          owner_id?: string
+          owner_logo_url?: string | null
+          paid_value?: number | null
+          pieces?: string | null
+          status?: string
+          stone_color?: string | null
+          stone_type?: string | null
+          thickness?: string | null
+          total_value?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stage_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          photo_url: string
+          stage_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          photo_url: string
+          stage_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          photo_url?: string
+          stage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_photos_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "project_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      user_has_project_access: {
+        Args: { project_uuid: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "marmorista" | "arquiteta"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +509,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["marmorista", "arquiteta"],
+    },
   },
 } as const
