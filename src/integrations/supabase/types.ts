@@ -14,6 +14,114 @@ export type Database = {
   }
   public: {
     Tables: {
+      billing_reminders: {
+        Row: {
+          created_at: string
+          expected_value: number | null
+          id: string
+          note: string | null
+          owner_id: string
+          payment_id: string | null
+          project_id: string | null
+          reminder_date: string
+          resolved: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          expected_value?: number | null
+          id?: string
+          note?: string | null
+          owner_id: string
+          payment_id?: string | null
+          project_id?: string | null
+          reminder_date: string
+          resolved?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          expected_value?: number | null
+          id?: string
+          note?: string | null
+          owner_id?: string
+          payment_id?: string | null
+          project_id?: string | null
+          reminder_date?: string
+          resolved?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_reminders_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_reminders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          city: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          observations: string | null
+          owner_id: string
+          project_id: string | null
+          quote_id: string | null
+          service_type: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          observations?: string | null
+          owner_id: string
+          project_id?: string | null
+          quote_id?: string | null
+          service_type?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          observations?: string | null
+          owner_id?: string
+          project_id?: string | null
+          quote_id?: string | null
+          service_type?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
@@ -277,6 +385,7 @@ export type Database = {
           client_name: string | null
           created_at: string
           deadline: string | null
+          down_payment: number | null
           environment_type: string | null
           finish: string | null
           id: string
@@ -285,6 +394,7 @@ export type Database = {
           owner_id: string
           owner_logo_url: string | null
           paid_value: number | null
+          payment_method: string | null
           pieces: string | null
           status: string
           stone_color: string | null
@@ -299,6 +409,7 @@ export type Database = {
           client_name?: string | null
           created_at?: string
           deadline?: string | null
+          down_payment?: number | null
           environment_type?: string | null
           finish?: string | null
           id?: string
@@ -307,6 +418,7 @@ export type Database = {
           owner_id: string
           owner_logo_url?: string | null
           paid_value?: number | null
+          payment_method?: string | null
           pieces?: string | null
           status?: string
           stone_color?: string | null
@@ -321,6 +433,7 @@ export type Database = {
           client_name?: string | null
           created_at?: string
           deadline?: string | null
+          down_payment?: number | null
           environment_type?: string | null
           finish?: string | null
           id?: string
@@ -329,12 +442,61 @@ export type Database = {
           owner_id?: string
           owner_logo_url?: string | null
           paid_value?: number | null
+          payment_method?: string | null
           pieces?: string | null
           status?: string
           stone_color?: string | null
           stone_type?: string | null
           thickness?: string | null
           total_value?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quotes: {
+        Row: {
+          client_name: string
+          client_whatsapp: string | null
+          created_at: string
+          environment_type: string | null
+          estimated_value: number | null
+          follow_up_date: string | null
+          id: string
+          observations: string | null
+          owner_id: string
+          sent_date: string | null
+          status: string
+          stone_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_name: string
+          client_whatsapp?: string | null
+          created_at?: string
+          environment_type?: string | null
+          estimated_value?: number | null
+          follow_up_date?: string | null
+          id?: string
+          observations?: string | null
+          owner_id: string
+          sent_date?: string | null
+          status?: string
+          stone_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_name?: string
+          client_whatsapp?: string | null
+          created_at?: string
+          environment_type?: string | null
+          estimated_value?: number | null
+          follow_up_date?: string | null
+          id?: string
+          observations?: string | null
+          owner_id?: string
+          sent_date?: string | null
+          status?: string
+          stone_type?: string | null
           updated_at?: string
         }
         Relationships: []

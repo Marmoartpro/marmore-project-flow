@@ -20,9 +20,9 @@ const NewProject = () => {
 
   const [form, setForm] = useState({
     name: '', client_name: '', environment_type: '', deadline: '', address: '',
+    total_value: '', down_payment: '', payment_method: '',
     stone_type: '', stone_color: '', thickness: '', finish: '', pieces: '', observations: '',
     architect_name: '', architect_email: '', architect_phone: '', architect_office: '',
-    total_value: '',
   });
 
   const update = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }));
@@ -45,9 +45,20 @@ const NewProject = () => {
         pieces: form.pieces,
         observations: form.observations,
         total_value: form.total_value ? parseFloat(form.total_value) : 0,
+        down_payment: form.down_payment ? parseFloat(form.down_payment) : 0,
+        payment_method: form.payment_method || null,
       }).select().single();
 
       if (error) throw error;
+
+      // Auto-create client
+      if (form.client_name) {
+        await supabase.from('clients').insert({
+          owner_id: user.id,
+          name: form.client_name,
+          project_id: project.id,
+        });
+      }
 
       if (form.architect_email) {
         await supabase.from('project_invites').insert({
@@ -82,12 +93,11 @@ const NewProject = () => {
         </div>
       </header>
 
-      {/* Step indicators */}
       <div className="container mx-auto px-4 py-4">
         <div className="flex gap-2 mb-6">
           {STEPS.map((s, i) => (
             <div key={s} className="flex-1">
-              <div className={`h-1 rounded-full transition-colors ${i <= step ? 'bg-accent' : 'bg-muted'}`} />
+              <div className={`h-1 rounded-full transition-colors ${i <= step ? 'bg-primary' : 'bg-muted'}`} />
               <p className={`text-xs mt-1 ${i <= step ? 'text-foreground' : 'text-muted-foreground'}`}>{s}</p>
             </div>
           ))}
@@ -122,9 +132,19 @@ const NewProject = () => {
                   <Label>Endereço</Label>
                   <Input value={form.address} onChange={e => update('address', e.target.value)} placeholder="Endereço da obra" />
                 </div>
-                <div className="space-y-2">
-                  <Label>Valor total (R$)</Label>
-                  <Input type="number" step="0.01" value={form.total_value} onChange={e => update('total_value', e.target.value)} placeholder="0,00" />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Valor total (R$)</Label>
+                    <Input type="number" step="0.01" value={form.total_value} onChange={e => update('total_value', e.target.value)} placeholder="0,00" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Entrada (R$)</Label>
+                    <Input type="number" step="0.01" value={form.down_payment} onChange={e => update('down_payment', e.target.value)} placeholder="0,00" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Forma de pagamento</Label>
+                    <Input value={form.payment_method} onChange={e => update('payment_method', e.target.value)} placeholder="PIX, boleto..." />
+                  </div>
                 </div>
               </>
             )}
