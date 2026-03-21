@@ -6,9 +6,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import ArchitectDashboard from "./pages/ArchitectDashboard";
 import NewProject from "./pages/NewProject";
 import ProjectDetail from "./pages/ProjectDetail";
 import InviteAccept from "./pages/InviteAccept";
+import Financeiro from "./pages/Financeiro";
+import Orcamentos from "./pages/Orcamentos";
+import Clientes from "./pages/Clientes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,21 +24,29 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const AppRoutes = () => {
-  const { user, loading } = useAuth();
-  
-  return (
-    <Routes>
-      <Route path="/" element={loading ? null : user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/invite/:token" element={<InviteAccept />} />
-      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/projeto/novo" element={<ProtectedRoute><NewProject /></ProtectedRoute>} />
-      <Route path="/projeto/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  );
+const HomeRedirect = () => {
+  const { user, profile, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  if (profile?.role === 'arquiteta') return <Navigate to="/architect" replace />;
+  return <Navigate to="/dashboard" replace />;
 };
+
+const AppRoutes = () => (
+  <Routes>
+    <Route path="/" element={<HomeRedirect />} />
+    <Route path="/login" element={<Login />} />
+    <Route path="/invite/:token" element={<InviteAccept />} />
+    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+    <Route path="/architect" element={<ProtectedRoute><ArchitectDashboard /></ProtectedRoute>} />
+    <Route path="/financeiro" element={<ProtectedRoute><Financeiro /></ProtectedRoute>} />
+    <Route path="/orcamentos" element={<ProtectedRoute><Orcamentos /></ProtectedRoute>} />
+    <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
+    <Route path="/projeto/novo" element={<ProtectedRoute><NewProject /></ProtectedRoute>} />
+    <Route path="/projeto/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
+    <Route path="*" element={<NotFound />} />
+  </Routes>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

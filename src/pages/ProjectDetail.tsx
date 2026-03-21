@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Copy, Share2 } from 'lucide-react';
+import { ArrowLeft, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ProjectOverview from '@/components/project/ProjectOverview';
 import ProjectEvolution from '@/components/project/ProjectEvolution';
@@ -27,13 +27,7 @@ const ProjectDetail = () => {
   const fetchProject = async () => {
     const { data } = await supabase.from('projects').select('*').eq('id', id).single();
     setProject(data);
-
-    const { data: inv } = await supabase
-      .from('project_invites')
-      .select('*')
-      .eq('project_id', id)
-      .limit(1)
-      .maybeSingle();
+    const { data: inv } = await supabase.from('project_invites').select('*').eq('project_id', id).limit(1).maybeSingle();
     setInvite(inv);
     setLoading(false);
   };
@@ -56,7 +50,7 @@ const ProjectDetail = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
+              <Button variant="ghost" size="icon" onClick={() => navigate(isOwner ? '/dashboard' : '/architect')}>
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
@@ -75,29 +69,18 @@ const ProjectDetail = () => {
 
       <main className="container mx-auto px-4 py-4">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="w-full justify-start overflow-x-auto flex-nowrap mb-4">
+          <TabsList className="w-full justify-start overflow-x-auto flex-nowrap mb-4 bg-card">
             <TabsTrigger value="overview">Visão geral</TabsTrigger>
             <TabsTrigger value="evolution">Evolução</TabsTrigger>
             <TabsTrigger value="plant">Planta</TabsTrigger>
             <TabsTrigger value="payments">Pagamento</TabsTrigger>
             <TabsTrigger value="messages">Recados</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="overview">
-            <ProjectOverview project={project} invite={invite} isOwner={isOwner} />
-          </TabsContent>
-          <TabsContent value="evolution">
-            <ProjectEvolution projectId={project.id} isOwner={isOwner} />
-          </TabsContent>
-          <TabsContent value="plant">
-            <ProjectPlant projectId={project.id} />
-          </TabsContent>
-          <TabsContent value="payments">
-            <ProjectPayments project={project} isOwner={isOwner} onUpdate={fetchProject} />
-          </TabsContent>
-          <TabsContent value="messages">
-            <ProjectMessages projectId={project.id} />
-          </TabsContent>
+          <TabsContent value="overview"><ProjectOverview project={project} invite={invite} isOwner={isOwner} /></TabsContent>
+          <TabsContent value="evolution"><ProjectEvolution projectId={project.id} isOwner={isOwner} /></TabsContent>
+          <TabsContent value="plant"><ProjectPlant projectId={project.id} /></TabsContent>
+          <TabsContent value="payments"><ProjectPayments project={project} isOwner={isOwner} onUpdate={fetchProject} /></TabsContent>
+          <TabsContent value="messages"><ProjectMessages projectId={project.id} /></TabsContent>
         </Tabs>
       </main>
     </div>
