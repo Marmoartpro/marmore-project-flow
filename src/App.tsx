@@ -13,6 +13,10 @@ import InviteAccept from "./pages/InviteAccept";
 import Financeiro from "./pages/Financeiro";
 import Orcamentos from "./pages/Orcamentos";
 import Clientes from "./pages/Clientes";
+import Mostruario from "./pages/Mostruario";
+import Fornecedores from "./pages/Fornecedores";
+import Calculadora from "./pages/Calculadora";
+import Portfolio from "./pages/Portfolio";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,11 +41,15 @@ const AppRoutes = () => (
     <Route path="/" element={<HomeRedirect />} />
     <Route path="/login" element={<Login />} />
     <Route path="/invite/:token" element={<InviteAccept />} />
+    <Route path="/portfolio/:slug" element={<Portfolio />} />
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     <Route path="/architect" element={<ProtectedRoute><ArchitectDashboard /></ProtectedRoute>} />
     <Route path="/financeiro" element={<ProtectedRoute><Financeiro /></ProtectedRoute>} />
     <Route path="/orcamentos" element={<ProtectedRoute><Orcamentos /></ProtectedRoute>} />
     <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
+    <Route path="/mostruario" element={<ProtectedRoute><Mostruario /></ProtectedRoute>} />
+    <Route path="/fornecedores" element={<ProtectedRoute><Fornecedores /></ProtectedRoute>} />
+    <Route path="/calculadora" element={<ProtectedRoute><Calculadora /></ProtectedRoute>} />
     <Route path="/projeto/novo" element={<ProtectedRoute><NewProject /></ProtectedRoute>} />
     <Route path="/projeto/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
