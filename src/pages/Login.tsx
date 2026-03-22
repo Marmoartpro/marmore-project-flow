@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,14 +9,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 
 const Login = () => {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get('invite');
+  const [isSignUp, setIsSignUp] = useState(!!inviteToken);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const inviteToken = searchParams.get('invite');
+  const { user } = useAuth();
+
+  // If already logged in and has invite token, go to invite page
+  useEffect(() => {
+    if (user && inviteToken) {
+      navigate(`/invite/${inviteToken}`);
+    } else if (user && !inviteToken) {
+      navigate('/');
+    }
+  }, [user, inviteToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,10 +39,21 @@ const Login = () => {
           password,
           options: {
             data: { full_name: fullName },
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: inviteToken
+              ? `${window.location.origin}/invite/${inviteToken}`
+              : window.location.origin,
           },
         });
         if (error) throw error;
+        
+        if (inviteToken) {
+          // Try to sign in immediately (for auto-confirm enabled)
+          const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+          if (!loginError) {
+            navigate(`/invite/${inviteToken}`);
+            return;
+          }
+        }
         toast.success('Conta criada! Verifique seu e-mail para confirmar.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -40,7 +62,7 @@ const Login = () => {
         if (inviteToken) {
           navigate(`/invite/${inviteToken}`);
         } else {
-          navigate('/dashboard');
+          navigate('/');
         }
       }
     } catch (error: any) {
@@ -57,6 +79,12 @@ const Login = () => {
           <h1 className="text-3xl font-display font-bold text-foreground">MármoreProart</h1>
           <p className="text-muted-foreground mt-2">Gestão de projetos de marmoraria</p>
         </div>
+
+        {inviteToken && (
+          <div className="mb-4 p-3 rounded-md bg-primary/10 border border-primary/30 text-center text-sm text-primary">
+            {isSignUp ? 'Crie sua conta para acessar o projeto' : 'Entre com sua conta para aceitar o convite'}
+          </div>
+        )}
 
         <Card>
           <CardHeader>

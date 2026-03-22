@@ -154,6 +154,44 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          project_id: string | null
+          read: boolean | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          project_id?: string | null
+          read?: boolean | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          project_id?: string | null
+          read?: boolean | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -236,6 +274,53 @@ export type Database = {
           },
         ]
       }
+      portfolio_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          display_order: number | null
+          environment_type: string | null
+          id: string
+          is_before: boolean | null
+          owner_id: string
+          pair_id: string | null
+          photo_url: string
+          project_id: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          display_order?: number | null
+          environment_type?: string | null
+          id?: string
+          is_before?: boolean | null
+          owner_id: string
+          pair_id?: string | null
+          photo_url: string
+          project_id?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          display_order?: number | null
+          environment_type?: string | null
+          id?: string
+          is_before?: boolean | null
+          owner_id?: string
+          pair_id?: string | null
+          photo_url?: string
+          project_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_photos_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -247,6 +332,9 @@ export type Database = {
           instagram: string | null
           office_name: string | null
           phone: string | null
+          portfolio_city: string | null
+          portfolio_slug: string | null
+          portfolio_whatsapp: string | null
           role: Database["public"]["Enums"]["user_role"]
           specialty: string | null
           updated_at: string
@@ -263,6 +351,9 @@ export type Database = {
           instagram?: string | null
           office_name?: string | null
           phone?: string | null
+          portfolio_city?: string | null
+          portfolio_slug?: string | null
+          portfolio_whatsapp?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           specialty?: string | null
           updated_at?: string
@@ -279,6 +370,9 @@ export type Database = {
           instagram?: string | null
           office_name?: string | null
           phone?: string | null
+          portfolio_city?: string | null
+          portfolio_slug?: string | null
+          portfolio_whatsapp?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           specialty?: string | null
           updated_at?: string
@@ -296,9 +390,11 @@ export type Database = {
           architect_phone: string | null
           architect_user_id: string | null
           created_at: string
+          expires_at: string | null
           id: string
           invite_token: string
           project_id: string
+          status: string | null
         }
         Insert: {
           accepted?: boolean | null
@@ -308,9 +404,11 @@ export type Database = {
           architect_phone?: string | null
           architect_user_id?: string | null
           created_at?: string
+          expires_at?: string | null
           id?: string
           invite_token?: string
           project_id: string
+          status?: string | null
         }
         Update: {
           accepted?: boolean | null
@@ -320,9 +418,11 @@ export type Database = {
           architect_phone?: string | null
           architect_user_id?: string | null
           created_at?: string
+          expires_at?: string | null
           id?: string
           invite_token?: string
           project_id?: string
+          status?: string | null
         }
         Relationships: [
           {
@@ -330,6 +430,69 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_materials: {
+        Row: {
+          area_m2: number
+          area_with_margin: number
+          created_at: string
+          description: string
+          id: string
+          length_m: number
+          owner_id: string
+          price_per_m2: number | null
+          project_id: string
+          quantity: number
+          supplier_id: string | null
+          total_cost: number | null
+          width_m: number
+        }
+        Insert: {
+          area_m2: number
+          area_with_margin: number
+          created_at?: string
+          description: string
+          id?: string
+          length_m: number
+          owner_id: string
+          price_per_m2?: number | null
+          project_id: string
+          quantity?: number
+          supplier_id?: string | null
+          total_cost?: number | null
+          width_m: number
+        }
+        Update: {
+          area_m2?: number
+          area_with_margin?: number
+          created_at?: string
+          description?: string
+          id?: string
+          length_m?: number
+          owner_id?: string
+          price_per_m2?: number | null
+          project_id?: string
+          quantity?: number
+          supplier_id?: string | null
+          total_cost?: number | null
+          width_m?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_materials_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_materials_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -532,6 +695,168 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      stones: {
+        Row: {
+          category: string
+          colors: string | null
+          cons: string | null
+          created_at: string
+          featured: boolean | null
+          finishes: string | null
+          id: string
+          in_stock: boolean | null
+          is_global: boolean | null
+          name: string
+          observations: string | null
+          origin: string | null
+          owner_id: string
+          photo_url: string | null
+          price_per_m2: number | null
+          promo_active: boolean | null
+          promo_badge: string | null
+          pros: string | null
+          thicknesses: string | null
+          usage_indication: string | null
+        }
+        Insert: {
+          category: string
+          colors?: string | null
+          cons?: string | null
+          created_at?: string
+          featured?: boolean | null
+          finishes?: string | null
+          id?: string
+          in_stock?: boolean | null
+          is_global?: boolean | null
+          name: string
+          observations?: string | null
+          origin?: string | null
+          owner_id: string
+          photo_url?: string | null
+          price_per_m2?: number | null
+          promo_active?: boolean | null
+          promo_badge?: string | null
+          pros?: string | null
+          thicknesses?: string | null
+          usage_indication?: string | null
+        }
+        Update: {
+          category?: string
+          colors?: string | null
+          cons?: string | null
+          created_at?: string
+          featured?: boolean | null
+          finishes?: string | null
+          id?: string
+          in_stock?: boolean | null
+          is_global?: boolean | null
+          name?: string
+          observations?: string | null
+          origin?: string | null
+          owner_id?: string
+          photo_url?: string | null
+          price_per_m2?: number | null
+          promo_active?: boolean | null
+          promo_badge?: string | null
+          pros?: string | null
+          thicknesses?: string | null
+          usage_indication?: string | null
+        }
+        Relationships: []
+      }
+      supplier_purchases: {
+        Row: {
+          amount: number | null
+          created_at: string
+          id: string
+          material: string
+          owner_id: string
+          project_id: string | null
+          purchase_date: string | null
+          quantity: string | null
+          supplier_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          id?: string
+          material: string
+          owner_id: string
+          project_id?: string | null
+          purchase_date?: string | null
+          quantity?: string | null
+          supplier_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          id?: string
+          material?: string
+          owner_id?: string
+          project_id?: string | null
+          purchase_date?: string | null
+          quantity?: string | null
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_purchases_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_purchases_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          avg_delivery_days: number | null
+          company_name: string
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          materials_supplied: string | null
+          observations: string | null
+          owner_id: string
+          rating: number | null
+          whatsapp: string | null
+        }
+        Insert: {
+          avg_delivery_days?: number | null
+          company_name: string
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          materials_supplied?: string | null
+          observations?: string | null
+          owner_id: string
+          rating?: number | null
+          whatsapp?: string | null
+        }
+        Update: {
+          avg_delivery_days?: number | null
+          company_name?: string
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          materials_supplied?: string | null
+          observations?: string | null
+          owner_id?: string
+          rating?: number | null
+          whatsapp?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {

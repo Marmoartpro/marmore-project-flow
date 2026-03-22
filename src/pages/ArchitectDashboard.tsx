@@ -49,10 +49,11 @@ const ArchitectDashboard = () => {
   const project = projects[0];
   if (!project) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-sm">
-          <CardContent className="py-8 text-center">
-            <p className="text-muted-foreground mb-4">Nenhum projeto vinculado.</p>
+          <CardContent className="py-8 text-center space-y-3">
+            <p className="text-muted-foreground">Você ainda não tem acesso a nenhum projeto.</p>
+            <p className="text-sm text-muted-foreground">Solicite um link de convite ao seu marmorista.</p>
             <Button variant="ghost" onClick={signOut}><LogOut className="w-4 h-4 mr-1" /> Sair</Button>
           </CardContent>
         </Card>
