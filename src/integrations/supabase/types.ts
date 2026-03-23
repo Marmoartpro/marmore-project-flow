@@ -696,6 +696,41 @@ export type Database = {
           },
         ]
       }
+      stone_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          owner_id: string
+          photo_url: string
+          stone_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          owner_id: string
+          photo_url: string
+          stone_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          owner_id?: string
+          photo_url?: string
+          stone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stone_photos_stone_id_fkey"
+            columns: ["stone_id"]
+            isOneToOne: false
+            referencedRelation: "stones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stones: {
         Row: {
           category: string
