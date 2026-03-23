@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import AppLayout from '@/components/AppLayout';
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Plus, Star, Maximize2, X, Edit, Package } from 'lucide-react';
+import { Search, Plus, Star, Maximize2, X, Edit, Package, Upload, Trash2, Image } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CATEGORIES = ['Todos', 'Granito', 'Mármore', 'Quartzito', 'Quartzo Artificial', 'Lâmina Ultracompacta'];
@@ -23,6 +23,11 @@ const Mostruario = () => {
   const [fullscreen, setFullscreen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editStone, setEditStone] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
+  const [galleryPhotos, setGalleryPhotos] = useState<any[]>([]);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: '', category: 'Granito', origin: '', colors: '', thicknesses: '', finishes: '',
     usage_indication: '', price_per_m2: '', promo_badge: '', promo_active: false,
@@ -38,6 +43,11 @@ const Mostruario = () => {
     setStones(data || []);
   };
 
+  const fetchGalleryPhotos = async (stoneId: string) => {
+    const { data } = await supabase.from('stone_photos').select('*').eq('stone_id', stoneId).order('created_at');
+    setGalleryPhotos(data || []);
+  };
+
   const filtered = stones.filter(s => {
     if (category !== 'Todos' && s.category !== category) return false;
     if (search && !s.name.toLowerCase().includes(search.toLowerCase())) return false;
@@ -49,6 +59,7 @@ const Mostruario = () => {
       usage_indication: '', price_per_m2: '', promo_badge: '', promo_active: false,
       pros: '', cons: '', observations: '', photo_url: '', in_stock: true, featured: false });
     setEditStone(null);
+    setGalleryPhotos([]);
   };
 
   const openEdit = (s: any) => {
@@ -61,7 +72,57 @@ const Mostruario = () => {
       featured: s.featured || false,
     });
     setEditStone(s);
+    fetchGalleryPhotos(s.id);
     setShowForm(true);
+  };
+
+  const uploadCoverPhoto = async (file: File) => {
+    if (!user) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `stones/${user.id}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('project-files').upload(path, file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(path);
+      setForm(f => ({ ...f, photo_url: urlData.publicUrl }));
+      toast.success('Foto de capa enviada!');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao enviar foto');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const uploadGalleryPhotos = async (files: FileList) => {
+    if (!user || !editStone) return;
+    setUploadingGallery(true);
+    try {
+      for (const file of Array.from(files)) {
+        const ext = file.name.split('.').pop();
+        const path = `stones/${user.id}/gallery/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from('project-files').upload(path, file);
+        if (upErr) throw upErr;
+        const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(path);
+        await supabase.from('stone_photos').insert({
+          stone_id: editStone.id,
+          owner_id: user.id,
+          photo_url: urlData.publicUrl,
+        });
+      }
+      toast.success('Fotos adicionadas!');
+      fetchGalleryPhotos(editStone.id);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao enviar fotos');
+    } finally {
+      setUploadingGallery(false);
+    }
+  };
+
+  const deleteGalleryPhoto = async (photoId: string) => {
+    await supabase.from('stone_photos').delete().eq('id', photoId);
+    setGalleryPhotos(prev => prev.filter(p => p.id !== photoId));
+    toast.success('Foto removida');
   };
 
   const saveStone = async () => {
@@ -76,17 +137,32 @@ const Mostruario = () => {
       await supabase.from('stones').update(payload).eq('id', editStone.id);
       toast.success('Pedra atualizada!');
     } else {
-      await supabase.from('stones').insert(payload);
-      toast.success('Pedra cadastrada!');
+      const { data } = await supabase.from('stones').insert(payload).select().single();
+      if (data) setEditStone(data); // allow gallery upload right after creation
+      toast.success('Pedra cadastrada! Agora você pode adicionar fotos à galeria.');
     }
     setShowForm(false);
     resetForm();
     fetchStones();
   };
 
+  const deleteStone = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta pedra?')) return;
+    await supabase.from('stone_photos').delete().eq('stone_id', id);
+    await supabase.from('stones').delete().eq('id', id);
+    toast.success('Pedra excluída');
+    setShowForm(false);
+    resetForm();
+    fetchStones();
+  };
+
+  const openDetail = async (s: any) => {
+    setSelected(s);
+    fetchGalleryPhotos(s.id);
+  };
+
   const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
-  // Architect layout wrapper
   const Wrapper = isMarmorista ? AppLayout : ({ children }: { children: React.ReactNode }) => (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card px-4 py-3">
@@ -108,7 +184,6 @@ const Mostruario = () => {
           )}
         </div>
 
-        {/* Search + filters */}
         <div className="space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -123,10 +198,9 @@ const Mostruario = () => {
           </div>
         </div>
 
-        {/* Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {filtered.map(s => (
-            <Card key={s.id} className="cursor-pointer hover:border-primary/40 transition-colors overflow-hidden group" onClick={() => setSelected(s)}>
+            <Card key={s.id} className="cursor-pointer hover:border-primary/40 transition-colors overflow-hidden group" onClick={() => openDetail(s)}>
               <div className="aspect-[4/3] bg-muted relative overflow-hidden">
                 {s.photo_url ? (
                   <img src={s.photo_url} alt={s.name} className="w-full h-full object-cover" />
@@ -136,16 +210,12 @@ const Mostruario = () => {
                 {s.promo_active && s.promo_badge && (
                   <Badge className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px]">{s.promo_badge}</Badge>
                 )}
-                {s.featured && (
-                  <Star className="absolute top-2 right-2 w-4 h-4 text-warning fill-warning" />
-                )}
+                {s.featured && <Star className="absolute top-2 right-2 w-4 h-4 text-yellow-400 fill-yellow-400" />}
               </div>
               <CardContent className="p-3">
                 <p className="font-medium text-sm truncate">{s.name}</p>
                 <p className="text-[11px] text-muted-foreground">{s.category}</p>
-                {s.price_per_m2 > 0 && (
-                  <p className="text-xs text-primary font-medium mt-1">R$ {fmt(Number(s.price_per_m2))}/m²</p>
-                )}
+                {s.price_per_m2 > 0 && <p className="text-xs text-primary font-medium mt-1">R$ {fmt(Number(s.price_per_m2))}/m²</p>}
                 <Badge variant="outline" className="text-[9px] mt-1">{s.in_stock ? 'Em estoque' : 'Sob consulta'}</Badge>
               </CardContent>
             </Card>
@@ -155,7 +225,7 @@ const Mostruario = () => {
         {filtered.length === 0 && <p className="text-center text-muted-foreground text-sm py-8">Nenhuma pedra encontrada.</p>}
 
         {/* Detail modal */}
-        <Dialog open={!!selected && !fullscreen} onOpenChange={() => setSelected(null)}>
+        <Dialog open={!!selected && !fullscreen} onOpenChange={() => { setSelected(null); setGalleryPhotos([]); }}>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             {selected && (
               <>
@@ -177,6 +247,17 @@ const Mostruario = () => {
                     </Button>
                   </div>
                 )}
+                {/* Gallery photos */}
+                {galleryPhotos.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground font-medium">Galeria de fotos</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {galleryPhotos.map(p => (
+                        <img key={p.id} src={p.photo_url} alt="" className="w-full aspect-square object-cover rounded-md cursor-pointer hover:opacity-80" onClick={() => { setSelected({ ...selected, photo_url: p.photo_url }); setFullscreen(true); }} />
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-3 text-sm">
                   <div className="grid grid-cols-2 gap-2">
                     <div><span className="text-muted-foreground">Categoria:</span> {selected.category}</div>
@@ -190,13 +271,13 @@ const Mostruario = () => {
                   {selected.pros && (
                     <div>
                       <p className="text-muted-foreground font-medium mb-1">Prós</p>
-                      <p className="text-success">{selected.pros}</p>
+                      <p className="text-green-400">{selected.pros}</p>
                     </div>
                   )}
                   {selected.cons && (
                     <div>
                       <p className="text-muted-foreground font-medium mb-1">Contras</p>
-                      <p className="text-destructive">{selected.cons}</p>
+                      <p className="text-red-400">{selected.cons}</p>
                     </div>
                   )}
                   {selected.observations && <div><span className="text-muted-foreground">Observações:</span> {selected.observations}</div>}
@@ -245,7 +326,29 @@ const Mostruario = () => {
                 <div><Label className="text-xs">Acabamentos</Label><Input value={form.finishes} onChange={e => setForm(f => ({ ...f, finishes: e.target.value }))} /></div>
               </div>
               <div><Label className="text-xs">Indicação de uso</Label><Input value={form.usage_indication} onChange={e => setForm(f => ({ ...f, usage_indication: e.target.value }))} /></div>
-              <div><Label className="text-xs">URL da foto</Label><Input value={form.photo_url} onChange={e => setForm(f => ({ ...f, photo_url: e.target.value }))} placeholder="https://..." /></div>
+              
+              {/* Cover photo upload */}
+              <div className="space-y-2">
+                <Label className="text-xs">Foto de capa</Label>
+                {form.photo_url ? (
+                  <div className="relative">
+                    <img src={form.photo_url} alt="" className="w-full h-40 object-cover rounded-md" />
+                    <Button size="icon" variant="destructive" className="absolute top-2 right-2 h-6 w-6" onClick={() => setForm(f => ({ ...f, photo_url: '' }))}>
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div
+                    className="border-2 border-dashed border-border rounded-md p-6 text-center cursor-pointer hover:border-primary/40 transition-colors"
+                    onClick={() => coverInputRef.current?.click()}
+                  >
+                    <Upload className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-xs text-muted-foreground">{uploading ? 'Enviando...' : 'Clique para enviar foto de capa'}</p>
+                  </div>
+                )}
+                <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadCoverPhoto(e.target.files[0])} />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div><Label className="text-xs">Preço por m² (R$)</Label><Input type="number" step="0.01" value={form.price_per_m2} onChange={e => setForm(f => ({ ...f, price_per_m2: e.target.value }))} /></div>
                 <div><Label className="text-xs">Badge promoção</Label><Input value={form.promo_badge} onChange={e => setForm(f => ({ ...f, promo_badge: e.target.value }))} placeholder="Ex: -20%" /></div>
@@ -253,12 +356,47 @@ const Mostruario = () => {
               <div><Label className="text-xs">Prós</Label><Textarea value={form.pros} onChange={e => setForm(f => ({ ...f, pros: e.target.value }))} rows={2} /></div>
               <div><Label className="text-xs">Contras</Label><Textarea value={form.cons} onChange={e => setForm(f => ({ ...f, cons: e.target.value }))} rows={2} /></div>
               <div><Label className="text-xs">Observações</Label><Textarea value={form.observations} onChange={e => setForm(f => ({ ...f, observations: e.target.value }))} rows={2} /></div>
-              <div className="flex gap-4 items-center text-sm">
+              <div className="flex gap-4 items-center text-sm flex-wrap">
                 <label className="flex items-center gap-2"><input type="checkbox" checked={form.in_stock} onChange={e => setForm(f => ({ ...f, in_stock: e.target.checked }))} /> Em estoque</label>
                 <label className="flex items-center gap-2"><input type="checkbox" checked={form.featured} onChange={e => setForm(f => ({ ...f, featured: e.target.checked }))} /> Destaque</label>
                 <label className="flex items-center gap-2"><input type="checkbox" checked={form.promo_active} onChange={e => setForm(f => ({ ...f, promo_active: e.target.checked }))} /> Promoção ativa</label>
               </div>
-              <Button className="w-full" onClick={saveStone}>{editStone ? 'Salvar alterações' : 'Cadastrar pedra'}</Button>
+
+              {/* Gallery photos - only for existing stones */}
+              {editStone && (
+                <div className="space-y-2 border-t border-border pt-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs flex items-center gap-1"><Image className="w-3 h-3" /> Galeria de fotos</Label>
+                    <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => galleryInputRef.current?.click()} disabled={uploadingGallery}>
+                      <Upload className="w-3 h-3 mr-1" /> {uploadingGallery ? 'Enviando...' : 'Adicionar fotos'}
+                    </Button>
+                    <input ref={galleryInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => e.target.files && uploadGalleryPhotos(e.target.files)} />
+                  </div>
+                  {galleryPhotos.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-2">
+                      {galleryPhotos.map(p => (
+                        <div key={p.id} className="relative group">
+                          <img src={p.photo_url} alt="" className="w-full aspect-square object-cover rounded-md" />
+                          <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => deleteGalleryPhoto(p.id)}>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center py-3">Nenhuma foto na galeria</p>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Button className="flex-1" onClick={saveStone}>{editStone ? 'Salvar alterações' : 'Cadastrar pedra'}</Button>
+                {editStone && (
+                  <Button variant="destructive" size="icon" onClick={() => deleteStone(editStone.id)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </DialogContent>
         </Dialog>

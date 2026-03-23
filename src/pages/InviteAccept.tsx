@@ -24,7 +24,6 @@ const InviteAccept = () => {
     }
   }, [authLoading, user, token]);
 
-  // Auto-accept when user is logged in and invite is loaded
   useEffect(() => {
     if (user && invite && !invite.accepted && invite.status !== 'aceito') {
       acceptInvite();
@@ -33,12 +32,10 @@ const InviteAccept = () => {
 
   const fetchInvite = async () => {
     if (!token) return;
-    const { data } = await supabase
-      .from('project_invites')
-      .select('*, projects(name, client_name, owner_id)')
-      .eq('invite_token', token)
-      .single();
-    setInvite(data);
+    const { data } = await supabase.rpc('get_project_invite_by_token', { invite_token_param: token });
+    if (data && data.length > 0) {
+      setInvite(data[0]);
+    }
     setLoading(false);
   };
 
@@ -47,34 +44,12 @@ const InviteAccept = () => {
     setAccepting(true);
 
     try {
-      // Update invite with user ID and status
-      const { error: inviteError } = await supabase.from('project_invites').update({
-        accepted: true,
-        architect_user_id: user.id,
-        status: 'aceito',
-      }).eq('id', invite.id);
-
-      if (inviteError) throw inviteError;
-
-      // Update profile to arquiteta role
-      await supabase.from('profiles').update({
-        role: 'arquiteta' as any,
-      }).eq('user_id', user.id);
-
-      // Create notification for the project owner
-      const projectData = invite.projects as any;
-      if (projectData?.owner_id) {
-        await supabase.from('notifications').insert({
-          user_id: projectData.owner_id,
-          project_id: invite.project_id,
-          title: 'Convite aceito',
-          message: `Arq. ${user.user_metadata?.full_name || user.email} aceitou o convite e já tem acesso ao projeto ${projectData.name}.`,
-        });
-      }
+      const { data: projectId, error } = await supabase.rpc('accept_project_invite', { invite_token_param: token! });
+      if (error) throw error;
 
       await refreshProfile();
       toast.success('Convite aceito! Bem-vinda ao projeto.');
-      navigate(`/projeto/${invite.project_id}`);
+      navigate(`/projeto/${projectId}`);
     } catch (error: any) {
       toast.error(error.message || 'Erro ao aceitar convite');
     } finally {
@@ -99,7 +74,6 @@ const InviteAccept = () => {
     );
   }
 
-  // Check if expired
   if (invite.expires_at && new Date(invite.expires_at) < new Date() && invite.status !== 'aceito') {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -121,15 +95,15 @@ const InviteAccept = () => {
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <div>
-            <h2 className="text-xl font-display font-bold">{(invite.projects as any)?.name}</h2>
-            <p className="text-muted-foreground">{(invite.projects as any)?.client_name}</p>
+            <h2 className="text-xl font-display font-bold">{invite.project_name}</h2>
+            <p className="text-muted-foreground">{invite.client_name}</p>
           </div>
           <p className="text-sm text-muted-foreground">
             Você foi convidada para colaborar neste projeto como arquiteta.
           </p>
           {invite.accepted || invite.status === 'aceito' ? (
             <div>
-              <p className="text-success font-medium">Convite já aceito!</p>
+              <p className="text-green-400 font-medium">Convite já aceito!</p>
               <Button className="mt-2" onClick={() => navigate(`/projeto/${invite.project_id}`)}>
                 Abrir projeto
               </Button>
