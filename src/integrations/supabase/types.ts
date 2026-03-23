@@ -696,6 +696,41 @@ export type Database = {
           },
         ]
       }
+      stone_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          owner_id: string
+          photo_url: string
+          stone_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          owner_id: string
+          photo_url: string
+          stone_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          owner_id?: string
+          photo_url?: string
+          stone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stone_photos_stone_id_fkey"
+            columns: ["stone_id"]
+            isOneToOne: false
+            referencedRelation: "stones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stones: {
         Row: {
           category: string
@@ -863,6 +898,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_project_invite: {
+        Args: { invite_token_param: string }
+        Returns: string
+      }
+      get_project_invite_by_token: {
+        Args: { invite_token_param: string }
+        Returns: {
+          accepted: boolean
+          architect_email: string
+          architect_name: string
+          architect_office: string
+          architect_phone: string
+          architect_user_id: string
+          client_name: string
+          created_at: string
+          expires_at: string
+          id: string
+          owner_id: string
+          project_id: string
+          project_name: string
+          status: string
+        }[]
+      }
       user_has_project_access: {
         Args: { project_uuid: string }
         Returns: boolean
