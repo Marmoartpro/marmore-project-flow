@@ -9,8 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Search, ExternalLink } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Plus, Search, ExternalLink, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+const emptyForm = { name: '', whatsapp: '', email: '', city: '', service_type: '', observations: '' };
 
 const Clientes = () => {
   const { user } = useAuth();
@@ -20,7 +24,9 @@ const Clientes = () => {
   const [quotes, setQuotes] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', whatsapp: '', email: '', city: '', service_type: '', observations: '' });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteClient, setDeleteClient] = useState<any>(null);
+  const [form, setForm] = useState(emptyForm);
 
   useEffect(() => { if (user) fetchAll(); }, [user]);
 
@@ -30,8 +36,7 @@ const Clientes = () => {
       supabase.from('projects').select('id, name, client_name, status, total_value'),
       supabase.from('quotes').select('id, client_name, status, estimated_value'),
     ]);
-    
-    // Build unified client list from clients table + projects + quotes
+
     const existingClients = cRes.data || [];
     const projectClients = (pRes.data || []).filter(p => p.client_name && !existingClients.some(c => c.name?.toLowerCase() === p.client_name?.toLowerCase()));
     const quoteClients = (qRes.data || []).filter(q => q.client_name && !existingClients.some(c => c.name?.toLowerCase() === q.client_name?.toLowerCase()) && !projectClients.some(p => p.client_name?.toLowerCase() === q.client_name?.toLowerCase()));
@@ -46,13 +51,41 @@ const Clientes = () => {
     setQuotes(qRes.data || []);
   };
 
-  const createClient = async () => {
+  const saveClient = async () => {
     if (!user || !form.name) return;
-    await supabase.from('clients').insert({ owner_id: user.id, ...form });
-    setForm({ name: '', whatsapp: '', email: '', city: '', service_type: '', observations: '' });
+    if (editingId) {
+      await supabase.from('clients').update(form).eq('id', editingId);
+      toast.success('Cliente atualizado!');
+    } else {
+      await supabase.from('clients').insert({ owner_id: user.id, ...form });
+      toast.success('Cliente adicionado!');
+    }
+    setForm(emptyForm);
     setShowForm(false);
+    setEditingId(null);
     fetchAll();
-    toast.success('Cliente adicionado!');
+  };
+
+  const startEdit = (c: any) => {
+    if (c.source !== 'manual') { toast.error('Só é possível editar clientes cadastrados manualmente.'); return; }
+    setForm({ name: c.name || '', whatsapp: c.whatsapp || '', email: c.email || '', city: c.city || '', service_type: c.service_type || '', observations: c.observations || '' });
+    setEditingId(c.id);
+    setShowForm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteClient) return;
+    // Unlink from projects/quotes
+    await supabase.from('clients').delete().eq('id', deleteClient.id);
+    setDeleteClient(null);
+    fetchAll();
+    toast.success('Cliente excluído!');
+  };
+
+  const getLinkedCount = (c: any) => {
+    const pCount = projects.filter(p => p.client_name?.toLowerCase() === c.name?.toLowerCase()).length;
+    const qCount = quotes.filter(q => q.client_name?.toLowerCase() === c.name?.toLowerCase()).length;
+    return pCount + qCount;
   };
 
   const filtered = clients.filter(c => c.name?.toLowerCase().includes(search.toLowerCase()));
@@ -69,7 +102,7 @@ const Clientes = () => {
       <div className="p-4 md:p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-display font-bold">Clientes</h2>
-          <Button size="sm" onClick={() => setShowForm(true)}><Plus className="w-4 h-4 mr-1" /> Novo</Button>
+          <Button size="sm" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true); }}><Plus className="w-4 h-4 mr-1" /> Novo</Button>
         </div>
 
         <div className="relative">
@@ -79,7 +112,7 @@ const Clientes = () => {
 
         {showForm && (
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm font-display">Novo cliente</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-display">{editingId ? 'Editar cliente' : 'Novo cliente'}</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><Label className="text-xs">Nome *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="h-8 text-sm" /></div>
@@ -92,8 +125,8 @@ const Clientes = () => {
               <div><Label className="text-xs">Tipo de serviço</Label><Input value={form.service_type} onChange={e => setForm(f => ({ ...f, service_type: e.target.value }))} className="h-8 text-sm" /></div>
               <div><Label className="text-xs">Observações</Label><Textarea value={form.observations} onChange={e => setForm(f => ({ ...f, observations: e.target.value }))} rows={2} className="text-sm" /></div>
               <div className="flex gap-2">
-                <Button size="sm" onClick={createClient} disabled={!form.name}>Salvar</Button>
-                <Button size="sm" variant="ghost" onClick={() => setShowForm(false)}>Cancelar</Button>
+                <Button size="sm" onClick={saveClient} disabled={!form.name}>{editingId ? 'Salvar alterações' : 'Salvar'}</Button>
+                <Button size="sm" variant="ghost" onClick={() => { setShowForm(false); setEditingId(null); }}>Cancelar</Button>
               </div>
             </CardContent>
           </Card>
@@ -113,12 +146,29 @@ const Clientes = () => {
                       {c.total_value && <span>• R$ {Number(c.total_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     <Badge className={st.color + ' text-[10px]'}>{st.label}</Badge>
                     {c.project_id && (
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => navigate(`/projeto/${c.project_id}`)}>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </Button>
+                    )}
+                    {c.source === 'manual' && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="icon" variant="ghost" className="h-7 w-7">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => startEdit(c)}>
+                            <Edit className="w-3.5 h-3.5 mr-2" /> Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setDeleteClient(c)} className="text-destructive">
+                            <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                   </div>
                 </CardContent>
@@ -128,6 +178,25 @@ const Clientes = () => {
           {filtered.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nenhum cliente encontrado.</p>}
         </div>
       </div>
+
+      {/* Delete confirmation */}
+      <Dialog open={!!deleteClient} onOpenChange={() => setDeleteClient(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir cliente</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {deleteClient && getLinkedCount(deleteClient) > 0
+              ? `Este cliente possui ${getLinkedCount(deleteClient)} projeto(s)/orçamento(s) vinculado(s). Ao excluir o cliente os projetos não serão apagados mas ficarão sem cliente vinculado. Deseja continuar?`
+              : 'Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.'
+            }
+          </p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteClient(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmDelete}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };

@@ -6,7 +6,11 @@ import AppLayout from '@/components/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DollarSign, AlertTriangle, FileText, TrendingUp, Copy, RefreshCw, CheckCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DollarSign, AlertTriangle, FileText, TrendingUp, Copy, RefreshCw, MoreVertical, Edit, Trash2, Archive } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Dashboard = () => {
@@ -20,6 +24,8 @@ const Dashboard = () => {
   const [invites, setInvites] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteProject, setDeleteProject] = useState<any>(null);
+  const [deleteConfirmName, setDeleteConfirmName] = useState('');
 
   useEffect(() => {
     if (user) fetchAll();
@@ -49,7 +55,7 @@ const Dashboard = () => {
   const thisMonth = new Date().getMonth();
   const thisYear = new Date().getFullYear();
 
-  const totalReceivable = projects.reduce((s, p) => s + (Number(p.total_value || 0) - Number(p.paid_value || 0)), 0);
+  const totalReceivable = projects.filter(p => !p.archived).reduce((s, p) => s + (Number(p.total_value || 0) - Number(p.paid_value || 0)), 0);
   const receivedThisMonth = payments
     .filter(p => p.paid && p.paid_at && new Date(p.paid_at).getMonth() === thisMonth && new Date(p.paid_at).getFullYear() === thisYear)
     .reduce((s, p) => s + Number(p.amount), 0);
@@ -59,7 +65,9 @@ const Dashboard = () => {
   const openQuotesValue = openQuotes.reduce((s, q) => s + Number(q.estimated_value || 0), 0);
 
   const projectStageMap: Record<string, string> = {};
-  const activeProjects = projects.filter(p => p.status === 'em_andamento');
+  const activeProjects = projects.filter(p => p.status === 'em_andamento' && !p.archived);
+  const archivedProjects = projects.filter(p => p.archived);
+
   activeProjects.forEach(p => {
     const pStages = stages.filter(s => s.project_id === p.id).sort((a, b) => a.stage_number - b.stage_number);
     const current = pStages.find(s => s.status !== 'concluida') || pStages[pStages.length - 1];
@@ -116,9 +124,97 @@ const Dashboard = () => {
     setNotifications(n => n.filter(x => x.id !== id));
   };
 
+  const archiveProject = async (id: string) => {
+    await supabase.from('projects').update({ archived: true }).eq('id', id);
+    toast.success('Projeto arquivado!');
+    fetchAll();
+  };
+
+  const restoreProject = async (id: string) => {
+    await supabase.from('projects').update({ archived: false }).eq('id', id);
+    toast.success('Projeto restaurado!');
+    fetchAll();
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!deleteProject || deleteConfirmName !== deleteProject.name) return;
+    // Delete related data
+    await Promise.all([
+      supabase.from('payments').delete().eq('project_id', deleteProject.id),
+      supabase.from('messages').delete().eq('project_id', deleteProject.id),
+      supabase.from('plant_annotations').delete().eq('project_id', deleteProject.id),
+      supabase.from('project_invites').delete().eq('project_id', deleteProject.id),
+      supabase.from('project_materials').delete().eq('project_id', deleteProject.id),
+      supabase.from('billing_reminders').delete().eq('project_id', deleteProject.id),
+    ]);
+    // Delete stages + photos
+    const { data: stageData } = await supabase.from('project_stages').select('id').eq('project_id', deleteProject.id);
+    if (stageData) {
+      const ids = stageData.map(s => s.id);
+      if (ids.length > 0) {
+        await supabase.from('stage_comments').delete().in('stage_id', ids);
+        await supabase.from('stage_photos').delete().in('stage_id', ids);
+      }
+      await supabase.from('project_stages').delete().eq('project_id', deleteProject.id);
+    }
+    await supabase.from('projects').delete().eq('id', deleteProject.id);
+    setDeleteProject(null);
+    setDeleteConfirmName('');
+    toast.success('Projeto excluído permanentemente.');
+    fetchAll();
+  };
+
   const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
   if (loading) return <AppLayout><div className="flex items-center justify-center h-64 text-muted-foreground">Carregando...</div></AppLayout>;
+
+  const renderProjectCard = (p: any, showActions = true) => {
+    const status = getPaymentStatus(p.id);
+    const progress = getProjectProgress(p.id);
+    return (
+      <Card key={p.id} className="hover:border-primary/40 transition-colors">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="cursor-pointer flex-1" onClick={() => navigate(`/projeto/${p.id}`)}>
+              <p className="font-medium text-sm">{p.name}</p>
+              <p className="text-xs text-muted-foreground">{p.client_name || 'Sem cliente'}</p>
+            </div>
+            <div className="flex items-center gap-1">
+              <Badge className={status.color + ' text-[10px]'}>{status.label}</Badge>
+              {showActions && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-7 w-7">
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate(`/projeto/${p.id}`)}>
+                      <Edit className="w-3.5 h-3.5 mr-2" /> Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => archiveProject(p.id)}>
+                      <Archive className="w-3.5 h-3.5 mr-2" /> Arquivar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setDeleteProject(p)} className="text-destructive">
+                      <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
+              </div>
+            </div>
+            <span className="text-[11px] text-muted-foreground whitespace-nowrap">{projectStageMap[p.id]}</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <AppLayout alertCount={alerts.length}>
@@ -127,57 +223,22 @@ const Dashboard = () => {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2.5 rounded-lg bg-primary/20"><DollarSign className="w-5 h-5 text-primary" /></div>
-              <div>
-                <p className="text-[11px] text-muted-foreground">Total a receber</p>
-                <p className="text-lg font-bold font-display">R$ {fmt(totalReceivable)}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2.5 rounded-lg bg-success/20"><TrendingUp className="w-5 h-5 text-success" /></div>
-              <div>
-                <p className="text-[11px] text-muted-foreground">Recebido no mês</p>
-                <p className="text-lg font-bold font-display">R$ {fmt(receivedThisMonth)}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2.5 rounded-lg bg-destructive/20"><AlertTriangle className="w-5 h-5 text-destructive" /></div>
-              <div>
-                <p className="text-[11px] text-muted-foreground">Em atraso</p>
-                <p className="text-lg font-bold font-display">R$ {fmt(overdueTotal)}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2.5 rounded-lg bg-primary/20"><FileText className="w-5 h-5 text-primary" /></div>
-              <div>
-                <p className="text-[11px] text-muted-foreground">Orçamentos abertos</p>
-                <p className="text-lg font-bold font-display">{openQuotes.length} <span className="text-sm font-normal text-muted-foreground">({fmt(openQuotesValue)})</span></p>
-              </div>
-            </CardContent>
-          </Card>
+          <Card><CardContent className="p-4 flex items-center gap-3"><div className="p-2.5 rounded-lg bg-primary/20"><DollarSign className="w-5 h-5 text-primary" /></div><div><p className="text-[11px] text-muted-foreground">Total a receber</p><p className="text-lg font-bold font-display">R$ {fmt(totalReceivable)}</p></div></CardContent></Card>
+          <Card><CardContent className="p-4 flex items-center gap-3"><div className="p-2.5 rounded-lg bg-success/20"><TrendingUp className="w-5 h-5 text-success" /></div><div><p className="text-[11px] text-muted-foreground">Recebido no mês</p><p className="text-lg font-bold font-display">R$ {fmt(receivedThisMonth)}</p></div></CardContent></Card>
+          <Card><CardContent className="p-4 flex items-center gap-3"><div className="p-2.5 rounded-lg bg-destructive/20"><AlertTriangle className="w-5 h-5 text-destructive" /></div><div><p className="text-[11px] text-muted-foreground">Em atraso</p><p className="text-lg font-bold font-display">R$ {fmt(overdueTotal)}</p></div></CardContent></Card>
+          <Card><CardContent className="p-4 flex items-center gap-3"><div className="p-2.5 rounded-lg bg-primary/20"><FileText className="w-5 h-5 text-primary" /></div><div><p className="text-[11px] text-muted-foreground">Orçamentos abertos</p><p className="text-lg font-bold font-display">{openQuotes.length} <span className="text-sm font-normal text-muted-foreground">({fmt(openQuotesValue)})</span></p></div></CardContent></Card>
         </div>
 
-        {/* Alerts + Notifications */}
+        {/* Alerts */}
         {alerts.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Alertas do dia</h3>
             {alerts.map((a, i) => (
-              <div
-                key={i}
-                className={`px-3 py-2 rounded-md text-sm border flex items-center justify-between ${
-                  a.type === 'danger' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
-                  a.type === 'info' ? 'bg-primary/10 border-primary/30 text-primary' :
-                  'bg-warning/10 border-warning/30 text-warning'
-                }`}
-              >
+              <div key={i} className={`px-3 py-2 rounded-md text-sm border flex items-center justify-between ${
+                a.type === 'danger' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
+                a.type === 'info' ? 'bg-primary/10 border-primary/30 text-primary' :
+                'bg-warning/10 border-warning/30 text-warning'
+              }`}>
                 <span>{a.text}</span>
                 {a.type === 'info' && (
                   <button onClick={() => { const n = notifications.find(x => x.message === a.text || x.title === a.text); if (n) markNotificationRead(n.id); }}
@@ -188,7 +249,7 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Invites sent */}
+        {/* Invites */}
         {invites.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Convites enviados</h3>
@@ -208,14 +269,8 @@ const Dashboard = () => {
                       </Badge>
                       {!isAccepted && (
                         <>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyInviteLink(inv.invite_token)} title="Copiar link">
-                            <Copy className="w-3 h-3" />
-                          </Button>
-                          {isExpired && (
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => resendInvite(inv.id)} title="Reenviar">
-                              <RefreshCw className="w-3 h-3" />
-                            </Button>
-                          )}
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyInviteLink(inv.invite_token)} title="Copiar link"><Copy className="w-3 h-3" /></Button>
+                          {isExpired && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => resendInvite(inv.id)} title="Reenviar"><RefreshCw className="w-3 h-3" /></Button>}
                         </>
                       )}
                     </div>
@@ -226,42 +281,55 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Active projects */}
-        <div>
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Projetos ativos</h3>
-          {activeProjects.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Nenhum projeto ativo.</p>
-          ) : (
-            <div className="space-y-2">
-              {activeProjects.map(p => {
-                const status = getPaymentStatus(p.id);
-                const progress = getProjectProgress(p.id);
-                return (
-                  <Card key={p.id} className="cursor-pointer hover:border-primary/40 transition-colors" onClick={() => navigate(`/projeto/${p.id}`)}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <p className="font-medium text-sm">{p.name}</p>
-                          <p className="text-xs text-muted-foreground">{p.client_name || 'Sem cliente'}</p>
-                        </div>
-                        <Badge className={status.color + ' text-[10px]'}>{status.label}</Badge>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1">
-                          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
-                          </div>
-                        </div>
-                        <span className="text-[11px] text-muted-foreground whitespace-nowrap">{projectStageMap[p.id]}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        {/* Projects */}
+        <Tabs defaultValue="active">
+          <TabsList className="bg-card">
+            <TabsTrigger value="active">Ativos ({activeProjects.length})</TabsTrigger>
+            <TabsTrigger value="archived">Arquivados ({archivedProjects.length})</TabsTrigger>
+          </TabsList>
+          <TabsContent value="active" className="space-y-2 mt-3">
+            {activeProjects.length === 0 ? (
+              <p className="text-muted-foreground text-sm">Nenhum projeto ativo.</p>
+            ) : activeProjects.map(p => renderProjectCard(p))}
+          </TabsContent>
+          <TabsContent value="archived" className="space-y-2 mt-3">
+            {archivedProjects.length === 0 ? (
+              <p className="text-muted-foreground text-sm">Nenhum projeto arquivado.</p>
+            ) : archivedProjects.map(p => (
+              <Card key={p.id}>
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="cursor-pointer" onClick={() => navigate(`/projeto/${p.id}`)}>
+                    <p className="font-medium text-sm">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">{p.client_name || 'Sem cliente'}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => restoreProject(p.id)}>Restaurar</Button>
+                    <Button size="sm" variant="destructive" className="text-xs h-7" onClick={() => setDeleteProject(p)}>Excluir</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </TabsContent>
+        </Tabs>
       </div>
+
+      {/* Delete project confirmation */}
+      <Dialog open={!!deleteProject} onOpenChange={() => { setDeleteProject(null); setDeleteConfirmName(''); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir projeto</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Ao excluir este projeto todos os dados serão apagados permanentemente incluindo fotos, recados, pagamentos e histórico. Esta ação não pode ser desfeita.
+          </p>
+          <p className="text-sm font-medium mt-2">Digite o nome do projeto para confirmar: <strong>{deleteProject?.name}</strong></p>
+          <Input value={deleteConfirmName} onChange={e => setDeleteConfirmName(e.target.value)} placeholder="Nome do projeto" />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setDeleteProject(null); setDeleteConfirmName(''); }}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmDeleteProject} disabled={deleteConfirmName !== deleteProject?.name}>Excluir permanentemente</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };
