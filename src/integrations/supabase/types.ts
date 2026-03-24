@@ -545,6 +545,7 @@ export type Database = {
         Row: {
           address: string | null
           architect_logo_url: string | null
+          archived: boolean
           client_name: string | null
           created_at: string
           deadline: string | null
@@ -569,6 +570,7 @@ export type Database = {
         Insert: {
           address?: string | null
           architect_logo_url?: string | null
+          archived?: boolean
           client_name?: string | null
           created_at?: string
           deadline?: string | null
@@ -593,6 +595,7 @@ export type Database = {
         Update: {
           address?: string | null
           architect_logo_url?: string | null
+          archived?: boolean
           client_name?: string | null
           created_at?: string
           deadline?: string | null
@@ -663,6 +666,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      stage_comments: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          has_alert: boolean
+          id: string
+          stage_id: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          has_alert?: boolean
+          id?: string
+          stage_id: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          has_alert?: boolean
+          id?: string
+          stage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_comments_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "project_stages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stage_photos: {
         Row: {
