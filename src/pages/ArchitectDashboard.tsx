@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, LogOut } from 'lucide-react';
+import { MessageSquare, LogOut, Package, Bell } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 const stageIcons = ['🪨', '📐', '✂️', '🔧', '✨'];
@@ -19,12 +19,18 @@ const ArchitectDashboard = () => {
   const [payments, setPayments] = useState<any[]>([]);
   const [photos, setPhotos] = useState<any[]>([]);
   const [lastMessage, setLastMessage] = useState<any>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifs, setShowNotifs] = useState(false);
 
   useEffect(() => { if (user) fetchAll(); }, [user]);
 
   const fetchAll = async () => {
     const { data: projs } = await supabase.from('projects').select('*');
     setProjects(projs || []);
+
+    const { data: notifs } = await supabase.from('notifications').select('*').eq('read', false).order('created_at', { ascending: false }).limit(10);
+    setNotifications(notifs || []);
+
     if (projs && projs.length > 0) {
       const projectIds = projs.map(p => p.id);
       const [stRes, payRes, msgRes] = await Promise.all([
@@ -35,8 +41,7 @@ const ArchitectDashboard = () => {
       setStages(stRes.data || []);
       setPayments(payRes.data || []);
       setLastMessage(msgRes.data?.[0] || null);
-      
-      // Get latest photos per stage
+
       const stageIds = (stRes.data || []).map(s => s.id);
       if (stageIds.length > 0) {
         const { data: photoData } = await supabase.from('stage_photos').select('*').in('stage_id', stageIds).order('created_at', { ascending: false });
@@ -45,7 +50,11 @@ const ArchitectDashboard = () => {
     }
   };
 
-  // We show first project for simplicity
+  const markRead = async (id: string) => {
+    await supabase.from('notifications').update({ read: true }).eq('id', id);
+    setNotifications(n => n.filter(x => x.id !== id));
+  };
+
   const project = projects[0];
   if (!project) {
     return (
@@ -74,20 +83,41 @@ const ArchitectDashboard = () => {
   ];
 
   const currentStage = projectStages.find(s => s.status !== 'concluida') || projectStages[projectStages.length - 1];
-
-  const getLastPhoto = (stageId: string) => {
-    return photos.find(p => p.stage_id === stageId);
-  };
-
+  const getLastPhoto = (stageId: string) => photos.find(p => p.stage_id === stageId);
   const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card px-4 py-3 flex items-center justify-between">
         <h1 className="text-base font-display font-bold">MármoreProart</h1>
-        <Button variant="ghost" size="icon" onClick={signOut}><LogOut className="w-4 h-4" /></Button>
+        <div className="flex items-center gap-2">
+          <button className="relative" onClick={() => setShowNotifs(!showNotifs)}>
+            <Bell className="w-5 h-5 text-muted-foreground" />
+            {notifications.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] rounded-full flex items-center justify-center">{notifications.length}</span>
+            )}
+          </button>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/mostruario')}>
+            <Package className="w-4 h-4 mr-1" /> Mostruário
+          </Button>
+          <Button variant="ghost" size="icon" onClick={signOut}><LogOut className="w-4 h-4" /></Button>
+        </div>
       </header>
+
+      {/* Notifications dropdown */}
+      {showNotifs && notifications.length > 0 && (
+        <div className="px-4 py-2 bg-card border-b border-border space-y-1">
+          {notifications.map(n => (
+            <div key={n.id} className="px-3 py-2 rounded-md bg-primary/10 border border-primary/30 text-xs flex justify-between items-start gap-2">
+              <div>
+                <p className="font-medium text-primary">{n.title}</p>
+                <p className="text-muted-foreground">{n.message}</p>
+              </div>
+              <button onClick={() => markRead(n.id)} className="text-muted-foreground hover:text-foreground text-[10px] shrink-0">✓</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="p-4 space-y-4 max-w-2xl mx-auto">
         {/* Welcome card */}
@@ -105,7 +135,7 @@ const ArchitectDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Donut chart + Financial */}
+        {/* Donut + Financial */}
         <div className="grid grid-cols-2 gap-3">
           <Card>
             <CardContent className="p-4 flex flex-col items-center">
@@ -144,16 +174,14 @@ const ArchitectDashboard = () => {
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground mb-3">Linha do tempo</p>
             <div className="flex items-center gap-1">
-              {projectStages.map((s, i) => {
+              {projectStages.map((s) => {
                 const isCurrent = s.id === currentStage?.id;
                 const isDone = s.status === 'concluida';
                 return (
                   <div key={s.id} className="flex-1 flex flex-col items-center">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
                       isDone ? 'bg-success text-success-foreground' : isCurrent ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {s.stage_number}
-                    </div>
+                    }`}>{s.stage_number}</div>
                     <p className="text-[9px] text-center mt-1 text-muted-foreground leading-tight">{s.name}</p>
                   </div>
                 );
@@ -178,9 +206,7 @@ const ArchitectDashboard = () => {
                       {isDone ? 'Concluída' : isActive ? 'Em andamento' : 'Pendente'}
                     </Badge>
                   </div>
-                  {photo && (
-                    <img src={photo.photo_url} alt="" className="w-full h-24 object-cover rounded-md" />
-                  )}
+                  {photo && <img src={photo.photo_url} alt="" className="w-full h-24 object-cover rounded-md" />}
                 </CardContent>
               </Card>
             );

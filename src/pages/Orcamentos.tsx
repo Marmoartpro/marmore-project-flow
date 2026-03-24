@@ -10,7 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Plus, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const statusLabels: Record<string, string> = {
@@ -26,15 +28,19 @@ const statusColors: Record<string, string> = {
   perdido: 'bg-destructive text-destructive-foreground',
 };
 
+const emptyForm = {
+  client_name: '', client_whatsapp: '', environment_type: '', stone_type: '',
+  estimated_value: '', status: 'aguardando', observations: '', follow_up_date: '',
+};
+
 const Orcamentos = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [quotes, setQuotes] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    client_name: '', client_whatsapp: '', environment_type: '', stone_type: '',
-    estimated_value: '', status: 'aguardando', observations: '', follow_up_date: '',
-  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
 
   useEffect(() => { if (user) fetchQuotes(); }, [user]);
 
@@ -43,9 +49,9 @@ const Orcamentos = () => {
     setQuotes(data || []);
   };
 
-  const createQuote = async () => {
+  const saveQuote = async () => {
     if (!user || !form.client_name) return;
-    await supabase.from('quotes').insert({
+    const payload = {
       owner_id: user.id,
       client_name: form.client_name,
       client_whatsapp: form.client_whatsapp,
@@ -55,11 +61,41 @@ const Orcamentos = () => {
       status: form.status,
       observations: form.observations,
       follow_up_date: form.follow_up_date || null,
-    });
-    setForm({ client_name: '', client_whatsapp: '', environment_type: '', stone_type: '', estimated_value: '', status: 'aguardando', observations: '', follow_up_date: '' });
+    };
+    if (editingId) {
+      await supabase.from('quotes').update(payload).eq('id', editingId);
+      toast.success('Orçamento atualizado!');
+    } else {
+      await supabase.from('quotes').insert(payload);
+      toast.success('Orçamento cadastrado!');
+    }
+    setForm(emptyForm);
     setShowForm(false);
+    setEditingId(null);
     fetchQuotes();
-    toast.success('Orçamento cadastrado!');
+  };
+
+  const startEdit = (q: any) => {
+    setForm({
+      client_name: q.client_name || '',
+      client_whatsapp: q.client_whatsapp || '',
+      environment_type: q.environment_type || '',
+      stone_type: q.stone_type || '',
+      estimated_value: q.estimated_value?.toString() || '',
+      status: q.status || 'aguardando',
+      observations: q.observations || '',
+      follow_up_date: q.follow_up_date || '',
+    });
+    setEditingId(q.id);
+    setShowForm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    await supabase.from('quotes').delete().eq('id', deleteId);
+    setDeleteId(null);
+    fetchQuotes();
+    toast.success('Orçamento excluído!');
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -84,11 +120,7 @@ const Orcamentos = () => {
     navigate(`/projeto/${project.id}`);
   };
 
-  const daysSince = (date: string) => {
-    const diff = Date.now() - new Date(date).getTime();
-    return Math.floor(diff / (1000 * 60 * 60 * 24));
-  };
-
+  const daysSince = (date: string) => Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24));
   const groupedStatuses = ['aguardando', 'negociando', 'aprovado', 'perdido'];
   const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
@@ -97,12 +129,12 @@ const Orcamentos = () => {
       <div className="p-4 md:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-display font-bold">Orçamentos</h2>
-          <Button size="sm" onClick={() => setShowForm(true)}><Plus className="w-4 h-4 mr-1" /> Novo</Button>
+          <Button size="sm" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true); }}><Plus className="w-4 h-4 mr-1" /> Novo</Button>
         </div>
 
         {showForm && (
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm font-display">Novo orçamento</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-display">{editingId ? 'Editar orçamento' : 'Novo orçamento'}</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><Label className="text-xs">Nome do cliente *</Label><Input value={form.client_name} onChange={e => setForm(f => ({ ...f, client_name: e.target.value }))} className="h-8 text-sm" /></div>
@@ -127,8 +159,8 @@ const Orcamentos = () => {
               </div>
               <div><Label className="text-xs">Observações</Label><Textarea value={form.observations} onChange={e => setForm(f => ({ ...f, observations: e.target.value }))} rows={2} className="text-sm" /></div>
               <div className="flex gap-2">
-                <Button size="sm" onClick={createQuote} disabled={!form.client_name}>Salvar</Button>
-                <Button size="sm" variant="ghost" onClick={() => setShowForm(false)}>Cancelar</Button>
+                <Button size="sm" onClick={saveQuote} disabled={!form.client_name}>{editingId ? 'Salvar alterações' : 'Salvar'}</Button>
+                <Button size="sm" variant="ghost" onClick={() => { setShowForm(false); setEditingId(null); }}>Cancelar</Button>
               </div>
             </CardContent>
           </Card>
@@ -145,7 +177,24 @@ const Orcamentos = () => {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-1">
                       <p className="font-medium text-sm">{q.client_name}</p>
-                      <Badge className={statusColors[q.status] + ' text-[10px]'}>{statusLabels[q.status]}</Badge>
+                      <div className="flex items-center gap-1">
+                        <Badge className={statusColors[q.status] + ' text-[10px]'}>{statusLabels[q.status]}</Badge>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-7 w-7">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => startEdit(q)}>
+                              <Edit className="w-3.5 h-3.5 mr-2" /> Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setDeleteId(q.id)} className="text-destructive">
+                              <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                     <div className="text-xs text-muted-foreground space-x-3">
                       <span>R$ {fmt(Number(q.estimated_value || 0))}</span>
@@ -165,6 +214,20 @@ const Orcamentos = () => {
           );
         })}
       </div>
+
+      {/* Delete confirmation */}
+      <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir orçamento</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita.</p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteId(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmDelete}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };

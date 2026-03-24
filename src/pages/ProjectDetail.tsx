@@ -77,7 +77,7 @@ const ProjectDetail = () => {
             <TabsTrigger value="messages">Recados</TabsTrigger>
           </TabsList>
           <TabsContent value="overview"><ProjectOverview project={project} invite={invite} isOwner={isOwner} /></TabsContent>
-          <TabsContent value="evolution"><ProjectEvolution projectId={project.id} isOwner={isOwner} /></TabsContent>
+          <TabsContent value="evolution"><ProjectEvolution projectId={project.id} projectName={project.name} isOwner={isOwner} /></TabsContent>
           <TabsContent value="plant"><ProjectPlant projectId={project.id} /></TabsContent>
           <TabsContent value="payments"><ProjectPayments project={project} isOwner={isOwner} onUpdate={fetchProject} /></TabsContent>
           <TabsContent value="messages"><ProjectMessages projectId={project.id} /></TabsContent>

@@ -89,9 +89,7 @@ const Mostruario = () => {
       toast.success('Foto de capa enviada!');
     } catch (err: any) {
       toast.error(err.message || 'Erro ao enviar foto');
-    } finally {
-      setUploading(false);
-    }
+    } finally { setUploading(false); }
   };
 
   const uploadGalleryPhotos = async (files: FileList) => {
@@ -104,19 +102,13 @@ const Mostruario = () => {
         const { error: upErr } = await supabase.storage.from('project-files').upload(path, file);
         if (upErr) throw upErr;
         const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(path);
-        await supabase.from('stone_photos').insert({
-          stone_id: editStone.id,
-          owner_id: user.id,
-          photo_url: urlData.publicUrl,
-        });
+        await supabase.from('stone_photos').insert({ stone_id: editStone.id, owner_id: user.id, photo_url: urlData.publicUrl });
       }
       toast.success('Fotos adicionadas!');
       fetchGalleryPhotos(editStone.id);
     } catch (err: any) {
       toast.error(err.message || 'Erro ao enviar fotos');
-    } finally {
-      setUploadingGallery(false);
-    }
+    } finally { setUploadingGallery(false); }
   };
 
   const deleteGalleryPhoto = async (photoId: string) => {
@@ -127,18 +119,13 @@ const Mostruario = () => {
 
   const saveStone = async () => {
     if (!user || !form.name) return;
-    const payload = {
-      ...form,
-      owner_id: user.id,
-      price_per_m2: form.price_per_m2 ? parseFloat(form.price_per_m2) : 0,
-    };
-
+    const payload = { ...form, owner_id: user.id, price_per_m2: form.price_per_m2 ? parseFloat(form.price_per_m2) : 0 };
     if (editStone) {
       await supabase.from('stones').update(payload).eq('id', editStone.id);
       toast.success('Pedra atualizada!');
     } else {
       const { data } = await supabase.from('stones').insert(payload).select().single();
-      if (data) setEditStone(data); // allow gallery upload right after creation
+      if (data) setEditStone(data);
       toast.success('Pedra cadastrada! Agora você pode adicionar fotos à galeria.');
     }
     setShowForm(false);
@@ -161,19 +148,17 @@ const Mostruario = () => {
     fetchGalleryPhotos(s.id);
   };
 
+  const shareStone = (s: any) => {
+    const url = `${window.location.origin}/mostruario?pedra=${s.id}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Link da pedra copiado!');
+  };
+
   const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
-  const Wrapper = isMarmorista ? AppLayout : ({ children }: { children: React.ReactNode }) => (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card px-4 py-3">
-        <h1 className="text-base font-display font-bold">Mostruário</h1>
-      </header>
-      <div>{children}</div>
-    </div>
-  );
-
+  // Both roles use AppLayout now
   return (
-    <Wrapper>
+    <AppLayout>
       <div className="p-4 md:p-6 space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <h2 className="text-xl font-display font-bold">Mostruário</h2>
@@ -247,7 +232,6 @@ const Mostruario = () => {
                     </Button>
                   </div>
                 )}
-                {/* Gallery photos */}
                 {galleryPhotos.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground font-medium">Galeria de fotos</p>
@@ -268,19 +252,12 @@ const Mostruario = () => {
                     <div><span className="text-muted-foreground">Preço/m²:</span> {selected.price_per_m2 > 0 ? `R$ ${fmt(Number(selected.price_per_m2))}` : '—'}</div>
                   </div>
                   {selected.usage_indication && <div><span className="text-muted-foreground">Indicação de uso:</span> {selected.usage_indication}</div>}
-                  {selected.pros && (
-                    <div>
-                      <p className="text-muted-foreground font-medium mb-1">Prós</p>
-                      <p className="text-green-400">{selected.pros}</p>
-                    </div>
-                  )}
-                  {selected.cons && (
-                    <div>
-                      <p className="text-muted-foreground font-medium mb-1">Contras</p>
-                      <p className="text-red-400">{selected.cons}</p>
-                    </div>
-                  )}
+                  {selected.pros && <div><p className="text-muted-foreground font-medium mb-1">Prós</p><p className="text-green-400">{selected.pros}</p></div>}
+                  {selected.cons && <div><p className="text-muted-foreground font-medium mb-1">Contras</p><p className="text-red-400">{selected.cons}</p></div>}
                   {selected.observations && <div><span className="text-muted-foreground">Observações:</span> {selected.observations}</div>}
+                  <Button size="sm" variant="outline" className="w-full" onClick={() => shareStone(selected)}>
+                    Compartilhar link da pedra
+                  </Button>
                 </div>
               </>
             )}
@@ -302,106 +279,105 @@ const Mostruario = () => {
         )}
 
         {/* Add/Edit form */}
-        <Dialog open={showForm} onOpenChange={() => { setShowForm(false); resetForm(); }}>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="font-display">{editStone ? 'Editar pedra' : 'Nova pedra'}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Nome *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
-                <div>
-                  <Label className="text-xs">Categoria</Label>
-                  <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
-                    {CATEGORIES.filter(c => c !== 'Todos').map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+        {isMarmorista && (
+          <Dialog open={showForm} onOpenChange={() => { setShowForm(false); resetForm(); }}>
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="font-display">{editStone ? 'Editar pedra' : 'Nova pedra'}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-xs">Nome *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+                  <div>
+                    <Label className="text-xs">Categoria</Label>
+                    <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
+                      {CATEGORIES.filter(c => c !== 'Todos').map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Origem</Label><Input value={form.origin} onChange={e => setForm(f => ({ ...f, origin: e.target.value }))} /></div>
-                <div><Label className="text-xs">Cores</Label><Input value={form.colors} onChange={e => setForm(f => ({ ...f, colors: e.target.value }))} /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Espessuras</Label><Input value={form.thicknesses} onChange={e => setForm(f => ({ ...f, thicknesses: e.target.value }))} /></div>
-                <div><Label className="text-xs">Acabamentos</Label><Input value={form.finishes} onChange={e => setForm(f => ({ ...f, finishes: e.target.value }))} /></div>
-              </div>
-              <div><Label className="text-xs">Indicação de uso</Label><Input value={form.usage_indication} onChange={e => setForm(f => ({ ...f, usage_indication: e.target.value }))} /></div>
-              
-              {/* Cover photo upload */}
-              <div className="space-y-2">
-                <Label className="text-xs">Foto de capa</Label>
-                {form.photo_url ? (
-                  <div className="relative">
-                    <img src={form.photo_url} alt="" className="w-full h-40 object-cover rounded-md" />
-                    <Button size="icon" variant="destructive" className="absolute top-2 right-2 h-6 w-6" onClick={() => setForm(f => ({ ...f, photo_url: '' }))}>
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div
-                    className="border-2 border-dashed border-border rounded-md p-6 text-center cursor-pointer hover:border-primary/40 transition-colors"
-                    onClick={() => coverInputRef.current?.click()}
-                  >
-                    <Upload className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-xs text-muted-foreground">{uploading ? 'Enviando...' : 'Clique para enviar foto de capa'}</p>
-                  </div>
-                )}
-                <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadCoverPhoto(e.target.files[0])} />
-              </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-xs">Origem</Label><Input value={form.origin} onChange={e => setForm(f => ({ ...f, origin: e.target.value }))} /></div>
+                  <div><Label className="text-xs">Cores</Label><Input value={form.colors} onChange={e => setForm(f => ({ ...f, colors: e.target.value }))} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-xs">Espessuras</Label><Input value={form.thicknesses} onChange={e => setForm(f => ({ ...f, thicknesses: e.target.value }))} /></div>
+                  <div><Label className="text-xs">Acabamentos</Label><Input value={form.finishes} onChange={e => setForm(f => ({ ...f, finishes: e.target.value }))} /></div>
+                </div>
+                <div><Label className="text-xs">Indicação de uso</Label><Input value={form.usage_indication} onChange={e => setForm(f => ({ ...f, usage_indication: e.target.value }))} /></div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Preço por m² (R$)</Label><Input type="number" step="0.01" value={form.price_per_m2} onChange={e => setForm(f => ({ ...f, price_per_m2: e.target.value }))} /></div>
-                <div><Label className="text-xs">Badge promoção</Label><Input value={form.promo_badge} onChange={e => setForm(f => ({ ...f, promo_badge: e.target.value }))} placeholder="Ex: -20%" /></div>
-              </div>
-              <div><Label className="text-xs">Prós</Label><Textarea value={form.pros} onChange={e => setForm(f => ({ ...f, pros: e.target.value }))} rows={2} /></div>
-              <div><Label className="text-xs">Contras</Label><Textarea value={form.cons} onChange={e => setForm(f => ({ ...f, cons: e.target.value }))} rows={2} /></div>
-              <div><Label className="text-xs">Observações</Label><Textarea value={form.observations} onChange={e => setForm(f => ({ ...f, observations: e.target.value }))} rows={2} /></div>
-              <div className="flex gap-4 items-center text-sm flex-wrap">
-                <label className="flex items-center gap-2"><input type="checkbox" checked={form.in_stock} onChange={e => setForm(f => ({ ...f, in_stock: e.target.checked }))} /> Em estoque</label>
-                <label className="flex items-center gap-2"><input type="checkbox" checked={form.featured} onChange={e => setForm(f => ({ ...f, featured: e.target.checked }))} /> Destaque</label>
-                <label className="flex items-center gap-2"><input type="checkbox" checked={form.promo_active} onChange={e => setForm(f => ({ ...f, promo_active: e.target.checked }))} /> Promoção ativa</label>
-              </div>
-
-              {/* Gallery photos - only for existing stones */}
-              {editStone && (
-                <div className="space-y-2 border-t border-border pt-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs flex items-center gap-1"><Image className="w-3 h-3" /> Galeria de fotos</Label>
-                    <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => galleryInputRef.current?.click()} disabled={uploadingGallery}>
-                      <Upload className="w-3 h-3 mr-1" /> {uploadingGallery ? 'Enviando...' : 'Adicionar fotos'}
-                    </Button>
-                    <input ref={galleryInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => e.target.files && uploadGalleryPhotos(e.target.files)} />
-                  </div>
-                  {galleryPhotos.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-2">
-                      {galleryPhotos.map(p => (
-                        <div key={p.id} className="relative group">
-                          <img src={p.photo_url} alt="" className="w-full aspect-square object-cover rounded-md" />
-                          <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => deleteGalleryPhoto(p.id)}>
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      ))}
+                {/* Cover photo */}
+                <div className="space-y-2">
+                  <Label className="text-xs">Foto de capa</Label>
+                  {form.photo_url ? (
+                    <div className="relative">
+                      <img src={form.photo_url} alt="" className="w-full h-40 object-cover rounded-md" />
+                      <Button size="icon" variant="destructive" className="absolute top-2 right-2 h-6 w-6" onClick={() => setForm(f => ({ ...f, photo_url: '' }))}>
+                        <X className="w-3 h-3" />
+                      </Button>
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground text-center py-3">Nenhuma foto na galeria</p>
+                    <div className="border-2 border-dashed border-border rounded-md p-6 text-center cursor-pointer hover:border-primary/40 transition-colors" onClick={() => coverInputRef.current?.click()}>
+                      <Upload className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-xs text-muted-foreground">{uploading ? 'Enviando...' : 'Clique para enviar foto de capa'}</p>
+                    </div>
+                  )}
+                  <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadCoverPhoto(e.target.files[0])} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-xs">Preço por m² (R$)</Label><Input type="number" step="0.01" value={form.price_per_m2} onChange={e => setForm(f => ({ ...f, price_per_m2: e.target.value }))} /></div>
+                  <div><Label className="text-xs">Badge promoção</Label><Input value={form.promo_badge} onChange={e => setForm(f => ({ ...f, promo_badge: e.target.value }))} placeholder="Ex: -20%" /></div>
+                </div>
+                <div><Label className="text-xs">Prós</Label><Textarea value={form.pros} onChange={e => setForm(f => ({ ...f, pros: e.target.value }))} rows={2} /></div>
+                <div><Label className="text-xs">Contras</Label><Textarea value={form.cons} onChange={e => setForm(f => ({ ...f, cons: e.target.value }))} rows={2} /></div>
+                <div><Label className="text-xs">Observações</Label><Textarea value={form.observations} onChange={e => setForm(f => ({ ...f, observations: e.target.value }))} rows={2} /></div>
+                <div className="flex gap-4 items-center text-sm flex-wrap">
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={form.in_stock} onChange={e => setForm(f => ({ ...f, in_stock: e.target.checked }))} /> Em estoque</label>
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={form.featured} onChange={e => setForm(f => ({ ...f, featured: e.target.checked }))} /> Destaque</label>
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={form.promo_active} onChange={e => setForm(f => ({ ...f, promo_active: e.target.checked }))} /> Promoção ativa</label>
+                </div>
+
+                {/* Gallery */}
+                {editStone && (
+                  <div className="space-y-2 border-t border-border pt-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs flex items-center gap-1"><Image className="w-3 h-3" /> Galeria de fotos</Label>
+                      <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => galleryInputRef.current?.click()} disabled={uploadingGallery}>
+                        <Upload className="w-3 h-3 mr-1" /> {uploadingGallery ? 'Enviando...' : 'Adicionar fotos'}
+                      </Button>
+                      <input ref={galleryInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => e.target.files && uploadGalleryPhotos(e.target.files)} />
+                    </div>
+                    {galleryPhotos.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        {galleryPhotos.map(p => (
+                          <div key={p.id} className="relative group">
+                            <img src={p.photo_url} alt="" className="w-full aspect-square object-cover rounded-md" />
+                            <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => deleteGalleryPhoto(p.id)}>
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center py-3">Nenhuma foto na galeria</p>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button className="flex-1" onClick={saveStone}>{editStone ? 'Salvar alterações' : 'Cadastrar pedra'}</Button>
+                  {editStone && (
+                    <Button variant="destructive" size="icon" onClick={() => deleteStone(editStone.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   )}
                 </div>
-              )}
-
-              <div className="flex gap-2">
-                <Button className="flex-1" onClick={saveStone}>{editStone ? 'Salvar alterações' : 'Cadastrar pedra'}</Button>
-                {editStone && (
-                  <Button variant="destructive" size="icon" onClick={() => deleteStone(editStone.id)}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
-    </Wrapper>
+    </AppLayout>
   );
 };
 

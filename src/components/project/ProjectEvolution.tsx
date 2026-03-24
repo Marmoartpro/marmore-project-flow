@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, Circle, Clock, Upload, Image } from 'lucide-react';
+import { CheckCircle, Circle, Clock, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import StageComments from './StageComments';
 
 interface Props {
   projectId: string;
+  projectName?: string;
   isOwner: boolean;
 }
 
@@ -18,7 +20,7 @@ const statusConfig: Record<string, { label: string; icon: any; color: string }> 
   concluida: { label: 'Concluída', icon: CheckCircle, color: 'bg-success text-success-foreground' },
 };
 
-const ProjectEvolution = ({ projectId, isOwner }: Props) => {
+const ProjectEvolution = ({ projectId, projectName = '', isOwner }: Props) => {
   const [stages, setStages] = useState<any[]>([]);
   const [photos, setPhotos] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
@@ -42,7 +44,7 @@ const ProjectEvolution = ({ projectId, isOwner }: Props) => {
         .select('*')
         .in('stage_id', stageIds)
         .order('created_at');
-      
+
       const grouped: Record<string, any[]> = {};
       photoData?.forEach(p => {
         if (!grouped[p.stage_id]) grouped[p.stage_id] = [];
@@ -71,13 +73,8 @@ const ProjectEvolution = ({ projectId, isOwner }: Props) => {
   const handlePhotoUpload = async (stageId: string, file: File) => {
     const ext = file.name.split('.').pop();
     const path = `stages/${stageId}/${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabase.storage
-      .from('project-files')
-      .upload(path, file);
-    if (uploadError) {
-      toast.error('Erro ao enviar foto');
-      return;
-    }
+    const { error: uploadError } = await supabase.storage.from('project-files').upload(path, file);
+    if (uploadError) { toast.error('Erro ao enviar foto'); return; }
     const { data: { publicUrl } } = supabase.storage.from('project-files').getPublicUrl(path);
     await supabase.from('stage_photos').insert({ stage_id: stageId, photo_url: publicUrl });
     fetchStages();
@@ -93,12 +90,11 @@ const ProjectEvolution = ({ projectId, isOwner }: Props) => {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Progress bar */}
       <div className="flex gap-1">
         {stages.map(stage => (
           <div key={stage.id} className="flex-1">
             <div className={`h-2 rounded-full transition-colors ${
-              stage.status === 'concluida' ? 'bg-success' : 
+              stage.status === 'concluida' ? 'bg-success' :
               stage.status === 'em_andamento' ? 'bg-accent' : 'bg-muted'
             }`} />
           </div>
@@ -147,7 +143,6 @@ const ProjectEvolution = ({ projectId, isOwner }: Props) => {
                 className="text-sm"
               />
 
-              {/* Photos */}
               {stagePhotos.length > 0 && (
                 <div className="flex gap-2 flex-wrap">
                   {stagePhotos.map(photo => (
@@ -173,6 +168,14 @@ const ProjectEvolution = ({ projectId, isOwner }: Props) => {
                   />
                 </label>
               )}
+
+              {/* Comments section */}
+              <StageComments
+                stageId={stage.id}
+                stageName={stage.name}
+                projectId={projectId}
+                projectName={projectName}
+              />
             </CardContent>
           </Card>
         );
