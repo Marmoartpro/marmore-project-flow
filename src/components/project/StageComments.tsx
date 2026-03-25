@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Send, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { sendWhatsApp } from '@/lib/whatsapp';
 
 const ALERT_WORDS = ['errado', 'problema', 'incorreto', 'refazer', 'ajustar'];
 
