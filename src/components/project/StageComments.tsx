@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Send, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { sendWhatsApp } from '@/lib/whatsapp';
 
 const ALERT_WORDS = ['errado', 'problema', 'incorreto', 'refazer', 'ajustar'];
 
@@ -63,9 +64,8 @@ const StageComments = ({ stageId, stageName, projectId, projectName }: Props) =>
       return;
     }
 
-    // Create notification for the other party
+    // Create notification + WhatsApp for the other party
     try {
-      // Find project owner
       const { data: project } = await supabase.from('projects').select('owner_id').eq('id', projectId).single();
       if (project) {
         const isOwner = project.owner_id === user.id;
@@ -73,21 +73,33 @@ const StageComments = ({ stageId, stageName, projectId, projectName }: Props) =>
           // Notify architect
           const { data: invite } = await supabase.from('project_invites').select('architect_user_id').eq('project_id', projectId).eq('accepted', true).limit(1).maybeSingle();
           if (invite?.architect_user_id) {
+            const msg = `${profile?.full_name || 'Marmorista'} comentou na etapa "${stageName}" do projeto "${projectName}".`;
             await supabase.from('notifications').insert({
               user_id: invite.architect_user_id,
               project_id: projectId,
               title: 'Novo comentário na etapa',
-              message: `${profile?.full_name || 'Marmorista'} comentou na etapa "${stageName}" do projeto "${projectName}".`,
+              message: msg,
             });
+            // Send WhatsApp to architect
+            const { data: archProfile } = await supabase.from('profiles').select('phone').eq('user_id', invite.architect_user_id).single();
+            if (archProfile?.phone) {
+              sendWhatsApp(archProfile.phone, `🔔 MármoreProart: ${msg}`);
+            }
           }
         } else {
           // Notify owner
+          const msg = `Arq. ${profile?.full_name || 'Arquiteta'} deixou um comentário na etapa "${stageName}" do projeto "${projectName}". Acesse o app para visualizar.`;
           await supabase.from('notifications').insert({
             user_id: project.owner_id,
             project_id: projectId,
             title: 'Comentário da arquiteta',
-            message: `Arq. ${profile?.full_name || 'Arquiteta'} deixou um comentário na etapa "${stageName}" do projeto "${projectName}". Acesse o app para visualizar.`,
+            message: msg,
           });
+          // Send WhatsApp to owner
+          const { data: ownerProfile } = await supabase.from('profiles').select('phone').eq('user_id', project.owner_id).single();
+          if (ownerProfile?.phone) {
+            sendWhatsApp(ownerProfile.phone, `🔔 MármoreProart: ${msg}`);
+          }
         }
       }
     } catch {}
