@@ -18,6 +18,9 @@ const Mostruario = () => {
   const [stones, setStones] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Todos');
+  const [colorTone, setColorTone] = useState('');
+  const [usageFilter, setUsageFilter] = useState('');
+  const [stockFilter, setStockFilter] = useState('');
   const [selected, setSelected] = useState<any>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [showForm, setShowForm] = useState(false);
