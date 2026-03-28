@@ -2,23 +2,25 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import AppLayout from '@/components/AppLayout';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Plus, Star, Maximize2, X, Edit, Package, Upload, Trash2, Image } from 'lucide-react';
+import { Plus, Maximize2, X, Edit, Upload, Trash2, Image } from 'lucide-react';
 import { toast } from 'sonner';
-
-const CATEGORIES = ['Todos', 'Granito', 'Mármore', 'Quartzito', 'Quartzo Artificial', 'Lâmina Ultracompacta'];
+import StoneFilters, { COLOR_TONES, CATEGORIES } from '@/components/mostruario/StoneFilters';
+import StoneCard from '@/components/mostruario/StoneCard';
 
 const Mostruario = () => {
   const { user, profile } = useAuth();
   const [stones, setStones] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Todos');
+  const [colorTone, setColorTone] = useState('');
+  const [usageFilter, setUsageFilter] = useState('');
+  const [stockFilter, setStockFilter] = useState('');
   const [selected, setSelected] = useState<any>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -51,6 +53,19 @@ const Mostruario = () => {
   const filtered = stones.filter(s => {
     if (category !== 'Todos' && s.category !== category) return false;
     if (search && !s.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (colorTone) {
+      const tone = COLOR_TONES.find(t => t.value === colorTone);
+      if (tone) {
+        const text = `${s.name} ${s.colors || ''}`.toLowerCase();
+        if (!tone.keywords.some(k => text.includes(k))) return false;
+      }
+    }
+    if (usageFilter) {
+      const usage = (s.usage_indication || '').toLowerCase();
+      if (!usage.includes(usageFilter)) return false;
+    }
+    if (stockFilter === 'in_stock' && !s.in_stock) return false;
+    if (stockFilter === 'consulta' && s.in_stock) return false;
     return true;
   });
 
@@ -169,41 +184,23 @@ const Mostruario = () => {
           )}
         </div>
 
-        <div className="space-y-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Buscar pedra..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {CATEGORIES.map(c => (
-              <Button key={c} size="sm" variant={category === c ? 'default' : 'outline'} className="text-xs whitespace-nowrap" onClick={() => setCategory(c)}>
-                {c}
-              </Button>
-            ))}
-          </div>
-        </div>
+        <StoneFilters
+          search={search} setSearch={setSearch}
+          category={category} setCategory={setCategory}
+          colorTone={colorTone} setColorTone={setColorTone}
+          usageFilter={usageFilter} setUsageFilter={setUsageFilter}
+          stockFilter={stockFilter} setStockFilter={setStockFilter}
+        />
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {filtered.map(s => (
-            <Card key={s.id} className="cursor-pointer hover:border-primary/40 transition-colors overflow-hidden group" onClick={() => openDetail(s)}>
-              <div className="aspect-[4/3] bg-muted relative overflow-hidden">
-                {s.photo_url ? (
-                  <img src={s.photo_url} alt={s.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center"><Package className="w-8 h-8 text-muted-foreground" /></div>
-                )}
-                {s.promo_active && s.promo_badge && (
-                  <Badge className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px]">{s.promo_badge}</Badge>
-                )}
-                {s.featured && <Star className="absolute top-2 right-2 w-4 h-4 text-yellow-400 fill-yellow-400" />}
-              </div>
-              <CardContent className="p-3">
-                <p className="font-medium text-sm truncate">{s.name}</p>
-                <p className="text-[11px] text-muted-foreground">{s.category}</p>
-                {s.price_per_m2 > 0 && <p className="text-xs text-primary font-medium mt-1">R$ {fmt(Number(s.price_per_m2))}/m²</p>}
-                <Badge variant="outline" className="text-[9px] mt-1">{s.in_stock ? 'Em estoque' : 'Sob consulta'}</Badge>
-              </CardContent>
-            </Card>
+            <StoneCard
+              key={s.id}
+              stone={s}
+              isMarmorista={isMarmorista}
+              onDetail={openDetail}
+              onUploadPhoto={(stone) => { openEdit(stone); }}
+            />
           ))}
         </div>
 
