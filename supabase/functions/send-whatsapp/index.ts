@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
-const TWILIO_FROM = "whatsapp:+14155238886"; // Twilio Sandbox
+const TWILIO_FROM = "whatsapp:+5516993301423"; // WhatsApp Business
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
