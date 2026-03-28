@@ -53,6 +53,19 @@ const Mostruario = () => {
   const filtered = stones.filter(s => {
     if (category !== 'Todos' && s.category !== category) return false;
     if (search && !s.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (colorTone) {
+      const tone = COLOR_TONES.find(t => t.value === colorTone);
+      if (tone) {
+        const text = `${s.name} ${s.colors || ''}`.toLowerCase();
+        if (!tone.keywords.some(k => text.includes(k))) return false;
+      }
+    }
+    if (usageFilter) {
+      const usage = (s.usage_indication || '').toLowerCase();
+      if (!usage.includes(usageFilter)) return false;
+    }
+    if (stockFilter === 'in_stock' && !s.in_stock) return false;
+    if (stockFilter === 'consulta' && s.in_stock) return false;
     return true;
   });
 
