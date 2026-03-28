@@ -56,24 +56,40 @@ const MaterialOptions = ({ ambiente, stones, onUpdateOption, onAddOption, onRemo
                 Material fornecido pelo cliente — valor R$ 0,00. Não nos responsabilizamos por quebras ou defeitos.
               </p>
             ) : (
-              <div className="flex items-center gap-2">
-                <select value={opt.stoneId}
-                  onChange={e => {
-                    const stone = stones.find(s => s.id === e.target.value);
-                    onUpdateOption(i, 'stoneId', e.target.value);
-                    onUpdateOption(i, 'stoneName', stone?.name || '');
-                    onUpdateOption(i, 'pricePerM2', Number(stone?.price_per_m2 || 0));
-                  }}
-                  className="flex-1 h-8 rounded-md border border-input bg-background px-2 text-xs">
-                  <option value="">Selecione pedra...</option>
-                  {stones.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} {s.price_per_m2 > 0 ? `(R$ ${fmt(Number(s.price_per_m2))}/m²)` : ''}
-                    </option>
-                  ))}
-                </select>
-                {materialCost > 0 && (
-                  <span className="text-xs font-medium text-primary whitespace-nowrap">R$ {fmt(materialCost)}</span>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <select value={opt.stoneId}
+                    onChange={e => {
+                      const stone = stones.find(s => s.id === e.target.value);
+                      onUpdateOption(i, 'stoneId', e.target.value);
+                      onUpdateOption(i, 'stoneName', stone?.name || '');
+                      onUpdateOption(i, 'pricePerM2', Number(stone?.price_per_m2 || 0));
+                    }}
+                    className="flex-1 h-8 rounded-md border border-input bg-background px-2 text-xs">
+                    <option value="">Selecione pedra...</option>
+                    {stones.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} {s.price_per_m2 > 0 ? `(R$ ${fmt(Number(s.price_per_m2))}/m²)` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {opt.stoneId && (
+                  <div className="flex items-center gap-2">
+                    <label className="text-[10px] text-muted-foreground whitespace-nowrap">R$/m²:</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={opt.pricePerM2 || ''}
+                      onChange={e => onUpdateOption(i, 'pricePerM2', Number(e.target.value) || 0)}
+                      className="w-24 h-7 rounded-md border border-input bg-background px-2 text-xs"
+                      placeholder="Valor/m²"
+                    />
+                    {materialCost > 0 && (
+                      <span className="text-xs font-medium text-primary whitespace-nowrap">= R$ {fmt(materialCost)}</span>
+                    )}
+                  </div>
                 )}
               </div>
             )}
