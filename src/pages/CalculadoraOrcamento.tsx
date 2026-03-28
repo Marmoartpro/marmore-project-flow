@@ -141,7 +141,7 @@ const CalculadoraOrcamento = () => {
         status: 'rascunho',
       };
 
-      const { error } = await supabase.from('budget_quotes').insert(payload);
+      const { error } = await supabase.from('budget_quotes').insert([payload]);
       if (error) throw error;
       toast.success('Orçamento salvo com sucesso!');
     } catch (err: any) {
