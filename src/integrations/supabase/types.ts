@@ -65,6 +65,81 @@ export type Database = {
           },
         ]
       }
+      budget_quotes: {
+        Row: {
+          client_name: string
+          created_at: string
+          data: Json
+          discount: number
+          discount_type: string
+          environment_type: string | null
+          id: string
+          observations: string | null
+          owner_id: string
+          payment_conditions: string | null
+          profit_margin_percent: number
+          quote_date: string
+          quote_number: string
+          status: string
+          subtotal_accessories: number
+          subtotal_installation: number
+          subtotal_labor: number
+          subtotal_materials: number
+          total: number
+          updated_at: string
+          validity_days: number
+          version: number
+        }
+        Insert: {
+          client_name?: string
+          created_at?: string
+          data?: Json
+          discount?: number
+          discount_type?: string
+          environment_type?: string | null
+          id?: string
+          observations?: string | null
+          owner_id: string
+          payment_conditions?: string | null
+          profit_margin_percent?: number
+          quote_date?: string
+          quote_number: string
+          status?: string
+          subtotal_accessories?: number
+          subtotal_installation?: number
+          subtotal_labor?: number
+          subtotal_materials?: number
+          total?: number
+          updated_at?: string
+          validity_days?: number
+          version?: number
+        }
+        Update: {
+          client_name?: string
+          created_at?: string
+          data?: Json
+          discount?: number
+          discount_type?: string
+          environment_type?: string | null
+          id?: string
+          observations?: string | null
+          owner_id?: string
+          payment_conditions?: string | null
+          profit_margin_percent?: number
+          quote_date?: string
+          quote_number?: string
+          status?: string
+          subtotal_accessories?: number
+          subtotal_installation?: number
+          subtotal_labor?: number
+          subtotal_materials?: number
+          total?: number
+          updated_at?: string
+          validity_days?: number
+          version?: number
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           city: string | null
@@ -321,11 +396,42 @@ export type Database = {
           },
         ]
       }
+      pricing_defaults: {
+        Row: {
+          created_at: string
+          id: string
+          owner_id: string
+          price_key: string
+          price_label: string
+          price_unit: string
+          price_value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_id: string
+          price_key: string
+          price_label: string
+          price_unit?: string
+          price_value?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_id?: string
+          price_key?: string
+          price_label?: string
+          price_unit?: string
+          price_value?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           cau: string | null
           city: string | null
+          company_logo_url: string | null
           created_at: string
           full_name: string | null
           id: string
@@ -345,6 +451,7 @@ export type Database = {
           avatar_url?: string | null
           cau?: string | null
           city?: string | null
+          company_logo_url?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
@@ -364,6 +471,7 @@ export type Database = {
           avatar_url?: string | null
           cau?: string | null
           city?: string | null
+          company_logo_url?: string | null
           created_at?: string
           full_name?: string | null
           id?: string

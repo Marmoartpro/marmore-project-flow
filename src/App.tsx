@@ -15,7 +15,7 @@ import Orcamentos from "./pages/Orcamentos";
 import Clientes from "./pages/Clientes";
 import Mostruario from "./pages/Mostruario";
 import Fornecedores from "./pages/Fornecedores";
-import Calculadora from "./pages/Calculadora";
+import CalculadoraOrcamento from "./pages/CalculadoraOrcamento";
 import Portfolio from "./pages/Portfolio";
 import NotFound from "./pages/NotFound";
 
@@ -49,7 +49,7 @@ const AppRoutes = () => (
     <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
     <Route path="/mostruario" element={<ProtectedRoute><Mostruario /></ProtectedRoute>} />
     <Route path="/fornecedores" element={<ProtectedRoute><Fornecedores /></ProtectedRoute>} />
-    <Route path="/calculadora" element={<ProtectedRoute><Calculadora /></ProtectedRoute>} />
+    <Route path="/calculadora" element={<ProtectedRoute><CalculadoraOrcamento /></ProtectedRoute>} />
     <Route path="/projeto/novo" element={<ProtectedRoute><NewProject /></ProtectedRoute>} />
     <Route path="/projeto/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
