@@ -127,7 +127,7 @@ const CalculadoraOrcamento = () => {
         environment_type: tipoAmbiente,
         quote_date: dataOrcamento,
         validity_days: parseInt(validadeDias) || 15,
-        data: { ambientes, acessorios, condicoesPagamento, observacoes },
+        data: JSON.parse(JSON.stringify({ ambientes, acessorios, condicoesPagamento, observacoes })),
         subtotal_materials: subtotalMaterials,
         subtotal_labor: subtotalLabor,
         subtotal_accessories: subtotalAccessories,
