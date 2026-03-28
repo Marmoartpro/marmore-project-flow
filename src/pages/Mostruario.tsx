@@ -2,17 +2,16 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import AppLayout from '@/components/AppLayout';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Plus, Star, Maximize2, X, Edit, Package, Upload, Trash2, Image } from 'lucide-react';
+import { Plus, Maximize2, X, Edit, Upload, Trash2, Image } from 'lucide-react';
 import { toast } from 'sonner';
-
-const CATEGORIES = ['Todos', 'Granito', 'Mármore', 'Quartzito', 'Quartzo Artificial', 'Lâmina Ultracompacta'];
+import StoneFilters, { COLOR_TONES, CATEGORIES } from '@/components/mostruario/StoneFilters';
+import StoneCard from '@/components/mostruario/StoneCard';
 
 const Mostruario = () => {
   const { user, profile } = useAuth();
