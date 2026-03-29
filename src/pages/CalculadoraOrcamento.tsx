@@ -245,6 +245,10 @@ const CalculadoraOrcamento = () => {
           tipoAmbiente={tipoAmbiente}
           dataOrcamento={dataOrcamento}
           validadeDias={validadeDias}
+          nomeEmpresa={nomeEmpresa}
+          nomeResponsavel={nomeResponsavel}
+          enderecoEmpresa={enderecoEmpresa}
+          telefoneEmpresa={telefoneEmpresa}
           onChange={handleClienteChange}
         />
 
