@@ -202,7 +202,10 @@ const CalculadoraOrcamento = () => {
         condicoesPagamento,
         observacoes,
         logoUrl: companyLogo,
-        companyName: (profile as any)?.office_name || (profile as any)?.full_name || 'MármorePro',
+        companyName: nomeEmpresa || 'Marmoraria Artesanal',
+        responsibleName: nomeResponsavel,
+        companyAddress: enderecoEmpresa,
+        companyPhone: telefoneEmpresa || (profile as any)?.phone || '',
       });
       toast.success('PDF gerado e baixado com sucesso!');
     } catch (err: any) {
