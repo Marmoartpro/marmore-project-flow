@@ -95,11 +95,19 @@ const Mostruario = () => {
     if (!user) return;
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop();
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext || '')) {
+        toast.error('Formato não suportado. Use JPG, PNG ou WEBP.');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Arquivo muito grande. Máximo 10MB.');
+        return;
+      }
       const path = `stones/${user.id}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('project-files').upload(path, file);
+      const { error } = await supabase.storage.from('mostruario').upload(path, file);
       if (error) throw error;
-      const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(path);
+      const { data: urlData } = supabase.storage.from('mostruario').getPublicUrl(path);
       setForm(f => ({ ...f, photo_url: urlData.publicUrl }));
       toast.success('Foto de capa enviada!');
     } catch (err: any) {
@@ -112,11 +120,13 @@ const Mostruario = () => {
     setUploadingGallery(true);
     try {
       for (const file of Array.from(files)) {
-        const ext = file.name.split('.').pop();
+        const ext = file.name.split('.').pop()?.toLowerCase();
+        if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext || '')) continue;
+        if (file.size > 10 * 1024 * 1024) continue;
         const path = `stones/${user.id}/gallery/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: upErr } = await supabase.storage.from('project-files').upload(path, file);
+        const { error: upErr } = await supabase.storage.from('mostruario').upload(path, file);
         if (upErr) throw upErr;
-        const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(path);
+        const { data: urlData } = supabase.storage.from('mostruario').getPublicUrl(path);
         await supabase.from('stone_photos').insert({ stone_id: editStone.id, owner_id: user.id, photo_url: urlData.publicUrl });
       }
       toast.success('Fotos adicionadas!');
