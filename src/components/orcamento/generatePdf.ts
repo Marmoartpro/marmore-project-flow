@@ -17,7 +17,10 @@ interface PdfParams {
   subtotalLabor: number;
   subtotalAccessories: number;
   subtotalInstallation: number;
-  margemLucro: number;
+  margemMaterial: number;
+  margemServicos: number;
+  margemAcessorios: number;
+  margemInstalacao: number;
   descontoValor: string;
   descontoTipo: 'percent' | 'reais';
   condicoesPagamento: string;
@@ -55,30 +58,57 @@ const buildPecaDescricao = (p: any): string => {
   const wCm = Math.round((parseFloat(p.largura) || 0) * 100);
   const lCm = Math.round((parseFloat(p.comprimento) || 0) * 100);
   const q = parseInt(p.quantidade) || 1;
-  let desc = `${p.tipo} (${lCm} x ${wCm} cm)`;
-  if (q > 1) desc += ` — ${q} unidades`;
-  if (p.descricao) desc += `\n${p.descricao}`;
-  return desc;
+  const lines: string[] = [];
+  lines.push(`${p.tipo}`);
+  lines.push(`Medidas: ${lCm} × ${wCm} cm`);
+  if (q > 1) lines.push(`Quantidade: ${q} unidades`);
+  if (p.descricao) lines.push(p.descricao);
+  return lines.join('\n');
 };
 
 /** Build detailed acabamentos lines for a piece */
 const buildAcabamentos = (p: any): string => {
   const lines: string[] = [];
-  if (p.tipoCuba !== 'Sem cuba') lines.push(`Cuba: ${p.tipoCuba}`);
-  if (p.tipoRebaixo !== 'Sem rebaixo') lines.push(`Rebaixo: ${p.tipoRebaixo}`);
-  if (p.acabamentoBorda !== 'Reto') lines.push(`Borda: ${p.acabamentoBorda} (${p.bordasComAcabamento || 'Só frontal'})`);
-  if (p.furosTorneira !== 'Nenhum') lines.push(`Furos: ${p.furosTorneira}`);
-  if (p.espelhoBacksplash && p.espelhoBacksplashAltura) lines.push(`Frontão (rodapia) de ${p.espelhoBacksplashAltura} cm`);
-  if (p.saiaFrontal && p.saiaFrontalAltura) lines.push(`Saia frontal de ${p.saiaFrontalAltura} cm`);
-  if (p.rebaixoCooktop) lines.push(`Recorte cooktop: ${p.rebaixoCooktopLargura || '—'}×${p.rebaixoCooktopComprimento || '—'} cm`);
-  return lines.length > 0 ? lines.join(', ') : '—';
+  if (p.tipoCuba !== 'Sem cuba') {
+    let cubaLine = `Cuba: ${p.tipoCuba}`;
+    if (p.valorCuba && parseFloat(p.valorCuba) > 0) cubaLine += ` (R$ ${fmt(parseFloat(p.valorCuba))})`;
+    lines.push(cubaLine);
+  }
+  if (p.tipoRebaixo !== 'Sem rebaixo') {
+    let rebLine = `Rebaixo: ${p.tipoRebaixo}`;
+    if (p.valorRebaixo && parseFloat(p.valorRebaixo) > 0) rebLine += ` (R$ ${fmt(parseFloat(p.valorRebaixo))})`;
+    lines.push(rebLine);
+  }
+  lines.push(`Acabamento borda: ${p.acabamentoBorda}`);
+  lines.push(`Bordas: ${p.bordasComAcabamento || 'Só frontal'}`);
+  if (p.valorAcabamentoBorda && parseFloat(p.valorAcabamentoBorda) > 0) {
+    lines.push(`Acabamento borda: R$ ${fmt(parseFloat(p.valorAcabamentoBorda))}/m`);
+  }
+  if (p.furosTorneira !== 'Nenhum') lines.push(`Furos torneira: ${p.furosTorneira}`);
+  if (p.espelhoBacksplash && p.espelhoBacksplashAltura) {
+    lines.push(`Frontão (rodapia): ${p.espelhoBacksplashAltura} cm de altura`);
+  }
+  if (p.saiaFrontal && p.saiaFrontalAltura) {
+    lines.push(`Saia frontal: ${p.saiaFrontalAltura} cm de altura`);
+  }
+  if (p.rebaixoCooktop) {
+    lines.push(`Recorte cooktop: ${p.rebaixoCooktopLargura || '—'} × ${p.rebaixoCooktopComprimento || '—'} cm`);
+  }
+  // Extras
+  if (p.extras && p.extras.length > 0) {
+    p.extras.forEach((e: any) => {
+      if (e.descricao) lines.push(`Extra: ${e.descricao} (R$ ${fmt(e.valor || 0)})`);
+    });
+  }
+  return lines.length > 0 ? lines.join('\n') : '—';
 };
 
 export const generateOrcamentoPdf = async (params: PdfParams) => {
   const {
     quoteNumber, clienteNome, tipoAmbiente, dataOrcamento, validadeDias,
     ambientes, acessorios, subtotalMaterials, subtotalLabor, subtotalAccessories,
-    subtotalInstallation, margemLucro, descontoValor, descontoTipo,
+    subtotalInstallation, margemMaterial, margemServicos, margemAcessorios, margemInstalacao,
+    descontoValor, descontoTipo,
     condicoesPagamento, observacoes, logoUrl, companyName, responsibleName,
     companyAddress, companyPhone,
   } = params;
@@ -92,12 +122,18 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
   let y = 20;
   let sectionNum = 0;
 
-  // Margin factor (never shown in PDF)
-  const factor = 1 + margemLucro / 100;
+  // Per-section margin factors (never shown in PDF)
+  const fMat = 1 + margemMaterial / 100;
+  const fServ = 1 + margemServicos / 100;
+  const fAcc = 1 + margemAcessorios / 100;
+  const fInst = 1 + margemInstalacao / 100;
 
-  // Calculate totals with embedded margin
-  const subtotalBase = subtotalMaterials + subtotalLabor + subtotalAccessories + subtotalInstallation;
-  const totalBruto = subtotalBase * factor;
+  // Calculate totals with embedded margins
+  const totalMat = subtotalMaterials * fMat;
+  const totalServ = subtotalLabor * fServ;
+  const totalAcc = subtotalAccessories * fAcc;
+  const totalInst = subtotalInstallation * fInst;
+  const totalBruto = totalMat + totalServ + totalAcc + totalInst;
   const desconto = descontoTipo === 'percent'
     ? totalBruto * ((parseFloat(descontoValor) || 0) / 100)
     : (parseFloat(descontoValor) || 0);
@@ -129,7 +165,6 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
   const sectionTitle = (title: string) => {
     sectionNum++;
     checkPageBreak(14);
-    // Blue left border bar
     doc.setFillColor(BLUE);
     doc.rect(marginL, y, 2.5, 8, 'F');
     doc.setFontSize(12);
@@ -153,19 +188,16 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
   // ========================
   const logoData = logoUrl ? await loadImage(logoUrl) : null;
 
-  // Logo centered
   if (logoData) {
     try { doc.addImage(logoData, 'PNG', pageW / 2 - 15, y, 30, 30); y += 34; } catch { y += 4; }
   }
 
-  // Company name centered
   doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(DARK);
   doc.text(empresa.toUpperCase(), pageW / 2, y, { align: 'center' });
   y += 6;
 
-  // Address and contact
   if (companyAddress) {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
@@ -181,22 +213,17 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     y += 4;
   }
 
-  // Separator line
   y += 2;
   doc.setDrawColor(200);
   doc.line(marginL, y, pageW - marginR, y);
   y += 10;
 
-  // ========================
-  // PROPOSTA COMERCIAL Nº
-  // ========================
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(DARK);
   doc.text(`PROPOSTA COMERCIAL Nº ${quoteNumber}`, marginL, y);
   y += 8;
 
-  // Separator
   doc.setDrawColor(200);
   doc.line(marginL, y, pageW - marginR, y);
   y += 8;
@@ -227,7 +254,6 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
 
   y += 4;
 
-  // Greeting
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(DARK);
@@ -250,7 +276,6 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
   doc.text('O projeto contempla a confecção e instalação (conforme especificado) dos seguintes itens:', marginL, y);
   y += 8;
 
-  // --- Tables per ambiente (Item | Descrição e Medidas | Acabamentos) ---
   ambientes.forEach((amb) => {
     const ambName = amb.tipo === 'Ambiente Personalizado' && amb.nomeCustom ? amb.nomeCustom : amb.tipo;
     subTitle(ambName);
@@ -266,15 +291,15 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     autoTable(doc, {
       startY: y,
       margin: { left: marginL, right: marginR },
-      head: [['Item', 'Descrição e Medidas (Aprox.)', 'Acabamentos Inclusos']],
+      head: [['Item', 'Descrição e Medidas', 'Acabamentos Inclusos']],
       body: pecasData,
-      styles: { fontSize: 8, cellPadding: 2.5, overflow: 'linebreak', textColor: [40, 40, 40] },
+      styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak', textColor: [40, 40, 40] },
       headStyles: { fillColor: [240, 240, 240], textColor: [40, 40, 40], fontStyle: 'bold', fontSize: 8 },
       alternateRowStyles: { fillColor: [255, 255, 255] },
       columnStyles: {
-        0: { cellWidth: 30, fontStyle: 'bold' },
-        1: { cellWidth: contentW * 0.4 },
-        2: { cellWidth: contentW - 30 - contentW * 0.4 },
+        0: { cellWidth: 28, fontStyle: 'bold' },
+        1: { cellWidth: contentW * 0.35 },
+        2: { cellWidth: contentW - 28 - contentW * 0.35 },
       },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
@@ -296,7 +321,6 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
 
     subTitle(ambName.toUpperCase());
 
-    // Note about client material if applicable
     const hasClientMat = amb.materialOptions.some(o => o.materialDoCliente);
     if (hasClientMat) {
       doc.setFontSize(8);
@@ -306,15 +330,13 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
       y += 5;
     }
 
-    // Area info
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100);
     doc.text(`Área total: ${fmt(area)} m² | Com desperdício (+10%): ${fmt(area * 1.1)} m²`, marginL, y);
     y += 6;
 
-    // Material + Services table
-    const laborCost = calcAmbienteLaborCost(amb) * factor;
+    const laborCost = calcAmbienteLaborCost(amb) * fServ;
     const matData = amb.materialOptions.map((opt, i) => {
       if (opt.materialDoCliente) {
         return [
@@ -325,7 +347,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
           `R$ ${fmt(laborCost)}`,
         ];
       }
-      const matCost = calcAmbienteMaterialCost(amb, i) * factor;
+      const matCost = calcAmbienteMaterialCost(amb, i) * fMat;
       return [
         opt.label || `Opção ${i + 1}`,
         opt.stoneName || '—',
@@ -361,11 +383,11 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
   if (validAccessories.length > 0) {
     sectionTitle('Acessórios');
     const accData = validAccessories.map((a) => {
-      const sub = (parseInt(a.quantidade) || 1) * (parseFloat(a.valorUnitario) || 0) * factor;
+      const sub = (parseInt(a.quantidade) || 1) * (parseFloat(a.valorUnitario) || 0) * fAcc;
       return [
         a.nome,
         a.quantidade || '1',
-        `R$ ${fmt((parseFloat(a.valorUnitario) || 0) * factor)}`,
+        `R$ ${fmt((parseFloat(a.valorUnitario) || 0) * fAcc)}`,
         `R$ ${fmt(sub)}`,
       ];
     });
@@ -394,7 +416,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
       const name = a.tipo === 'Ambiente Personalizado' && a.nomeCustom ? a.nomeCustom : a.tipo;
       return [
         `Instalação e Logística (${name})`,
-        `R$ ${fmt(calcAmbienteInstallCost(a) * factor)}`,
+        `R$ ${fmt(calcAmbienteInstallCost(a) * fInst)}`,
       ];
     });
 
@@ -417,15 +439,13 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     });
     y = (doc as any).lastAutoTable.finalY + 2;
 
-    // Total installation
-    const totalInstall = subtotalInstallation * factor;
     doc.setFillColor(240, 240, 240);
     doc.rect(marginL + contentW * 0.4, y, contentW * 0.6, 7, 'F');
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(DARK);
     doc.text('Total (Instalação e Logística)', marginL + contentW * 0.4 + 3, y + 5);
-    doc.text(`R$ ${fmt(totalInstall)}`, pageW - marginR - 3, y + 5, { align: 'right' });
+    doc.text(`R$ ${fmt(totalInst)}`, pageW - marginR - 3, y + 5, { align: 'right' });
     y += 12;
   }
 
@@ -444,21 +464,17 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     doc.text(simIntro, marginL, y);
     y += simIntro.length * 4 + 4;
 
-    // Build scenario headers from ambientes
     const ambNames = ambientes.map(a => a.tipo === 'Ambiente Personalizado' && a.nomeCustom ? a.nomeCustom : a.tipo);
     const maxOpts = Math.max(...ambientes.map(a => a.materialOptions.length));
-    const totalInstall = subtotalInstallation * factor;
 
     const scenarioHead = ['Cenário de Investimento', ...ambNames.map(n => `Subtotal ${n}`), 'Custo Instalação', 'INVESTIMENTO TOTAL'];
     const scenarioRows: string[][] = [];
 
     for (let optIdx = 0; optIdx < maxOpts; optIdx++) {
       const row: string[] = [];
-      // Label from first ambiente option
       const label = ambientes[0]?.materialOptions[Math.min(optIdx, ambientes[0].materialOptions.length - 1)]?.label
         || `Cenário ${String.fromCharCode(65 + optIdx)}`;
 
-      // Build description
       const matNames = ambientes.map(a => {
         const idx = Math.min(optIdx, a.materialOptions.length - 1);
         const opt = a.materialOptions[idx];
@@ -467,21 +483,23 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
       row.push(`${label}\n(${matNames.join(' / ')})`);
 
       let scenarioTotal = 0;
-      ambientes.forEach((amb, aIdx) => {
+      ambientes.forEach((amb) => {
         const idx = Math.min(optIdx, amb.materialOptions.length - 1);
-        const matCost = calcAmbienteMaterialCost(amb, idx) * factor;
-        const labCost = calcAmbienteLaborCost(amb) * factor;
+        const matCost = calcAmbienteMaterialCost(amb, idx) * fMat;
+        const labCost = calcAmbienteLaborCost(amb) * fServ;
         const ambTotal = matCost + labCost;
         scenarioTotal += ambTotal;
         row.push(`R$ ${fmt(ambTotal)}`);
       });
 
-      scenarioTotal += totalInstall + subtotalAccessories * factor;
-      const scenarioFinal = descontoTipo === 'percent'
-        ? scenarioTotal - scenarioTotal * ((parseFloat(descontoValor) || 0) / 100)
-        : scenarioTotal - (parseFloat(descontoValor) || 0);
+      scenarioTotal += totalInst + totalAcc;
+      // Apply discount to scenario
+      const scenarioDiscount = descontoTipo === 'percent'
+        ? scenarioTotal * ((parseFloat(descontoValor) || 0) / 100)
+        : (parseFloat(descontoValor) || 0);
+      const scenarioFinal = scenarioTotal - scenarioDiscount;
 
-      row.push(`R$ ${fmt(totalInstall)}`);
+      row.push(`R$ ${fmt(totalInst)}`);
       row.push(`R$ ${fmt(scenarioFinal)}`);
       scenarioRows.push(row);
     }
@@ -501,24 +519,31 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
         [scenarioHead.length - 2]: { halign: 'right' },
       },
     });
-    y = (doc as any).lastAutoTable.finalY + 8;
+    y = (doc as any).lastAutoTable.finalY + 4;
+
+    // Discount highlight for scenarios
+    if (desconto > 0) {
+      checkPageBreak(16);
+      doc.setFillColor(39, 174, 96);
+      doc.roundedRect(marginL, y, contentW, 10, 2, 2, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`DESCONTO PARA PAGAMENTO À VISTA (${descontoTipo === 'percent' ? `${descontoValor}%` : `R$ ${descontoValor}`})`, marginL + 5, y + 7);
+      doc.text(`- R$ ${fmt(desconto)}`, pageW - marginR - 5, y + 7, { align: 'right' });
+      y += 14;
+    }
   } else {
     // Single option — show investment total
     sectionTitle('Investimento Total');
 
     if (hasLabor) {
-      const displayMaterials = subtotalMaterials * factor;
-      const displayLabor = subtotalLabor * factor;
-      const displayAccessories = subtotalAccessories * factor;
-      const displayInstallation = subtotalInstallation * factor;
-
       const totalsData: string[][] = [
-        ['Total do Material', `R$ ${fmt(displayMaterials)}`],
-        ['Total dos Serviços', `R$ ${fmt(displayLabor)}`],
+        ['Total do Material', `R$ ${fmt(totalMat)}`],
+        ['Total dos Serviços', `R$ ${fmt(totalServ)}`],
       ];
-      if (displayAccessories > 0) totalsData.push(['Total de Acessórios', `R$ ${fmt(displayAccessories)}`]);
-      if (displayInstallation > 0) totalsData.push(['Total de Instalação', `R$ ${fmt(displayInstallation)}`]);
-      if (desconto > 0) totalsData.push(['Desconto', `- R$ ${fmt(desconto)}`]);
+      if (totalAcc > 0) totalsData.push(['Total de Acessórios', `R$ ${fmt(totalAcc)}`]);
+      if (totalInst > 0) totalsData.push(['Total de Instalação', `R$ ${fmt(totalInst)}`]);
 
       autoTable(doc, {
         startY: y,
@@ -532,6 +557,19 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
         },
       });
       y = (doc as any).lastAutoTable.finalY + 3;
+
+      // Discount highlight
+      if (desconto > 0) {
+        checkPageBreak(14);
+        doc.setFillColor(39, 174, 96);
+        doc.roundedRect(marginL + contentW * 0.35, y, contentW * 0.65, 10, 2, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DESC. PGTO À VISTA', marginL + contentW * 0.35 + 5, y + 7);
+        doc.text(`- R$ ${fmt(desconto)}`, pageW - marginR - 5, y + 7, { align: 'right' });
+        y += 14;
+      }
 
       // Total highlight box
       checkPageBreak(14);
@@ -551,7 +589,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       doc.text('TOTAL DO MATERIAL', marginL + contentW * 0.25 + 5, y + 7);
-      doc.text(`R$ ${fmt(subtotalMaterials * factor)}`, pageW - marginR - 5, y + 7, { align: 'right' });
+      doc.text(`R$ ${fmt(totalMat)}`, pageW - marginR - 5, y + 7, { align: 'right' });
       y += 14;
 
       doc.setFontSize(8);
@@ -563,7 +601,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
   }
 
   // ========================
-  // SECTION: OBSERVAÇÃO IMPORTANTE (if any)
+  // SECTION: OBSERVAÇÃO IMPORTANTE
   // ========================
   if (observacoes) {
     sectionTitle('Observação Importante');
@@ -591,7 +629,6 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
 
   if (condicoesPagamento) {
     bulletItems.push(`Condições de Pagamento: ${condicoesPagamento}`);
-    // Calculate payment values from percentages
     const percentRegex = /(\d+)\s*%/g;
     let match;
     while ((match = percentRegex.exec(condicoesPagamento)) !== null) {
@@ -603,13 +640,16 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     bulletItems.push('Condições de Pagamento: A combinar.');
   }
 
-  // Client material note
+  // Discount note
+  if (desconto > 0) {
+    bulletItems.push(`Desconto para Pagamento à Vista: ${descontoTipo === 'percent' ? `${descontoValor}%` : `R$ ${fmt(desconto)}`} — Valor à vista: R$ ${fmt(totalFinal)}`);
+  }
+
   const hasClientMaterial = ambientes.some(a => a.materialOptions.some(o => o.materialDoCliente));
   if (hasClientMaterial) {
     bulletItems.push('Material do Cliente: Quando indicado, o valor refere-se apenas ao serviço de produção, pois o material será fornecido pelo cliente. Não nos responsabilizamos por quebras ou defeitos no material fornecido.');
   }
 
-  // No installation note
   const noInstallAmbs = ambientes.filter(a => a.instalacao.semInstalacao);
   if (noInstallAmbs.length > 0) {
     const names = noInstallAmbs.map(a => a.tipo === 'Ambiente Personalizado' && a.nomeCustom ? a.nomeCustom : a.tipo);
