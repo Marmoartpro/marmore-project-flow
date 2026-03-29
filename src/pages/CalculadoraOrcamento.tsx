@@ -80,6 +80,10 @@ const CalculadoraOrcamento = () => {
     if (field === 'tipoAmbiente') setTipoAmbiente(value);
     if (field === 'dataOrcamento') setDataOrcamento(value);
     if (field === 'validadeDias') setValidadeDias(value);
+    if (field === 'nomeEmpresa') setNomeEmpresa(value);
+    if (field === 'nomeResponsavel') setNomeResponsavel(value);
+    if (field === 'enderecoEmpresa') setEnderecoEmpresa(value);
+    if (field === 'telefoneEmpresa') setTelefoneEmpresa(value);
   };
 
   const updateAmbiente = (id: string, amb: Ambiente) => {
