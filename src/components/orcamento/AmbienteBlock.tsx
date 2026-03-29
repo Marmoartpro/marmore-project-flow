@@ -7,7 +7,7 @@ import PecaForm from './PecaForm';
 import MaterialOptions from './MaterialOptions';
 import MaoDeObraSection from './MaoDeObraSection';
 import {
-  Ambiente, PecaItem, MaterialOption, MaoDeObra, Instalacao,
+  Ambiente, PecaItem, MaterialOption, MaoDeObra, Instalacao, ServicoCustom,
   PECA_TIPOS, newPeca, newMaterialOption,
   calcAmbienteArea, calcAmbienteLaborCost, calcAmbienteInstallCost, fmt,
 } from './types';
@@ -123,6 +123,7 @@ const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Prop
                 key={peca.id}
                 peca={peca}
                 pecaTipos={pecaTipos}
+                ambienteTipo={ambiente.tipo}
                 onChange={(field, value) => updatePeca(peca.id, field, value)}
                 onRemove={() => removePeca(peca.id)}
                 canRemove={ambiente.pecas.length > 1}

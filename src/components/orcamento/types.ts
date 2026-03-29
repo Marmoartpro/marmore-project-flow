@@ -1,3 +1,10 @@
+export interface ServicoCustom {
+  id: string;
+  descricao: string;
+  valor: string;
+  tipo: 'fixo' | 'm2' | 'ml';
+}
+
 export interface PecaItem {
   id: string;
   tipo: string;
@@ -5,10 +12,12 @@ export interface PecaItem {
   largura: string;
   comprimento: string;
   quantidade: string;
-  // Technical details (Fase 2 will expand these)
+  // Technical details
   tipoCuba: string;
+  valorCuba: string;
   tipoRebaixo: string;
   acabamentoBorda: string;
+  valorAcabamentoBorda: string;
   bordasComAcabamento: string;
   furosTorneira: string;
   espelhoBacksplash: boolean;
@@ -31,7 +40,7 @@ export interface ExtraItem {
 
 export interface MaterialOption {
   id: string;
-  label: string; // "Opção A", "Opção B", "Opção C"
+  label: string;
   stoneId: string;
   stoneName: string;
   pricePerM2: number;
@@ -46,6 +55,10 @@ export interface MaoDeObra {
   instalacao: string;
   instalacaoTipo: 'fixo' | 'm2';
   visitaTecnica: string;
+  corte45: string;
+  corte45Tipo: 'fixo' | 'ml';
+  corte45Metros: string;
+  servicosCustom: ServicoCustom[];
 }
 
 export interface Instalacao {
@@ -118,6 +131,13 @@ export const ACABAMENTO_BORDA = ['Reto', 'Meia bola (boleado)', 'Chanfrado 45°'
 export const BORDAS_COM_ACABAMENTO = ['Só frontal', 'Frontal e laterais', 'Todas as bordas'];
 export const FUROS_TORNEIRA = ['Nenhum', '1 furo', '2 furos', '3 furos'];
 
+export const newServicoCustom = (): ServicoCustom => ({
+  id: crypto.randomUUID(),
+  descricao: '',
+  valor: '',
+  tipo: 'fixo',
+});
+
 export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   id: crypto.randomUUID(),
   tipo,
@@ -126,8 +146,10 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   comprimento: '',
   quantidade: '1',
   tipoCuba: 'Sem cuba',
+  valorCuba: '',
   tipoRebaixo: 'Sem rebaixo',
   acabamentoBorda: 'Reto',
+  valorAcabamentoBorda: '',
   bordasComAcabamento: 'Só frontal',
   furosTorneira: 'Nenhum',
   espelhoBacksplash: false,
@@ -156,7 +178,14 @@ export const newAmbiente = (tipo: string): Ambiente => ({
   nomeCustom: '',
   pecas: [newPeca(PECA_TIPOS[tipo]?.[0] || 'Bancada')],
   materialOptions: [newMaterialOption('Opção A')],
-  maoDeObra: { corte: '', corteTipo: 'fixo', polimento: '', polimentoTipo: 'fixo', instalacao: '', instalacaoTipo: 'fixo', visitaTecnica: '' },
+  maoDeObra: {
+    corte: '', corteTipo: 'fixo',
+    polimento: '', polimentoTipo: 'fixo',
+    instalacao: '', instalacaoTipo: 'fixo',
+    visitaTecnica: '',
+    corte45: '', corte45Tipo: 'ml', corte45Metros: '',
+    servicosCustom: [],
+  },
   instalacao: { medicao: '', transporte: '', maoDeObra: '', semInstalacao: false },
 });
 
@@ -167,27 +196,35 @@ export const newAcessorio = (): AcessorioItem => ({
   valorUnitario: '',
 });
 
+/**
+ * Calcula a área total de uma peça incluindo espelho e saia
+ * conforme o tipo de borda selecionado.
+ * Largura e comprimento em metros. Alturas de espelho/saia em cm.
+ */
 export const calcPecaArea = (p: PecaItem): number => {
-  const w = parseFloat(p.largura) || 0;
-  const l = parseFloat(p.comprimento) || 0;
+  const w = parseFloat(p.largura) || 0;    // largura em metros
+  const l = parseFloat(p.comprimento) || 0; // comprimento em metros
   const q = parseInt(p.quantidade) || 1;
+
+  // Área base da peça
   let area = w * l * q;
 
-  // Espelho (backsplash) — always added based on borda setting
+  // Espelho (backsplash) — altura em cm, convertida para metros
   const espelhoAltura = p.espelhoBacksplash ? (parseFloat(p.espelhoBacksplashAltura) || 0) / 100 : 0;
+  // Saia frontal — altura em cm, convertida para metros
   const saiaAltura = p.saiaFrontal ? (parseFloat(p.saiaFrontalAltura) || 0) / 100 : 0;
 
   if (p.bordasComAcabamento === 'Só frontal') {
-    // Espelho: fundo (comprimento), Saia: frente (comprimento)
+    // Espelho: atrás (comprimento da peça)
     if (espelhoAltura > 0) area += l * espelhoAltura * q;
+    // Saia: frente (comprimento da peça)
     if (saiaAltura > 0) area += l * saiaAltura * q;
   } else if (p.bordasComAcabamento === 'Frontal e laterais') {
-    // Espelho: fundo + 2 laterais
+    // Espelho: atrás (comprimento) + 2 laterais (largura)
     if (espelhoAltura > 0) area += (l + w * 2) * espelhoAltura * q;
-    // Saia: frente + 2 laterais
+    // Saia: frente (comprimento) + 2 laterais (largura)
     if (saiaAltura > 0) area += (l + w * 2) * saiaAltura * q;
   } else if (p.bordasComAcabamento === 'Todas as bordas') {
-    // Espelho e saia em todos os lados
     const perimeter = (l + w) * 2;
     if (espelhoAltura > 0) area += perimeter * espelhoAltura * q;
     if (saiaAltura > 0) area += perimeter * saiaAltura * q;
@@ -212,25 +249,95 @@ export const calcAmbienteMaterialCost = (amb: Ambiente, optionIndex: number): nu
   return areaWithMargin * opt.pricePerM2;
 };
 
+/**
+ * Calcula todos os custos de serviços/mão de obra de um ambiente:
+ * - Corte, polimento, instalação (fixo ou por m²)
+ * - Visita técnica
+ * - Corte 45° (fixo ou por metro linear)
+ * - Rebaixo (valor por peça)
+ * - Valor de cuba (por peça)
+ * - Valor de acabamento de borda (por peça, para piscina etc)
+ * - Extras por peça
+ * - Serviços customizados
+ */
 export const calcAmbienteLaborCost = (amb: Ambiente): number => {
   const area = calcAmbienteArea(amb);
   const areaWithMargin = area * 1.1;
   const mo = amb.maoDeObra;
   let total = 0;
+
+  // Corte
   total += mo.corteTipo === 'm2' ? (parseFloat(mo.corte) || 0) * areaWithMargin : (parseFloat(mo.corte) || 0);
+  // Polimento
   total += mo.polimentoTipo === 'm2' ? (parseFloat(mo.polimento) || 0) * areaWithMargin : (parseFloat(mo.polimento) || 0);
+  // Instalação (mão de obra)
   total += mo.instalacaoTipo === 'm2' ? (parseFloat(mo.instalacao) || 0) * areaWithMargin : (parseFloat(mo.instalacao) || 0);
+  // Visita técnica
   total += parseFloat(mo.visitaTecnica) || 0;
-  // Rebaixo values from peças
+
+  // Corte 45°
+  if (mo.corte45Tipo === 'ml') {
+    total += (parseFloat(mo.corte45) || 0) * (parseFloat(mo.corte45Metros) || 0);
+  } else {
+    total += parseFloat(mo.corte45) || 0;
+  }
+
+  // Rebaixo por peça
   amb.pecas.forEach(p => {
     if (p.tipoRebaixo !== 'Sem rebaixo') {
       total += parseFloat(p.valorRebaixo) || 0;
     }
   });
-  // Extras from peças
+
+  // Valor cuba por peça
+  amb.pecas.forEach(p => {
+    if (p.tipoCuba !== 'Sem cuba') {
+      total += parseFloat(p.valorCuba) || 0;
+    }
+  });
+
+  // Valor acabamento borda por peça (piscina, etc)
+  amb.pecas.forEach(p => {
+    if (p.valorAcabamentoBorda) {
+      const bordaVal = parseFloat(p.valorAcabamentoBorda) || 0;
+      if (bordaVal > 0) {
+        // Calcula metros lineares de borda conforme tipo
+        const l = parseFloat(p.comprimento) || 0;
+        const w = parseFloat(p.largura) || 0;
+        const q = parseInt(p.quantidade) || 1;
+        let ml = 0;
+        if (p.bordasComAcabamento === 'Só frontal') {
+          ml = l * q;
+        } else if (p.bordasComAcabamento === 'Frontal e laterais') {
+          ml = (l + w * 2) * q;
+        } else if (p.bordasComAcabamento === 'Todas as bordas') {
+          ml = (l + w) * 2 * q;
+        } else {
+          ml = l * q;
+        }
+        total += bordaVal * ml;
+      }
+    }
+  });
+
+  // Extras por peça
   amb.pecas.forEach(p => {
     p.extras.forEach(e => { total += e.valor; });
   });
+
+  // Serviços customizados
+  (mo.servicosCustom || []).forEach(s => {
+    const val = parseFloat(s.valor) || 0;
+    if (s.tipo === 'm2') {
+      total += val * areaWithMargin;
+    } else if (s.tipo === 'ml') {
+      // Para ml, usa-se o valor diretamente (metros definidos no campo)
+      total += val;
+    } else {
+      total += val;
+    }
+  });
+
   return total;
 };
 
