@@ -39,6 +39,10 @@ const CalculadoraOrcamento = () => {
   const [condicoesPagamento, setCondicoesPagamento] = useState('Entrada 40%, parcela intermediária 30%, saldo na conclusão 30%');
   const [observacoes, setObservacoes] = useState('');
   const [showAddAmbiente, setShowAddAmbiente] = useState(false);
+  const [nomeEmpresa, setNomeEmpresa] = useState('Marmoraria Artesanal');
+  const [nomeResponsavel, setNomeResponsavel] = useState('');
+  const [enderecoEmpresa, setEnderecoEmpresa] = useState('');
+  const [telefoneEmpresa, setTelefoneEmpresa] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -76,6 +80,10 @@ const CalculadoraOrcamento = () => {
     if (field === 'tipoAmbiente') setTipoAmbiente(value);
     if (field === 'dataOrcamento') setDataOrcamento(value);
     if (field === 'validadeDias') setValidadeDias(value);
+    if (field === 'nomeEmpresa') setNomeEmpresa(value);
+    if (field === 'nomeResponsavel') setNomeResponsavel(value);
+    if (field === 'enderecoEmpresa') setEnderecoEmpresa(value);
+    if (field === 'telefoneEmpresa') setTelefoneEmpresa(value);
   };
 
   const updateAmbiente = (id: string, amb: Ambiente) => {
@@ -194,7 +202,10 @@ const CalculadoraOrcamento = () => {
         condicoesPagamento,
         observacoes,
         logoUrl: companyLogo,
-        companyName: (profile as any)?.office_name || (profile as any)?.full_name || 'MármorePro',
+        companyName: nomeEmpresa || 'Marmoraria Artesanal',
+        responsibleName: nomeResponsavel,
+        companyAddress: enderecoEmpresa,
+        companyPhone: telefoneEmpresa || (profile as any)?.phone || '',
       });
       toast.success('PDF gerado e baixado com sucesso!');
     } catch (err: any) {
@@ -234,6 +245,10 @@ const CalculadoraOrcamento = () => {
           tipoAmbiente={tipoAmbiente}
           dataOrcamento={dataOrcamento}
           validadeDias={validadeDias}
+          nomeEmpresa={nomeEmpresa}
+          nomeResponsavel={nomeResponsavel}
+          enderecoEmpresa={enderecoEmpresa}
+          telefoneEmpresa={telefoneEmpresa}
           onChange={handleClienteChange}
         />
 
