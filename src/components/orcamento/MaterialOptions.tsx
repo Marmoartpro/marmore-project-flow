@@ -9,13 +9,14 @@ interface Props {
   ambiente: Ambiente;
   stones: any[];
   onUpdateOption: (optIndex: number, field: keyof MaterialOption, value: any) => void;
+  onUpdateOptionBatch: (optIndex: number, fields: Partial<MaterialOption>) => void;
   onAddOption: () => void;
   onRemoveOption: (optIndex: number) => void;
 }
 
 const OPTION_LABELS = ['Opção A', 'Opção B', 'Opção C'];
 
-const MaterialOptions = ({ ambiente, stones, onUpdateOption, onAddOption, onRemoveOption }: Props) => {
+const MaterialOptions = ({ ambiente, stones, onUpdateOption, onUpdateOptionBatch, onAddOption, onRemoveOption }: Props) => {
   const area = calcAmbienteArea(ambiente);
   const areaWithMargin = area * 1.1;
 
@@ -61,9 +62,11 @@ const MaterialOptions = ({ ambiente, stones, onUpdateOption, onAddOption, onRemo
                   <select value={opt.stoneId}
                     onChange={e => {
                       const stone = stones.find(s => s.id === e.target.value);
-                      onUpdateOption(i, 'stoneId', e.target.value);
-                      onUpdateOption(i, 'stoneName', stone?.name || '');
-                      onUpdateOption(i, 'pricePerM2', Number(stone?.price_per_m2 || 0));
+                      onUpdateOptionBatch(i, {
+                        stoneId: e.target.value,
+                        stoneName: stone?.name || '',
+                        pricePerM2: Number(stone?.price_per_m2 || 0),
+                      });
                     }}
                     className="flex-1 h-8 rounded-md border border-input bg-background px-2 text-xs">
                     <option value="">Selecione pedra...</option>

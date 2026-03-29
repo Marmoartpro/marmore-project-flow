@@ -49,6 +49,12 @@ const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Prop
     onUpdate({ ...ambiente, materialOptions: updated });
   };
 
+  const updateMaterialOptionBatch = (optIndex: number, fields: Partial<MaterialOption>) => {
+    const updated = [...ambiente.materialOptions];
+    updated[optIndex] = { ...updated[optIndex], ...fields };
+    onUpdate({ ...ambiente, materialOptions: updated });
+  };
+
   const addMaterialOption = () => {
     if (ambiente.materialOptions.length >= 3) return;
     const labels = ['Opção A', 'Opção B', 'Opção C'];
@@ -132,6 +138,7 @@ const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Prop
             ambiente={ambiente}
             stones={stones}
             onUpdateOption={updateMaterialOption}
+            onUpdateOptionBatch={updateMaterialOptionBatch}
             onAddOption={addMaterialOption}
             onRemoveOption={removeMaterialOption}
           />
