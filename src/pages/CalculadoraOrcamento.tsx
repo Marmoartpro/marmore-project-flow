@@ -169,6 +169,41 @@ const CalculadoraOrcamento = () => {
     toast.success('Campos limpos!');
   };
 
+  const handleGeneratePdf = async () => {
+    if (!clienteNome) {
+      toast.error('Informe o nome do cliente antes de gerar o PDF');
+      return;
+    }
+    setGeneratingPdf(true);
+    try {
+      await generateOrcamentoPdf({
+        quoteNumber: generateQuoteNumber(),
+        clienteNome,
+        tipoAmbiente,
+        dataOrcamento,
+        validadeDias,
+        ambientes,
+        acessorios,
+        subtotalMaterials,
+        subtotalLabor,
+        subtotalAccessories,
+        subtotalInstallation,
+        margemLucro,
+        descontoValor,
+        descontoTipo,
+        condicoesPagamento,
+        observacoes,
+        logoUrl: companyLogo,
+        companyName: (profile as any)?.office_name || (profile as any)?.full_name || 'MármorePro',
+      });
+      toast.success('PDF gerado e baixado com sucesso!');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao gerar PDF');
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="p-4 md:p-6 space-y-4 max-w-4xl mx-auto">
