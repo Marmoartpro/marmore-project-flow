@@ -169,7 +169,18 @@ export const calcPecaArea = (p: PecaItem): number => {
   const w = parseFloat(p.largura) || 0;
   const l = parseFloat(p.comprimento) || 0;
   const q = parseInt(p.quantidade) || 1;
-  return w * l * q;
+  let area = w * l * q;
+  // Add backsplash area (altura in cm → convert to m)
+  if (p.espelhoBacksplash && p.espelhoBacksplashAltura) {
+    const alturaM = (parseFloat(p.espelhoBacksplashAltura) || 0) / 100;
+    area += l * alturaM * q;
+  }
+  // Add saia frontal area (altura in cm → convert to m)
+  if (p.saiaFrontal && p.saiaFrontalAltura) {
+    const alturaM = (parseFloat(p.saiaFrontalAltura) || 0) / 100;
+    area += l * alturaM * q;
+  }
+  return area;
 };
 
 export const calcAmbienteArea = (amb: Ambiente): number => {
