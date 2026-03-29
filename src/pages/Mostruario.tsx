@@ -145,17 +145,37 @@ const Mostruario = () => {
   const saveStone = async () => {
     if (!user || !form.name) return;
     const payload = { ...form, owner_id: user.id, price_per_m2: form.price_per_m2 ? parseFloat(form.price_per_m2) : 0 };
-    if (editStone) {
-      await supabase.from('stones').update(payload).eq('id', editStone.id);
-      toast.success('Pedra atualizada!');
-    } else {
-      const { data } = await supabase.from('stones').insert(payload).select().single();
-      if (data) setEditStone(data);
-      toast.success('Pedra cadastrada! Agora você pode adicionar fotos à galeria.');
+    try {
+      if (editStone) {
+        // If the stone belongs to another user (global/seed), clone it as own
+        if (editStone.owner_id !== user.id) {
+          const { id, ...cloneData } = payload as any;
+          const { data: newStone, error } = await supabase.from('stones').insert({ ...cloneData, is_global: false }).select().single();
+          if (error) throw error;
+          // Copy gallery photos to new stone
+          if (newStone && galleryPhotos.length > 0) {
+            for (const p of galleryPhotos) {
+              await supabase.from('stone_photos').insert({ stone_id: newStone.id, owner_id: user.id, photo_url: p.photo_url });
+            }
+          }
+          toast.success('Pedra personalizada e salva!');
+        } else {
+          const { error } = await supabase.from('stones').update(payload).eq('id', editStone.id);
+          if (error) throw error;
+          toast.success('Pedra atualizada!');
+        }
+      } else {
+        const { data, error } = await supabase.from('stones').insert(payload).select().single();
+        if (error) throw error;
+        if (data) setEditStone(data);
+        toast.success('Pedra cadastrada! Agora você pode adicionar fotos à galeria.');
+      }
+      setShowForm(false);
+      resetForm();
+      fetchStones();
+    } catch (err: any) {
+      toast.error(err.message || 'Não foi possível salvar. Verifique sua conexão ou tente novamente.');
     }
-    setShowForm(false);
-    resetForm();
-    fetchStones();
   };
 
   const deleteStone = async (id: string) => {
