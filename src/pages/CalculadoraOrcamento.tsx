@@ -216,6 +216,9 @@ const CalculadoraOrcamento = () => {
             <Button size="sm" variant="outline" onClick={limparTudo}>
               <Trash2 className="w-4 h-4 mr-1" /> Limpar
             </Button>
+            <Button size="sm" variant="outline" onClick={handleGeneratePdf} disabled={generatingPdf || !clienteNome}>
+              <FileText className="w-4 h-4 mr-1" /> {generatingPdf ? 'Gerando...' : 'Gerar PDF'}
+            </Button>
             <Button size="sm" onClick={saveOrcamento} disabled={saving || !clienteNome}>
               <Save className="w-4 h-4 mr-1" /> {saving ? 'Salvando...' : 'Salvar orçamento'}
             </Button>
