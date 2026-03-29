@@ -18,6 +18,7 @@ export interface PecaItem {
   rebaixoCooktop: boolean;
   rebaixoCooktopLargura: string;
   rebaixoCooktopComprimento: string;
+  valorRebaixo: string;
   // Extras
   extras: ExtraItem[];
 }
@@ -136,6 +137,7 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   rebaixoCooktop: false,
   rebaixoCooktopLargura: '',
   rebaixoCooktopComprimento: '',
+  valorRebaixo: '',
   extras: [],
 });
 
@@ -170,16 +172,31 @@ export const calcPecaArea = (p: PecaItem): number => {
   const l = parseFloat(p.comprimento) || 0;
   const q = parseInt(p.quantidade) || 1;
   let area = w * l * q;
-  // Add backsplash area (altura in cm → convert to m)
-  if (p.espelhoBacksplash && p.espelhoBacksplashAltura) {
-    const alturaM = (parseFloat(p.espelhoBacksplashAltura) || 0) / 100;
-    area += l * alturaM * q;
+
+  // Espelho (backsplash) — always added based on borda setting
+  const espelhoAltura = p.espelhoBacksplash ? (parseFloat(p.espelhoBacksplashAltura) || 0) / 100 : 0;
+  const saiaAltura = p.saiaFrontal ? (parseFloat(p.saiaFrontalAltura) || 0) / 100 : 0;
+
+  if (p.bordasComAcabamento === 'Só frontal') {
+    // Espelho: fundo (comprimento), Saia: frente (comprimento)
+    if (espelhoAltura > 0) area += l * espelhoAltura * q;
+    if (saiaAltura > 0) area += l * saiaAltura * q;
+  } else if (p.bordasComAcabamento === 'Frontal e laterais') {
+    // Espelho: fundo + 2 laterais
+    if (espelhoAltura > 0) area += (l + w * 2) * espelhoAltura * q;
+    // Saia: frente + 2 laterais
+    if (saiaAltura > 0) area += (l + w * 2) * saiaAltura * q;
+  } else if (p.bordasComAcabamento === 'Todas as bordas') {
+    // Espelho e saia em todos os lados
+    const perimeter = (l + w) * 2;
+    if (espelhoAltura > 0) area += perimeter * espelhoAltura * q;
+    if (saiaAltura > 0) area += perimeter * saiaAltura * q;
+  } else {
+    // Fallback: só frontal
+    if (espelhoAltura > 0) area += l * espelhoAltura * q;
+    if (saiaAltura > 0) area += l * saiaAltura * q;
   }
-  // Add saia frontal area (altura in cm → convert to m)
-  if (p.saiaFrontal && p.saiaFrontalAltura) {
-    const alturaM = (parseFloat(p.saiaFrontalAltura) || 0) / 100;
-    area += l * alturaM * q;
-  }
+
   return area;
 };
 
@@ -204,6 +221,12 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
   total += mo.polimentoTipo === 'm2' ? (parseFloat(mo.polimento) || 0) * areaWithMargin : (parseFloat(mo.polimento) || 0);
   total += mo.instalacaoTipo === 'm2' ? (parseFloat(mo.instalacao) || 0) * areaWithMargin : (parseFloat(mo.instalacao) || 0);
   total += parseFloat(mo.visitaTecnica) || 0;
+  // Rebaixo values from peças
+  amb.pecas.forEach(p => {
+    if (p.tipoRebaixo !== 'Sem rebaixo') {
+      total += parseFloat(p.valorRebaixo) || 0;
+    }
+  });
   // Extras from peças
   amb.pecas.forEach(p => {
     p.extras.forEach(e => { total += e.valor; });
