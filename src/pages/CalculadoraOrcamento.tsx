@@ -39,6 +39,10 @@ const CalculadoraOrcamento = () => {
   const [condicoesPagamento, setCondicoesPagamento] = useState('Entrada 40%, parcela intermediária 30%, saldo na conclusão 30%');
   const [observacoes, setObservacoes] = useState('');
   const [showAddAmbiente, setShowAddAmbiente] = useState(false);
+  const [nomeEmpresa, setNomeEmpresa] = useState('Marmoraria Artesanal');
+  const [nomeResponsavel, setNomeResponsavel] = useState('');
+  const [enderecoEmpresa, setEnderecoEmpresa] = useState('');
+  const [telefoneEmpresa, setTelefoneEmpresa] = useState('');
 
   useEffect(() => {
     if (user) {
