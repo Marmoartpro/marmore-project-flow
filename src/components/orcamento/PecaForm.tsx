@@ -80,6 +80,13 @@ const PecaForm = ({ peca, pecaTipos, onChange, onRemove, canRemove }: Props) => 
             </select>
           </div>
         )}
+        {showRebaixo && peca.tipoRebaixo !== 'Sem rebaixo' && (
+          <div>
+            <Label className="text-[10px]">Valor rebaixo (R$)</Label>
+            <Input type="number" step="0.01" value={peca.valorRebaixo} onChange={e => onChange('valorRebaixo', e.target.value)}
+              className="h-8 text-xs" placeholder="0,00" />
+          </div>
+        )}
         {showBorda && (
           <>
             <div>
