@@ -221,6 +221,12 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
   total += mo.polimentoTipo === 'm2' ? (parseFloat(mo.polimento) || 0) * areaWithMargin : (parseFloat(mo.polimento) || 0);
   total += mo.instalacaoTipo === 'm2' ? (parseFloat(mo.instalacao) || 0) * areaWithMargin : (parseFloat(mo.instalacao) || 0);
   total += parseFloat(mo.visitaTecnica) || 0;
+  // Rebaixo values from peças
+  amb.pecas.forEach(p => {
+    if (p.tipoRebaixo !== 'Sem rebaixo') {
+      total += parseFloat(p.valorRebaixo) || 0;
+    }
+  });
   // Extras from peças
   amb.pecas.forEach(p => {
     p.extras.forEach(e => { total += e.valor; });
