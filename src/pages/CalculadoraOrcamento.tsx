@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Calculator, Plus, Save, Trash2, FileText } from 'lucide-react';
+import { generateOrcamentoPdf } from '@/components/orcamento/generatePdf';
 import { toast } from 'sonner';
 import ClienteSection from '@/components/orcamento/ClienteSection';
 import AmbienteBlock from '@/components/orcamento/AmbienteBlock';
@@ -23,6 +24,7 @@ const CalculadoraOrcamento = () => {
   const [stones, setStones] = useState<any[]>([]);
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   // Orcamento state
   const [clienteNome, setClienteNome] = useState('');
