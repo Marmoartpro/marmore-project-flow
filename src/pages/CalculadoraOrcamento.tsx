@@ -33,7 +33,11 @@ const CalculadoraOrcamento = () => {
   const [validadeDias, setValidadeDias] = useState('15');
   const [ambientes, setAmbientes] = useState<Ambiente[]>([newAmbiente('Cozinha')]);
   const [acessorios, setAcessorios] = useState<AcessorioItem[]>([newAcessorio()]);
-  const [margemLucro, setMargemLucro] = useState(30);
+  // Per-section margins
+  const [margemMaterial, setMargemMaterial] = useState(30);
+  const [margemServicos, setMargemServicos] = useState(30);
+  const [margemAcessorios, setMargemAcessorios] = useState(30);
+  const [margemInstalacao, setMargemInstalacao] = useState(20);
   const [descontoValor, setDescontoValor] = useState('');
   const [descontoTipo, setDescontoTipo] = useState<'percent' | 'reais'>('percent');
   const [condicoesPagamento, setCondicoesPagamento] = useState('Entrada 40%, parcela intermediária 30%, saldo na conclusão 30%');
@@ -122,27 +126,35 @@ const CalculadoraOrcamento = () => {
     }
     setSaving(true);
     try {
-      const subtotalBase = subtotalMaterials + subtotalLabor + subtotalAccessories + subtotalInstallation;
-      const valorMargem = subtotalBase * (margemLucro / 100);
-      const totalBruto = subtotalBase + valorMargem;
+      const materialComMargem = subtotalMaterials * (1 + margemMaterial / 100);
+      const servicosComMargem = subtotalLabor * (1 + margemServicos / 100);
+      const acessoriosComMargem = subtotalAccessories * (1 + margemAcessorios / 100);
+      const instalacaoComMargem = subtotalInstallation * (1 + margemInstalacao / 100);
+      const totalBruto = materialComMargem + servicosComMargem + acessoriosComMargem + instalacaoComMargem;
       const desconto = descontoTipo === 'percent'
         ? totalBruto * ((parseFloat(descontoValor) || 0) / 100)
         : (parseFloat(descontoValor) || 0);
       const totalFinal = totalBruto - desconto;
 
+      const quoteNumber = generateQuoteNumber();
+
       const payload = {
         owner_id: user.id,
-        quote_number: generateQuoteNumber(),
+        quote_number: quoteNumber,
         client_name: clienteNome,
         environment_type: tipoAmbiente,
         quote_date: dataOrcamento,
         validity_days: parseInt(validadeDias) || 15,
-        data: JSON.parse(JSON.stringify({ ambientes, acessorios, condicoesPagamento, observacoes })),
+        data: JSON.parse(JSON.stringify({
+          ambientes, acessorios, condicoesPagamento, observacoes,
+          margemMaterial, margemServicos, margemAcessorios, margemInstalacao,
+          nomeEmpresa, nomeResponsavel, enderecoEmpresa, telefoneEmpresa,
+        })),
         subtotal_materials: subtotalMaterials,
         subtotal_labor: subtotalLabor,
         subtotal_accessories: subtotalAccessories,
         subtotal_installation: subtotalInstallation,
-        profit_margin_percent: margemLucro,
+        profit_margin_percent: margemMaterial, // store primary margin
         discount: parseFloat(descontoValor) || 0,
         discount_type: descontoTipo,
         total: totalFinal,
@@ -153,6 +165,24 @@ const CalculadoraOrcamento = () => {
 
       const { error } = await supabase.from('budget_quotes').insert([payload]);
       if (error) throw error;
+
+      // Also save/update client profile
+      const { data: existingClients } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('owner_id', user.id)
+        .eq('name', clienteNome)
+        .limit(1);
+
+      if (!existingClients || existingClients.length === 0) {
+        await supabase.from('clients').insert({
+          owner_id: user.id,
+          name: clienteNome,
+          service_type: tipoAmbiente,
+          observations: `Orçamento ${quoteNumber} gerado em ${new Date().toLocaleDateString('pt-BR')}`,
+        });
+      }
+
       toast.success('Orçamento salvo com sucesso!');
     } catch (err: any) {
       toast.error(err.message || 'Erro ao salvar orçamento');
@@ -169,7 +199,10 @@ const CalculadoraOrcamento = () => {
     setValidadeDias('15');
     setAmbientes([newAmbiente('Cozinha')]);
     setAcessorios([newAcessorio()]);
-    setMargemLucro(30);
+    setMargemMaterial(30);
+    setMargemServicos(30);
+    setMargemAcessorios(30);
+    setMargemInstalacao(20);
     setDescontoValor('');
     setDescontoTipo('percent');
     setCondicoesPagamento('Entrada 40%, parcela intermediária 30%, saldo na conclusão 30%');
@@ -196,7 +229,10 @@ const CalculadoraOrcamento = () => {
         subtotalLabor,
         subtotalAccessories,
         subtotalInstallation,
-        margemLucro,
+        margemMaterial,
+        margemServicos,
+        margemAcessorios,
+        margemInstalacao,
         descontoValor,
         descontoTipo,
         condicoesPagamento,
@@ -293,8 +329,14 @@ const CalculadoraOrcamento = () => {
           subtotalLabor={subtotalLabor}
           subtotalAccessories={subtotalAccessories}
           subtotalInstallation={subtotalInstallation}
-          margemLucro={margemLucro}
-          setMargemLucro={setMargemLucro}
+          margemMaterial={margemMaterial}
+          setMargemMaterial={setMargemMaterial}
+          margemServicos={margemServicos}
+          setMargemServicos={setMargemServicos}
+          margemAcessorios={margemAcessorios}
+          setMargemAcessorios={setMargemAcessorios}
+          margemInstalacao={margemInstalacao}
+          setMargemInstalacao={setMargemInstalacao}
           descontoValor={descontoValor}
           descontoTipo={descontoTipo}
           setDescontoValor={setDescontoValor}
@@ -322,13 +364,12 @@ const CalculadoraOrcamento = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Generate scenarios from material option combinations */}
                   {ambientes[0]?.materialOptions.map((_, optIdx) => {
                     const scenarioTotal = ambientes.reduce((sum, amb) => {
-                      const matCost = calcAmbienteMaterialCost(amb, Math.min(optIdx, amb.materialOptions.length - 1));
-                      return sum + matCost + calcAmbienteLaborCost(amb);
-                    }, 0) + subtotalAccessories + subtotalInstallation;
-                    const withMargin = scenarioTotal * (1 + margemLucro / 100);
+                      const matCost = calcAmbienteMaterialCost(amb, Math.min(optIdx, amb.materialOptions.length - 1)) * (1 + margemMaterial / 100);
+                      const labCost = calcAmbienteLaborCost(amb) * (1 + margemServicos / 100);
+                      return sum + matCost + labCost;
+                    }, 0) + subtotalAccessories * (1 + margemAcessorios / 100) + subtotalInstallation * (1 + margemInstalacao / 100);
 
                     return (
                       <tr key={optIdx} className="border-t border-border">
@@ -336,8 +377,8 @@ const CalculadoraOrcamento = () => {
                         {ambientes.map(amb => {
                           const idx = Math.min(optIdx, amb.materialOptions.length - 1);
                           const opt = amb.materialOptions[idx];
-                          const matCost = calcAmbienteMaterialCost(amb, idx);
-                          const labCost = calcAmbienteLaborCost(amb);
+                          const matCost = calcAmbienteMaterialCost(amb, idx) * (1 + margemMaterial / 100);
+                          const labCost = calcAmbienteLaborCost(amb) * (1 + margemServicos / 100);
                           return (
                             <td key={amb.id} className="text-right px-3 py-2">
                               <span className="text-muted-foreground">{opt?.stoneName || opt?.materialDoCliente ? 'Cliente' : '—'}</span>
@@ -345,8 +386,8 @@ const CalculadoraOrcamento = () => {
                             </td>
                           );
                         })}
-                        <td className="text-right px-3 py-2">R$ {fmt(subtotalInstallation)}</td>
-                        <td className="text-right px-3 py-2 font-bold" style={{ color: '#2E7DB5' }}>R$ {fmt(withMargin)}</td>
+                        <td className="text-right px-3 py-2">R$ {fmt(subtotalInstallation * (1 + margemInstalacao / 100))}</td>
+                        <td className="text-right px-3 py-2 font-bold" style={{ color: '#2E7DB5' }}>R$ {fmt(scenarioTotal)}</td>
                       </tr>
                     );
                   })}
