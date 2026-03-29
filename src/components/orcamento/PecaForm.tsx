@@ -10,19 +10,23 @@ import {
 interface Props {
   peca: PecaItem;
   pecaTipos: string[];
+  ambienteTipo?: string;
   onChange: (field: keyof PecaItem, value: any) => void;
   onRemove: () => void;
   canRemove: boolean;
 }
 
-const PecaForm = ({ peca, pecaTipos, onChange, onRemove, canRemove }: Props) => {
+const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove }: Props) => {
   const area = calcPecaArea(peca);
   const showCuba = ['Bancada', 'Lavatório', 'Bancada de Banheiro', 'Bancada Tanque'].includes(peca.tipo);
-  const showRebaixo = peca.tipo === 'Bancada';
-  const showBorda = ['Bancada', 'Lavatório', 'Bancada de Banheiro', 'Soleira', 'Borda de Piscina'].includes(peca.tipo);
+  const showRebaixo = ['Bancada', 'Bancada de Banheiro'].includes(peca.tipo);
+  const showBorda = ['Bancada', 'Lavatório', 'Bancada de Banheiro', 'Soleira', 'Borda de Piscina', 'Escada/Degrau'].includes(peca.tipo);
   const showFuros = ['Bancada', 'Lavatório', 'Bancada de Banheiro'].includes(peca.tipo);
-  const showBacksplash = peca.tipo === 'Bancada';
+  // Espelho disponível para bancadas e banheiros
+  const showBacksplash = ['Bancada', 'Bancada de Banheiro', 'Lavatório', 'Bancada Tanque'].includes(peca.tipo);
   const showCooktop = peca.tipo === 'Bancada';
+  // Piscina: mostrar valor por metro do acabamento
+  const isPiscina = peca.tipo === 'Borda de Piscina' || peca.tipo === 'Escada/Degrau';
 
   return (
     <div className="border border-border rounded-md p-3 space-y-3">
@@ -63,29 +67,40 @@ const PecaForm = ({ peca, pecaTipos, onChange, onRemove, canRemove }: Props) => 
       {/* Technical details */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {showCuba && (
-          <div>
-            <Label className="text-[10px]">Tipo de cuba</Label>
-            <select value={peca.tipoCuba} onChange={e => onChange('tipoCuba', e.target.value)}
-              className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
-              {TIPO_CUBA.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
+          <>
+            <div>
+              <Label className="text-[10px]">Tipo de cuba</Label>
+              <select value={peca.tipoCuba} onChange={e => onChange('tipoCuba', e.target.value)}
+                className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
+                {TIPO_CUBA.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            {peca.tipoCuba !== 'Sem cuba' && (
+              <div>
+                <Label className="text-[10px]">Valor cuba (R$)</Label>
+                <Input type="number" step="0.01" value={peca.valorCuba} onChange={e => onChange('valorCuba', e.target.value)}
+                  className="h-8 text-xs" placeholder="0,00" />
+              </div>
+            )}
+          </>
         )}
         {showRebaixo && (
-          <div>
-            <Label className="text-[10px]">Rebaixo área pia</Label>
-            <select value={peca.tipoRebaixo} onChange={e => onChange('tipoRebaixo', e.target.value)}
-              className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
-              {TIPO_REBAIXO.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-        )}
-        {showRebaixo && peca.tipoRebaixo !== 'Sem rebaixo' && (
-          <div>
-            <Label className="text-[10px]">Valor rebaixo (R$)</Label>
-            <Input type="number" step="0.01" value={peca.valorRebaixo} onChange={e => onChange('valorRebaixo', e.target.value)}
-              className="h-8 text-xs" placeholder="0,00" />
-          </div>
+          <>
+            <div>
+              <Label className="text-[10px]">Rebaixo área pia</Label>
+              <select value={peca.tipoRebaixo} onChange={e => onChange('tipoRebaixo', e.target.value)}
+                className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
+                {TIPO_REBAIXO.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            {peca.tipoRebaixo !== 'Sem rebaixo' && (
+              <div>
+                <Label className="text-[10px]">Valor rebaixo (R$)</Label>
+                <Input type="number" step="0.01" value={peca.valorRebaixo} onChange={e => onChange('valorRebaixo', e.target.value)}
+                  className="h-8 text-xs" placeholder="0,00" />
+              </div>
+            )}
+          </>
         )}
         {showBorda && (
           <>
@@ -103,6 +118,13 @@ const PecaForm = ({ peca, pecaTipos, onChange, onRemove, canRemove }: Props) => 
                 {BORDAS_COM_ACABAMENTO.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
+            {(isPiscina || peca.acabamentoBorda !== 'Reto') && (
+              <div>
+                <Label className="text-[10px]">Valor acabamento (R$/m)</Label>
+                <Input type="number" step="0.01" value={peca.valorAcabamentoBorda} onChange={e => onChange('valorAcabamentoBorda', e.target.value)}
+                  className="h-8 text-xs" placeholder="0,00" />
+              </div>
+            )}
           </>
         )}
         {showFuros && (
