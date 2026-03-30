@@ -28,6 +28,11 @@ export interface PecaItem {
   rebaixoCooktopLargura: string;
   rebaixoCooktopComprimento: string;
   valorRebaixo: string;
+  // Ilhargas / pés revestidos
+  ilhargas: boolean;
+  ilhargasQtd: string;
+  ilhargasAltura: string;
+  ilhargasLargura: string;
   // Extras
   extras: ExtraItem[];
 }
@@ -160,6 +165,10 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   rebaixoCooktopLargura: '',
   rebaixoCooktopComprimento: '',
   valorRebaixo: '',
+  ilhargas: false,
+  ilhargasQtd: '2',
+  ilhargasAltura: '',
+  ilhargasLargura: '',
   extras: [],
 });
 
