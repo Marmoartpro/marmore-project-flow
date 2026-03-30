@@ -23,6 +23,7 @@ const marmoristNavItems = [
   { path: '/mostruario', label: 'Mostruário', icon: Package },
   { path: '/fornecedores', label: 'Fornecedores', icon: Truck },
   { path: '/calculadora', label: 'Orçamento', icon: Calculator },
+  { path: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ];
 
 const architectNavItems = [

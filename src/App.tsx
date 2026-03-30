@@ -17,6 +17,7 @@ import Mostruario from "./pages/Mostruario";
 import Fornecedores from "./pages/Fornecedores";
 import CalculadoraOrcamento from "./pages/CalculadoraOrcamento";
 import Portfolio from "./pages/Portfolio";
+import Relatorios from "./pages/Relatorios";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
