@@ -28,6 +28,11 @@ export interface PecaItem {
   rebaixoCooktopLargura: string;
   rebaixoCooktopComprimento: string;
   valorRebaixo: string;
+  // Ilhargas / pés revestidos
+  ilhargas: boolean;
+  ilhargasQtd: string;
+  ilhargasAltura: string;
+  ilhargasLargura: string;
   // Extras
   extras: ExtraItem[];
 }
@@ -160,6 +165,10 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   rebaixoCooktopLargura: '',
   rebaixoCooktopComprimento: '',
   valorRebaixo: '',
+  ilhargas: false,
+  ilhargasQtd: '2',
+  ilhargasAltura: '',
+  ilhargasLargura: '',
   extras: [],
 });
 
@@ -232,6 +241,14 @@ export const calcPecaArea = (p: PecaItem): number => {
     // Fallback: só frontal
     if (espelhoAltura > 0) area += l * espelhoAltura * q;
     if (saiaAltura > 0) area += l * saiaAltura * q;
+  }
+
+  // Ilhargas / pés revestidos
+  if (p.ilhargas) {
+    const ilhQtd = parseInt(p.ilhargasQtd) || 0;
+    const ilhAltura = (parseFloat(p.ilhargasAltura) || 0) / 100;
+    const ilhLargura = (parseFloat(p.ilhargasLargura) || 0) / 100;
+    area += ilhQtd * ilhAltura * ilhLargura * q;
   }
 
   return area;

@@ -22,10 +22,9 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
   const showRebaixo = ['Bancada', 'Bancada de Banheiro'].includes(peca.tipo);
   const showBorda = ['Bancada', 'Lavatório', 'Bancada de Banheiro', 'Soleira', 'Borda de Piscina', 'Escada/Degrau'].includes(peca.tipo);
   const showFuros = ['Bancada', 'Lavatório', 'Bancada de Banheiro'].includes(peca.tipo);
-  // Espelho disponível para bancadas e banheiros
   const showBacksplash = ['Bancada', 'Bancada de Banheiro', 'Lavatório', 'Bancada Tanque'].includes(peca.tipo);
   const showCooktop = peca.tipo === 'Bancada';
-  // Piscina: mostrar valor por metro do acabamento
+  const showIlhargas = ['Bancada', 'Bancada de Banheiro', 'Bancada Tanque', 'Lavatório'].includes(peca.tipo);
   const isPiscina = peca.tipo === 'Borda de Piscina' || peca.tipo === 'Escada/Degrau';
 
   return (
@@ -164,9 +163,32 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
             Rebaixo cooktop
           </label>
         )}
+        {showIlhargas && (
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={peca.ilhargas} onChange={e => onChange('ilhargas', e.target.checked)} />
+            Ilhargas / pés revestidos
+          </label>
+        )}
       </div>
 
-      {/* Area info */}
+      {/* Ilhargas details */}
+      {peca.ilhargas && showIlhargas && (
+        <div className="grid grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
+          <div>
+            <Label className="text-[10px]">Qtd ilhargas</Label>
+            <Input type="number" min="1" value={peca.ilhargasQtd} onChange={e => onChange('ilhargasQtd', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Altura (cm)</Label>
+            <Input type="number" step="0.1" value={peca.ilhargasAltura} onChange={e => onChange('ilhargasAltura', e.target.value)} className="h-8 text-xs" placeholder="Ex: 80" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Largura (cm)</Label>
+            <Input type="number" step="0.1" value={peca.ilhargasLargura} onChange={e => onChange('ilhargasLargura', e.target.value)} className="h-8 text-xs" placeholder="Ex: 60" />
+          </div>
+        </div>
+      )}
+
       {area > 0 && (
         <div className="text-[11px] text-muted-foreground flex gap-3">
           <span>Área: {fmt(area)} m²</span>
