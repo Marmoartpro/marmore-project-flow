@@ -228,6 +228,7 @@ const CalculadoraOrcamento = () => {
         });
       }
 
+      localStorage.removeItem('orcamento_autosave');
       toast.success('Orçamento salvo com sucesso!');
     } catch (err: any) {
       toast.error(err.message || 'Erro ao salvar orçamento');
