@@ -44,9 +44,22 @@ const AppLayout = ({ children, alertCount = 0 }: Props) => {
   const navItems = isMarmorista ? marmoristNavItems : architectNavItems;
 
   useEffect(() => {
-    if (user) {
-      supabase.from('notifications').select('*').eq('user_id', user.id).eq('read', false).order('created_at', { ascending: false }).limit(20).then(({ data }) => setNotifications(data || []));
-    }
+    if (!user) return;
+    supabase.from('notifications').select('*').eq('user_id', user.id).eq('read', false).order('created_at', { ascending: false }).limit(20).then(({ data }) => setNotifications(data || []));
+
+    // Realtime notifications
+    const channel = supabase
+      .channel('user-notifications')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          setNotifications(prev => [payload.new as any, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user, location.pathname]);
 
   const markRead = async (id: string) => {
