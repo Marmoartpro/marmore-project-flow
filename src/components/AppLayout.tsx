@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
   Home, DollarSign, FileText, Users, LogOut, Plus, Menu, X, Bell,
-  Package, Truck, Calculator, CheckCheck, Search,
+  Package, Truck, Calculator, CheckCheck, Search, BarChart3,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import GlobalSearch from './GlobalSearch';
