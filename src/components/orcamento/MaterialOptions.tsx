@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2 } from 'lucide-react';
-import { MaterialOption, newMaterialOption, calcAmbienteArea, fmt } from './types';
+import { MaterialOption, newMaterialOption, calcAmbienteArea, calcAmbienteAreaCompra, fmt } from './types';
 import type { Ambiente } from './types';
 
 interface Props {
@@ -17,13 +17,20 @@ interface Props {
 const OPTION_LABELS = ['Opção A', 'Opção B', 'Opção C'];
 
 const MaterialOptions = ({ ambiente, stones, onUpdateOption, onUpdateOptionBatch, onAddOption, onRemoveOption }: Props) => {
-  const area = calcAmbienteArea(ambiente);
-  const areaWithMargin = area * 1.1;
+  const areaLiq = calcAmbienteArea(ambiente);
+  const areaCompra = calcAmbienteAreaCompra(ambiente);
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Label className="text-xs font-medium">Opções de Material</Label>
+        <Label className="text-xs font-medium">
+          Opções de Material
+          {areaLiq > 0 && (
+            <span className="text-[10px] text-muted-foreground ml-2">
+              ({fmt(areaLiq)} m² líquido → {fmt(areaCompra)} m² compra)
+            </span>
+          )}
+        </Label>
         {ambiente.materialOptions.length < 3 && (
           <Button size="sm" variant="outline" className="h-6 text-[10px]" onClick={onAddOption}>
             <Plus className="w-3 h-3 mr-1" /> Opção
@@ -32,7 +39,7 @@ const MaterialOptions = ({ ambiente, stones, onUpdateOption, onUpdateOptionBatch
       </div>
 
       {ambiente.materialOptions.map((opt, i) => {
-        const materialCost = opt.materialDoCliente ? 0 : areaWithMargin * opt.pricePerM2;
+        const materialCost = opt.materialDoCliente ? 0 : areaCompra * opt.pricePerM2;
 
         return (
           <div key={opt.id} className="border border-border rounded-md p-2 space-y-2">
@@ -54,7 +61,7 @@ const MaterialOptions = ({ ambiente, stones, onUpdateOption, onUpdateOptionBatch
 
             {opt.materialDoCliente ? (
               <p className="text-[10px] text-warning italic">
-                Material fornecido pelo cliente — valor R$ 0,00. Não nos responsabilizamos por quebras ou defeitos.
+                Material fornecido pelo cliente — valor R$ 0,00.
               </p>
             ) : (
               <div className="space-y-1">
@@ -80,15 +87,10 @@ const MaterialOptions = ({ ambiente, stones, onUpdateOption, onUpdateOptionBatch
                 {opt.stoneId && (
                   <div className="flex items-center gap-2">
                     <label className="text-[10px] text-muted-foreground whitespace-nowrap">R$/m²:</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
+                    <input type="number" step="0.01" min="0"
                       value={opt.pricePerM2 || ''}
                       onChange={e => onUpdateOption(i, 'pricePerM2', Number(e.target.value) || 0)}
-                      className="w-24 h-7 rounded-md border border-input bg-background px-2 text-xs"
-                      placeholder="Valor/m²"
-                    />
+                      className="w-24 h-7 rounded-md border border-input bg-background px-2 text-xs" />
                     {materialCost > 0 && (
                       <span className="text-xs font-medium text-primary whitespace-nowrap">= R$ {fmt(materialCost)}</span>
                     )}
@@ -101,7 +103,7 @@ const MaterialOptions = ({ ambiente, stones, onUpdateOption, onUpdateOptionBatch
       })}
 
       {/* Comparison table */}
-      {ambiente.materialOptions.length > 1 && area > 0 && (
+      {ambiente.materialOptions.length > 1 && areaLiq > 0 && (
         <div className="border border-primary/30 rounded-md overflow-hidden">
           <table className="w-full text-[10px]">
             <thead>
@@ -114,7 +116,7 @@ const MaterialOptions = ({ ambiente, stones, onUpdateOption, onUpdateOptionBatch
             </thead>
             <tbody>
               {ambiente.materialOptions.map((opt, i) => {
-                const matCost = opt.materialDoCliente ? 0 : areaWithMargin * opt.pricePerM2;
+                const matCost = opt.materialDoCliente ? 0 : areaCompra * opt.pricePerM2;
                 const laborCost = (parseFloat(ambiente.maoDeObra.corte) || 0) +
                   (parseFloat(ambiente.maoDeObra.polimento) || 0) +
                   (parseFloat(ambiente.maoDeObra.instalacao) || 0) +

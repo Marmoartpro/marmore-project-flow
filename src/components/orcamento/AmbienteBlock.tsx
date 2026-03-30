@@ -6,10 +6,12 @@ import { useState } from 'react';
 import PecaForm from './PecaForm';
 import MaterialOptions from './MaterialOptions';
 import MaoDeObraSection from './MaoDeObraSection';
+import AlertasOrcamento from './AlertasOrcamento';
 import {
-  Ambiente, PecaItem, MaterialOption, MaoDeObra, Instalacao, ServicoCustom,
+  Ambiente, PecaItem, MaterialOption, MaoDeObra, Instalacao,
   PECA_TIPOS, newPeca, newMaterialOption,
-  calcAmbienteArea, calcAmbienteLaborCost, calcAmbienteInstallCost, fmt,
+  calcAmbienteArea, calcAmbienteAreaCompra, calcAmbienteLaborCost,
+  calcAmbienteInstallCost, gerarAlertas, fmt,
 } from './types';
 
 interface Props {
@@ -23,9 +25,11 @@ interface Props {
 const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Props) => {
   const [collapsed, setCollapsed] = useState(false);
   const pecaTipos = PECA_TIPOS[ambiente.tipo] || PECA_TIPOS['Ambiente Personalizado'];
-  const area = calcAmbienteArea(ambiente);
+  const areaLiq = calcAmbienteArea(ambiente);
+  const areaCompra = calcAmbienteAreaCompra(ambiente);
   const laborCost = calcAmbienteLaborCost(ambiente);
   const installCost = calcAmbienteInstallCost(ambiente);
+  const alertas = gerarAlertas([{ ...ambiente, id: ambiente.id, tipo: ambiente.tipo, nomeCustom: ambiente.nomeCustom, pecas: ambiente.pecas, materialOptions: ambiente.materialOptions, maoDeObra: ambiente.maoDeObra, instalacao: ambiente.instalacao }]);
 
   const updatePeca = (pecaId: string, field: keyof PecaItem, value: any) => {
     onUpdate({
@@ -97,8 +101,10 @@ const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Prop
                 placeholder="Nome do ambiente"
               />
             )}
-            {area > 0 && (
-              <span className="text-[10px] text-muted-foreground">({fmt(area)} m²)</span>
+            {areaLiq > 0 && (
+              <span className="text-[10px] text-muted-foreground">
+                ({fmt(areaLiq)} m² líq. → {fmt(areaCompra)} m² compra)
+              </span>
             )}
           </div>
           <div className="flex items-center gap-1">
@@ -116,6 +122,9 @@ const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Prop
 
       {!collapsed && (
         <CardContent className="space-y-4">
+          {/* Alertas */}
+          <AlertasOrcamento alertas={alertas} />
+
           {/* Peças */}
           <div className="space-y-2">
             {ambiente.pecas.map(peca => (
@@ -153,7 +162,7 @@ const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Prop
           />
 
           {/* Subtotals */}
-          {area > 0 && (
+          {areaLiq > 0 && (
             <div className="bg-muted/50 rounded-md p-2 text-[11px] flex flex-wrap gap-3">
               <span>Serviços: <b>R$ {fmt(laborCost)}</b></span>
               <span>Instalação: <b>R$ {fmt(installCost)}</b></span>

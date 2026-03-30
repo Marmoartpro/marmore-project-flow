@@ -1,10 +1,14 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Plus } from 'lucide-react';
+import CubaEsculpidaFields from './CubaEsculpidaFields';
 import {
-  PecaItem, TIPO_CUBA, TIPO_REBAIXO, ACABAMENTO_BORDA,
-  BORDAS_COM_ACABAMENTO, FUROS_TORNEIRA, calcPecaArea, fmt,
+  PecaItem, CubaEsculpidaData, Abertura,
+  TIPO_CUBA, TIPO_REBAIXO, ACABAMENTO_BORDA,
+  BORDAS_COM_ACABAMENTO, FUROS_TORNEIRA, FORMATOS_PECA, PADROES_PISO,
+  calcPecaAreaLiquida, calcPecaAreaCompra, calcMetrosLinearesBorda,
+  calcCubaEsculpida, fmt, newAbertura,
 } from './types';
 
 interface Props {
@@ -17,18 +21,48 @@ interface Props {
 }
 
 const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove }: Props) => {
-  const area = calcPecaArea(peca);
-  const showCuba = ['Bancada', 'Lavatório', 'Bancada de Banheiro', 'Bancada Tanque'].includes(peca.tipo);
-  const showRebaixo = ['Bancada', 'Bancada de Banheiro'].includes(peca.tipo);
-  const showBorda = ['Bancada', 'Lavatório', 'Bancada de Banheiro', 'Soleira', 'Borda de Piscina', 'Escada/Degrau'].includes(peca.tipo);
-  const showFuros = ['Bancada', 'Lavatório', 'Bancada de Banheiro'].includes(peca.tipo);
-  const showBacksplash = ['Bancada', 'Bancada de Banheiro', 'Lavatório', 'Bancada Tanque'].includes(peca.tipo);
-  const showCooktop = peca.tipo === 'Bancada';
-  const showIlhargas = ['Bancada', 'Bancada de Banheiro', 'Bancada Tanque', 'Lavatório'].includes(peca.tipo);
-  const isPiscina = peca.tipo === 'Borda de Piscina' || peca.tipo === 'Escada/Degrau';
+  const areaLiq = calcPecaAreaLiquida(peca);
+  const areaCompra = calcPecaAreaCompra(peca);
+  const mlBorda = calcMetrosLinearesBorda(peca);
+
+  const is = (...tipos: string[]) => tipos.includes(peca.tipo);
+  const showCuba = is('Bancada', 'Lavatório', 'Bancada de Banheiro', 'Bancada Tanque', 'Ilha Gourmet');
+  const showRebaixo = is('Bancada', 'Bancada de Banheiro', 'Ilha Gourmet');
+  const showBorda = is('Bancada', 'Lavatório', 'Bancada de Banheiro', 'Soleira', 'Borda de Piscina', 'Escada/Degrau', 'Peitoril', 'Tampo de Mesa', 'Ilha Gourmet');
+  const showFuros = is('Bancada', 'Lavatório', 'Bancada de Banheiro', 'Ilha Gourmet');
+  const showBacksplash = is('Bancada', 'Bancada de Banheiro', 'Lavatório', 'Bancada Tanque', 'Ilha Gourmet');
+  const showCooktop = is('Bancada', 'Ilha Gourmet');
+  const showIlhargas = is('Bancada', 'Bancada de Banheiro', 'Bancada Tanque', 'Lavatório', 'Ilha Gourmet');
+  const isPiscina = is('Borda de Piscina');
+  const isEscada = is('Escada/Degrau');
+  const isSoleira = is('Soleira');
+  const isPeitoril = is('Peitoril');
+  const isRodape = is('Rodapé/Filete');
+  const isRevestimento = is('Revestimento de Parede');
+  const isPiso = is('Piso');
+  const isTampo = is('Tampo de Mesa');
+  const isNicho = is('Nicho Embutido');
+  const isBox = is('Box - Piso');
+  const showFormato = is('Tampo de Mesa', 'Peça Personalizada', 'Piso');
+  const showPrateleira = is('Lavatório', 'Bancada de Banheiro');
+
+  const handleCubaEsculpidaChange = (field: keyof CubaEsculpidaData, value: string) => {
+    onChange('cubaEsculpida', { ...peca.cubaEsculpida, [field]: value });
+  };
+
+  const addAbertura = () => {
+    onChange('aberturas', [...(peca.aberturas || []), newAbertura()]);
+  };
+  const removeAbertura = (id: string) => {
+    onChange('aberturas', (peca.aberturas || []).filter(a => a.id !== id));
+  };
+  const updateAbertura = (id: string, field: keyof Abertura, value: string) => {
+    onChange('aberturas', (peca.aberturas || []).map(a => a.id === id ? { ...a, [field]: value } : a));
+  };
 
   return (
     <div className="border border-border rounded-md p-3 space-y-3">
+      {/* Header row */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div>
@@ -38,30 +72,142 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
               {pecaTipos.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
-          <div>
-            <Label className="text-[10px]">Larg. (m)</Label>
-            <Input type="number" step="0.01" value={peca.largura} onChange={e => onChange('largura', e.target.value)} className="h-8 text-xs" />
-          </div>
-          <div>
-            <Label className="text-[10px]">Comp. (m)</Label>
-            <Input type="number" step="0.01" value={peca.comprimento} onChange={e => onChange('comprimento', e.target.value)} className="h-8 text-xs" />
-          </div>
+          {showFormato && (
+            <div>
+              <Label className="text-[10px]">Formato</Label>
+              <select value={peca.formato} onChange={e => onChange('formato', e.target.value)}
+                className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
+                {FORMATOS_PECA.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+              </select>
+            </div>
+          )}
+
+          {/* Dimensions based on format */}
+          {peca.formato === 'redondo' ? (
+            <div>
+              <Label className="text-[10px]">Raio (cm)</Label>
+              <Input type="number" step="0.1" value={peca.raio}
+                onChange={e => onChange('raio', e.target.value)} className="h-8 text-xs" />
+            </div>
+          ) : peca.formato === 'semicircular' || peca.formato === 'setor_circular' ? (
+            <>
+              <div>
+                <Label className="text-[10px]">Raio (cm)</Label>
+                <Input type="number" step="0.1" value={peca.raio}
+                  onChange={e => onChange('raio', e.target.value)} className="h-8 text-xs" />
+              </div>
+              {peca.formato === 'setor_circular' && (
+                <div>
+                  <Label className="text-[10px]">Ângulo (°)</Label>
+                  <Input type="number" step="1" value={peca.angulo}
+                    onChange={e => onChange('angulo', e.target.value)} className="h-8 text-xs" />
+                </div>
+              )}
+            </>
+          ) : peca.formato === 'triangular' ? (
+            <>
+              <div>
+                <Label className="text-[10px]">Base (cm)</Label>
+                <Input type="number" step="0.1" value={peca.comprimento}
+                  onChange={e => onChange('comprimento', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Altura (cm)</Label>
+                <Input type="number" step="0.1" value={peca.alturaForma}
+                  onChange={e => onChange('alturaForma', e.target.value)} className="h-8 text-xs" />
+              </div>
+            </>
+          ) : peca.formato === 'trapezoidal' ? (
+            <>
+              <div>
+                <Label className="text-[10px]">Base maior (cm)</Label>
+                <Input type="number" step="0.1" value={peca.baseMaior}
+                  onChange={e => onChange('baseMaior', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Base menor (cm)</Label>
+                <Input type="number" step="0.1" value={peca.baseMenor}
+                  onChange={e => onChange('baseMenor', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Altura (cm)</Label>
+                <Input type="number" step="0.1" value={peca.alturaForma}
+                  onChange={e => onChange('alturaForma', e.target.value)} className="h-8 text-xs" />
+              </div>
+            </>
+          ) : peca.formato === 'irregular' ? (
+            <div>
+              <Label className="text-[10px]">Área manual (cm²)</Label>
+              <Input type="number" step="1" value={peca.areaManualCm2}
+                onChange={e => onChange('areaManualCm2', e.target.value)} className="h-8 text-xs" />
+            </div>
+          ) : (
+            <>
+              <div>
+                <Label className="text-[10px]">Larg. (cm)</Label>
+                <Input type="number" step="0.1" value={peca.largura}
+                  onChange={e => onChange('largura', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Comp. (cm)</Label>
+                <Input type="number" step="0.1" value={peca.comprimento}
+                  onChange={e => onChange('comprimento', e.target.value)} className="h-8 text-xs" />
+              </div>
+            </>
+          )}
+
           <div>
             <Label className="text-[10px]">Qtd</Label>
-            <Input type="number" min="1" value={peca.quantidade} onChange={e => onChange('quantidade', e.target.value)} className="h-8 text-xs" />
+            <Input type="number" min="1" value={peca.quantidade}
+              onChange={e => onChange('quantidade', e.target.value)} className="h-8 text-xs" />
           </div>
         </div>
         {canRemove && (
-          <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0 mt-4" onClick={onRemove}>
+          <Button size="icon" variant="ghost"
+            className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0 mt-4"
+            onClick={onRemove}>
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
         )}
       </div>
 
+      {/* L-Shape second segment */}
+      {peca.formato === 'l_shape' && (
+        <div className="grid grid-cols-2 gap-2 bg-muted/30 rounded-md p-2">
+          <div className="col-span-2 text-[10px] font-medium text-muted-foreground">Trecho 2 do L:</div>
+          <div>
+            <Label className="text-[10px]">Larg. trecho 2 (cm)</Label>
+            <Input type="number" step="0.1" value={peca.lTrecho2Largura}
+              onChange={e => onChange('lTrecho2Largura', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Comp. trecho 2 (cm)</Label>
+            <Input type="number" step="0.1" value={peca.lTrecho2Comprimento}
+              onChange={e => onChange('lTrecho2Comprimento', e.target.value)} className="h-8 text-xs" />
+          </div>
+        </div>
+      )}
+
+      {/* Descrição */}
       <div>
         <Label className="text-[10px]">Descrição</Label>
-        <Input value={peca.descricao} onChange={e => onChange('descricao', e.target.value)} className="h-8 text-xs" placeholder="Descrição opcional da peça" />
+        <Input value={peca.descricao} onChange={e => onChange('descricao', e.target.value)}
+          className="h-8 text-xs" placeholder="Descrição opcional da peça" />
       </div>
+
+      {/* Soleira/Peitoril method */}
+      {(isSoleira || isPeitoril) && (
+        <div className="flex gap-4 text-xs">
+          <label className="flex items-center gap-1">
+            <input type="radio" name={`calc-${peca.id}`} checked={peca.metodoCalculo === 'area'}
+              onChange={() => onChange('metodoCalculo', 'area')} /> Por área (m²)
+          </label>
+          <label className="flex items-center gap-1">
+            <input type="radio" name={`calc-${peca.id}`} checked={peca.metodoCalculo === 'ml'}
+              onChange={() => onChange('metodoCalculo', 'ml')} /> Por metro linear
+          </label>
+        </div>
+      )}
 
       {/* Technical details */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -74,15 +220,16 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
                 {TIPO_CUBA.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
-            {peca.tipoCuba !== 'Sem cuba' && (
+            {peca.tipoCuba !== 'Sem cuba' && peca.tipoCuba !== 'Cuba esculpida' && (
               <div>
                 <Label className="text-[10px]">Valor cuba (R$)</Label>
-                <Input type="number" step="0.01" value={peca.valorCuba} onChange={e => onChange('valorCuba', e.target.value)}
-                  className="h-8 text-xs" placeholder="0,00" />
+                <Input type="number" step="0.01" value={peca.valorCuba}
+                  onChange={e => onChange('valorCuba', e.target.value)} className="h-8 text-xs" />
               </div>
             )}
           </>
         )}
+
         {showRebaixo && (
           <>
             <div>
@@ -93,14 +240,27 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
               </select>
             </div>
             {peca.tipoRebaixo !== 'Sem rebaixo' && (
-              <div>
-                <Label className="text-[10px]">Valor rebaixo (R$)</Label>
-                <Input type="number" step="0.01" value={peca.valorRebaixo} onChange={e => onChange('valorRebaixo', e.target.value)}
-                  className="h-8 text-xs" placeholder="0,00" />
-              </div>
+              <>
+                <div>
+                  <Label className="text-[10px]">Valor rebaixo (R$)</Label>
+                  <Input type="number" step="0.01" value={peca.valorRebaixo}
+                    onChange={e => onChange('valorRebaixo', e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-[10px]">Comp. rebaixo (cm)</Label>
+                  <Input type="number" step="0.1" value={peca.rebaixoComprimento}
+                    onChange={e => onChange('rebaixoComprimento', e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-[10px]">Larg. rebaixo (cm)</Label>
+                  <Input type="number" step="0.1" value={peca.rebaixoLargura}
+                    onChange={e => onChange('rebaixoLargura', e.target.value)} className="h-8 text-xs" />
+                </div>
+              </>
             )}
           </>
         )}
+
         {showBorda && (
           <>
             <div>
@@ -119,80 +279,611 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
             </div>
             {(isPiscina || peca.acabamentoBorda !== 'Reto') && (
               <div>
-                <Label className="text-[10px]">Valor acabamento (R$/m)</Label>
-                <Input type="number" step="0.01" value={peca.valorAcabamentoBorda} onChange={e => onChange('valorAcabamentoBorda', e.target.value)}
-                  className="h-8 text-xs" placeholder="0,00" />
+                <Label className="text-[10px]">Valor acab. (R$/m)</Label>
+                <Input type="number" step="0.01" value={peca.valorAcabamentoBorda}
+                  onChange={e => onChange('valorAcabamentoBorda', e.target.value)} className="h-8 text-xs" />
               </div>
             )}
           </>
         )}
+
         {showFuros && (
-          <div>
-            <Label className="text-[10px]">Furos torneira</Label>
-            <select value={peca.furosTorneira} onChange={e => onChange('furosTorneira', e.target.value)}
-              className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
-              {FUROS_TORNEIRA.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
+          <>
+            <div>
+              <Label className="text-[10px]">Furos torneira</Label>
+              <select value={peca.furosTorneira} onChange={e => onChange('furosTorneira', e.target.value)}
+                className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
+                {FUROS_TORNEIRA.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            {peca.furosTorneira !== 'Nenhum' && (
+              <div>
+                <Label className="text-[10px]">Valor/furo (R$)</Label>
+                <Input type="number" step="0.01" value={peca.valorFuroTorneira}
+                  onChange={e => onChange('valorFuroTorneira', e.target.value)} className="h-8 text-xs" />
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Backsplash & Saia */}
+      {/* Cuba esculpida details */}
+      {peca.tipoCuba === 'Cuba esculpida' && showCuba && (
+        <CubaEsculpidaFields data={peca.cubaEsculpida} onChange={handleCubaEsculpidaChange} />
+      )}
+      {peca.tipoCuba === 'Cuba esculpida' && (
+        <div>
+          <Label className="text-[10px]">Valor total escultura (R$)</Label>
+          <Input type="number" step="0.01" value={peca.valorCuba}
+            onChange={e => onChange('valorCuba', e.target.value)} className="h-8 text-xs" />
+        </div>
+      )}
+
+      {/* Cuba dimensions for embutir/undermount */}
+      {['Cuba de embutir', 'Cuba colada por baixo (undermount)', 'Cuba sobreposta', 'Cuba flush'].includes(peca.tipoCuba) && showCuba && (
+        <div className="grid grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
+          <div className="col-span-3 text-[10px] font-medium text-muted-foreground">Dimensões da cuba (para cálculo de recorte):</div>
+          <div>
+            <Label className="text-[10px]">Comp. cuba (cm)</Label>
+            <Input type="number" step="0.1" value={peca.cubaEsculpida.compExterno}
+              onChange={e => handleCubaEsculpidaChange('compExterno', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Larg. cuba (cm)</Label>
+            <Input type="number" step="0.1" value={peca.cubaEsculpida.largExterno}
+              onChange={e => handleCubaEsculpidaChange('largExterno', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Qtd cubas</Label>
+            <Input type="number" min="1" max="4" value={peca.cubaEsculpida.quantidade}
+              onChange={e => handleCubaEsculpidaChange('quantidade', e.target.value)} className="h-8 text-xs" />
+          </div>
+        </div>
+      )}
+
+      {/* Backsplash, Saia, Cooktop, Ilhargas checkboxes */}
       <div className="flex flex-wrap gap-4 text-xs">
         {showBacksplash && (
           <label className="flex items-center gap-2">
-            <input type="checkbox" checked={peca.espelhoBacksplash} onChange={e => onChange('espelhoBacksplash', e.target.checked)} />
+            <input type="checkbox" checked={peca.espelhoBacksplash}
+              onChange={e => onChange('espelhoBacksplash', e.target.checked)} />
             Espelho (backsplash)
             {peca.espelhoBacksplash && (
-              <Input type="number" step="0.01" value={peca.espelhoBacksplashAltura} onChange={e => onChange('espelhoBacksplashAltura', e.target.value)}
+              <Input type="number" step="0.1" value={peca.espelhoBacksplashAltura}
+                onChange={e => onChange('espelhoBacksplashAltura', e.target.value)}
                 className="h-6 w-16 text-xs ml-1" placeholder="Alt. cm" />
             )}
           </label>
         )}
         <label className="flex items-center gap-2">
-          <input type="checkbox" checked={peca.saiaFrontal} onChange={e => onChange('saiaFrontal', e.target.checked)} />
+          <input type="checkbox" checked={peca.saiaFrontal}
+            onChange={e => onChange('saiaFrontal', e.target.checked)} />
           Saia frontal
           {peca.saiaFrontal && (
-            <Input type="number" step="0.01" value={peca.saiaFrontalAltura} onChange={e => onChange('saiaFrontalAltura', e.target.value)}
+            <Input type="number" step="0.1" value={peca.saiaFrontalAltura}
+              onChange={e => onChange('saiaFrontalAltura', e.target.value)}
               className="h-6 w-16 text-xs ml-1" placeholder="Alt. cm" />
           )}
         </label>
         {showCooktop && (
           <label className="flex items-center gap-2">
-            <input type="checkbox" checked={peca.rebaixoCooktop} onChange={e => onChange('rebaixoCooktop', e.target.checked)} />
-            Rebaixo cooktop
+            <input type="checkbox" checked={peca.rebaixoCooktop}
+              onChange={e => onChange('rebaixoCooktop', e.target.checked)} />
+            Recorte cooktop
           </label>
         )}
         {showIlhargas && (
           <label className="flex items-center gap-2">
-            <input type="checkbox" checked={peca.ilhargas} onChange={e => onChange('ilhargas', e.target.checked)} />
+            <input type="checkbox" checked={peca.ilhargas}
+              onChange={e => onChange('ilhargas', e.target.checked)} />
             Ilhargas / pés revestidos
           </label>
         )}
+        {showPrateleira && (
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={peca.prateleira}
+              onChange={e => onChange('prateleira', e.target.checked)} />
+            Prateleira inferior
+          </label>
+        )}
       </div>
+
+      {/* Cooktop dimensions */}
+      {peca.rebaixoCooktop && showCooktop && (
+        <div className="grid grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
+          <div>
+            <Label className="text-[10px]">Larg. cooktop (cm)</Label>
+            <Input type="number" step="0.1" value={peca.rebaixoCooktopLargura}
+              onChange={e => onChange('rebaixoCooktopLargura', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Comp. cooktop (cm)</Label>
+            <Input type="number" step="0.1" value={peca.rebaixoCooktopComprimento}
+              onChange={e => onChange('rebaixoCooktopComprimento', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Valor recorte (R$)</Label>
+            <Input type="number" step="0.01" value={peca.valorRecorteCooktop}
+              onChange={e => onChange('valorRecorteCooktop', e.target.value)} className="h-8 text-xs" />
+          </div>
+        </div>
+      )}
 
       {/* Ilhargas details */}
       {peca.ilhargas && showIlhargas && (
         <div className="grid grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
           <div>
             <Label className="text-[10px]">Qtd ilhargas</Label>
-            <Input type="number" min="1" value={peca.ilhargasQtd} onChange={e => onChange('ilhargasQtd', e.target.value)} className="h-8 text-xs" />
+            <Input type="number" min="1" value={peca.ilhargasQtd}
+              onChange={e => onChange('ilhargasQtd', e.target.value)} className="h-8 text-xs" />
           </div>
           <div>
             <Label className="text-[10px]">Altura (cm)</Label>
-            <Input type="number" step="0.1" value={peca.ilhargasAltura} onChange={e => onChange('ilhargasAltura', e.target.value)} className="h-8 text-xs" placeholder="Ex: 80" />
+            <Input type="number" step="0.1" value={peca.ilhargasAltura}
+              onChange={e => onChange('ilhargasAltura', e.target.value)} className="h-8 text-xs" />
           </div>
           <div>
             <Label className="text-[10px]">Largura (cm)</Label>
-            <Input type="number" step="0.1" value={peca.ilhargasLargura} onChange={e => onChange('ilhargasLargura', e.target.value)} className="h-8 text-xs" placeholder="Ex: 60" />
+            <Input type="number" step="0.1" value={peca.ilhargasLargura}
+              onChange={e => onChange('ilhargasLargura', e.target.value)} className="h-8 text-xs" />
           </div>
         </div>
       )}
 
-      {area > 0 && (
-        <div className="text-[11px] text-muted-foreground flex gap-3">
-          <span>Área: {fmt(area)} m²</span>
-          <span>+10%: {fmt(area * 1.1)} m²</span>
+      {/* Prateleira inferior */}
+      {peca.prateleira && showPrateleira && (
+        <div className="grid grid-cols-2 gap-2 bg-muted/30 rounded-md p-2">
+          <div>
+            <Label className="text-[10px]">Larg. prateleira (cm)</Label>
+            <Input type="number" step="0.1" value={peca.prateleiraLargura}
+              onChange={e => onChange('prateleiraLargura', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Comp. prateleira (cm)</Label>
+            <Input type="number" step="0.1" value={peca.prateleiraComprimento}
+              onChange={e => onChange('prateleiraComprimento', e.target.value)} className="h-8 text-xs" />
+          </div>
+        </div>
+      )}
+
+      {/* ═══ PISCINA ═══ */}
+      {isPiscina && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-blue-50 dark:bg-blue-950/20 rounded-md p-2">
+          <div className="col-span-full text-[10px] font-medium text-muted-foreground">Detalhes Piscina:</div>
+          <div>
+            <Label className="text-[10px]">Cantos internos (90°)</Label>
+            <Input type="number" min="0" value={peca.cantosInternos}
+              onChange={e => onChange('cantosInternos', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">R$/canto interno</Label>
+            <Input type="number" step="0.01" value={peca.valorCantoInterno}
+              onChange={e => onChange('valorCantoInterno', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Cantos externos (90°)</Label>
+            <Input type="number" min="0" value={peca.cantosExternos}
+              onChange={e => onChange('cantosExternos', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">R$/canto externo</Label>
+            <Input type="number" step="0.01" value={peca.valorCantoExterno}
+              onChange={e => onChange('valorCantoExterno', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Prof. submersa (cm)</Label>
+            <Input type="number" step="0.1" value={peca.profundidadeSubmersa}
+              onChange={e => onChange('profundidadeSubmersa', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div className="col-span-full flex items-center gap-2">
+            <label className="text-[10px] flex items-center gap-1">
+              <input type="checkbox" checked={peca.canaletaEscoamento}
+                onChange={e => onChange('canaletaEscoamento', e.target.checked)} />
+              Canaleta de escoamento
+            </label>
+          </div>
+          {peca.canaletaEscoamento && (
+            <>
+              <div>
+                <Label className="text-[10px]">Metros canaleta</Label>
+                <Input type="number" step="0.1" value={peca.canaletaMetros}
+                  onChange={e => onChange('canaletaMetros', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">R$/metro canaleta</Label>
+                <Input type="number" step="0.01" value={peca.valorCanaletaMetro}
+                  onChange={e => onChange('valorCanaletaMetro', e.target.value)} className="h-8 text-xs" />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ═══ ESCADA ═══ */}
+      {isEscada && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
+          <div className="col-span-full text-[10px] font-medium text-muted-foreground">Detalhes Escada/Degrau:</div>
+          <div>
+            <Label className="text-[10px]">Altura espelho (cm)</Label>
+            <Input type="number" step="0.1" value={peca.alturaEspelho}
+              onChange={e => onChange('alturaEspelho', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div className="col-span-full flex flex-wrap gap-4">
+            <label className="text-[10px] flex items-center gap-1">
+              <input type="checkbox" checked={peca.frisosAntiderrapante}
+                onChange={e => onChange('frisosAntiderrapante', e.target.checked)} />
+              Frisos antiderrapante
+            </label>
+          </div>
+          {peca.frisosAntiderrapante && (
+            <>
+              <div>
+                <Label className="text-[10px]">Frisos/degrau</Label>
+                <Input type="number" min="1" value={peca.qtdFrisosPorDegrau}
+                  onChange={e => onChange('qtdFrisosPorDegrau', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">R$/metro friso</Label>
+                <Input type="number" step="0.01" value={peca.valorFrisoMetro}
+                  onChange={e => onChange('valorFrisoMetro', e.target.value)} className="h-8 text-xs" />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ═══ SOLEIRA / PEITORIL extras ═══ */}
+      {(isSoleira || isPeitoril) && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
+          <div>
+            <Label className="text-[10px]">Boleado (lados)</Label>
+            <select value={peca.boleadoLados} onChange={e => onChange('boleadoLados', e.target.value)}
+              className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
+              <option value="0">Sem boleado</option>
+              <option value="1">1 lado</option>
+              <option value="2">2 lados</option>
+            </select>
+          </div>
+          {parseInt(peca.boleadoLados) > 0 && (
+            <div>
+              <Label className="text-[10px]">R$/metro boleado</Label>
+              <Input type="number" step="0.01" value={peca.valorBoleadoMetro}
+                onChange={e => onChange('valorBoleadoMetro', e.target.value)} className="h-8 text-xs" />
+            </div>
+          )}
+          {isPeitoril && (
+            <>
+              <div className="col-span-full flex items-center gap-4">
+                <label className="text-[10px] flex items-center gap-1">
+                  <input type="checkbox" checked={peca.pingadeira}
+                    onChange={e => onChange('pingadeira', e.target.checked)} />
+                  Pingadeira
+                </label>
+              </div>
+              {peca.pingadeira && (
+                <div>
+                  <Label className="text-[10px]">R$/metro pingadeira</Label>
+                  <Input type="number" step="0.01" value={peca.valorPingadeiraMetro}
+                    onChange={e => onChange('valorPingadeiraMetro', e.target.value)} className="h-8 text-xs" />
+                </div>
+              )}
+            </>
+          )}
+          {isSoleira && (
+            <>
+              <div className="col-span-full flex items-center gap-4">
+                <label className="text-[10px] flex items-center gap-1">
+                  <input type="checkbox" checked={peca.encaixePorta}
+                    onChange={e => onChange('encaixePorta', e.target.checked)} />
+                  Encaixe em porta
+                </label>
+              </div>
+              {peca.encaixePorta && (
+                <>
+                  <div>
+                    <Label className="text-[10px]">Prof. encaixe (cm)</Label>
+                    <Input type="number" step="0.1" value={peca.profundidadeEncaixe}
+                      onChange={e => onChange('profundidadeEncaixe', e.target.value)} className="h-8 text-xs" />
+                  </div>
+                  <div>
+                    <Label className="text-[10px]">Valor encaixe (R$)</Label>
+                    <Input type="number" step="0.01" value={peca.valorEncaixe}
+                      onChange={e => onChange('valorEncaixe', e.target.value)} className="h-8 text-xs" />
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ═══ RODAPÉ ═══ */}
+      {isRodape && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
+          <div>
+            <Label className="text-[10px]">Cantos internos</Label>
+            <Input type="number" min="0" value={peca.rodapeCantosInternos}
+              onChange={e => onChange('rodapeCantosInternos', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Cantos externos</Label>
+            <Input type="number" min="0" value={peca.rodapeCantosExternos}
+              onChange={e => onChange('rodapeCantosExternos', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">R$/canto</Label>
+            <Input type="number" step="0.01" value={peca.valorCantoRodape}
+              onChange={e => onChange('valorCantoRodape', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Acab. superior (R$/m)</Label>
+            <Input type="number" step="0.01" value={peca.valorAcabSuperior}
+              onChange={e => onChange('valorAcabSuperior', e.target.value)} className="h-8 text-xs" />
+          </div>
+        </div>
+      )}
+
+      {/* ═══ REVESTIMENTO ═══ */}
+      {isRevestimento && (
+        <div className="space-y-2 bg-muted/30 rounded-md p-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-medium text-muted-foreground">Aberturas (janelas, portas) a descontar:</span>
+            <Button size="sm" variant="outline" className="h-6 text-[10px]" onClick={addAbertura}>
+              <Plus className="w-3 h-3 mr-1" /> Abertura
+            </Button>
+          </div>
+          {(peca.aberturas || []).map(ab => (
+            <div key={ab.id} className="flex items-center gap-2">
+              <Input value={ab.descricao} onChange={e => updateAbertura(ab.id, 'descricao', e.target.value)}
+                className="h-7 text-xs flex-1" placeholder="Ex: Janela" />
+              <Input type="number" step="0.1" value={ab.largura}
+                onChange={e => updateAbertura(ab.id, 'largura', e.target.value)}
+                className="h-7 text-xs w-20" placeholder="Larg cm" />
+              <Input type="number" step="0.1" value={ab.altura}
+                onChange={e => updateAbertura(ab.id, 'altura', e.target.value)}
+                className="h-7 text-xs w-20" placeholder="Alt cm" />
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => removeAbertura(ab.id)}>
+                <Trash2 className="w-3 h-3 text-muted-foreground" />
+              </Button>
+            </div>
+          ))}
+          <label className="text-[10px] flex items-center gap-1">
+            <input type="checkbox" checked={peca.painelRipado}
+              onChange={e => onChange('painelRipado', e.target.checked)} />
+            Painel ripado / recortes decorativos
+          </label>
+          {peca.painelRipado && (
+            <div>
+              <Label className="text-[10px]">Valor serviço recortes (R$)</Label>
+              <Input type="number" step="0.01" value={peca.valorRecorteDecorat}
+                onChange={e => onChange('valorRecorteDecorat', e.target.value)} className="h-8 text-xs" />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ PISO ═══ */}
+      {isPiso && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
+          <div>
+            <Label className="text-[10px]">Padrão do piso</Label>
+            <select value={peca.padraoPiso} onChange={e => onChange('padraoPiso', e.target.value)}
+              className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
+              {PADROES_PISO.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+            </select>
+          </div>
+          <div className="col-span-full flex items-center gap-4">
+            <label className="text-[10px] flex items-center gap-1">
+              <input type="checkbox" checked={peca.rodapeIntegrado}
+                onChange={e => onChange('rodapeIntegrado', e.target.checked)} />
+              Rodapé integrado
+            </label>
+          </div>
+          {peca.rodapeIntegrado && (
+            <>
+              <div>
+                <Label className="text-[10px]">Perímetro ambiente (cm)</Label>
+                <Input type="number" step="1" value={peca.perimetroAmbiente}
+                  onChange={e => onChange('perimetroAmbiente', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Largura portas (cm)</Label>
+                <Input type="number" step="1" value={peca.larguraPortas}
+                  onChange={e => onChange('larguraPortas', e.target.value)} className="h-8 text-xs" />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ═══ TAMPO DE MESA ═══ */}
+      {isTampo && (
+        <div className="grid grid-cols-2 gap-2 bg-muted/30 rounded-md p-2">
+          <label className="text-[10px] flex items-center gap-1 col-span-full">
+            <input type="checkbox" checked={peca.furoColuna}
+              onChange={e => onChange('furoColuna', e.target.checked)} />
+            Furo central para coluna
+          </label>
+          {peca.furoColuna && (
+            <>
+              <div>
+                <Label className="text-[10px]">Diâmetro furo (cm)</Label>
+                <Input type="number" step="0.1" value={peca.diametroFuro}
+                  onChange={e => onChange('diametroFuro', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Valor serviço (R$)</Label>
+                <Input type="number" step="0.01" value={peca.valorFuroColuna}
+                  onChange={e => onChange('valorFuroColuna', e.target.value)} className="h-8 text-xs" />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ═══ NICHO EMBUTIDO ═══ */}
+      {isNicho && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
+          <div className="col-span-full text-[10px] font-medium text-muted-foreground">
+            Larg e Comp acima = largura e altura do fundo. Profundidade abaixo:
+          </div>
+          <div>
+            <Label className="text-[10px]">Profundidade (cm)</Label>
+            <Input type="number" step="0.1" value={peca.nichoProfundidade}
+              onChange={e => onChange('nichoProfundidade', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Prateleiras internas</Label>
+            <Input type="number" min="0" value={peca.nichoQtdPrateleiras}
+              onChange={e => onChange('nichoQtdPrateleiras', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Valor serviço/nicho (R$)</Label>
+            <Input type="number" step="0.01" value={peca.valorServicoNicho}
+              onChange={e => onChange('valorServicoNicho', e.target.value)} className="h-8 text-xs" />
+          </div>
+        </div>
+      )}
+
+      {/* ═══ BOX BANHEIRO ═══ */}
+      {isBox && (
+        <div className="space-y-2 bg-muted/30 rounded-md p-2">
+          <div className="text-[10px] font-medium text-muted-foreground">Detalhes do Box:</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div>
+              <Label className="text-[10px]">Paredes revestidas</Label>
+              <select value={peca.paredesBox} onChange={e => onChange('paredesBox', e.target.value)}
+                className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
+                <option value="0">Nenhuma</option>
+                <option value="1">1 parede</option>
+                <option value="2">2 paredes</option>
+                <option value="3">3 paredes</option>
+              </select>
+            </div>
+            {parseInt(peca.paredesBox) > 0 && (
+              <>
+                <div>
+                  <Label className="text-[10px]">Altura paredes (cm)</Label>
+                  <Input type="number" step="0.1" value={peca.alturaParede}
+                    onChange={e => onChange('alturaParede', e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-[10px]">Larg. parede 1 (cm)</Label>
+                  <Input type="number" step="0.1" value={peca.larguraParede1}
+                    onChange={e => onChange('larguraParede1', e.target.value)} className="h-8 text-xs" />
+                </div>
+                {parseInt(peca.paredesBox) >= 2 && (
+                  <div>
+                    <Label className="text-[10px]">Larg. parede 2 (cm)</Label>
+                    <Input type="number" step="0.1" value={peca.larguraParede2}
+                      onChange={e => onChange('larguraParede2', e.target.value)} className="h-8 text-xs" />
+                  </div>
+                )}
+                {parseInt(peca.paredesBox) >= 3 && (
+                  <div>
+                    <Label className="text-[10px]">Larg. parede 3 (cm)</Label>
+                    <Input type="number" step="0.1" value={peca.larguraParede3}
+                      onChange={e => onChange('larguraParede3', e.target.value)} className="h-8 text-xs" />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-4">
+            <label className="text-[10px] flex items-center gap-1">
+              <input type="checkbox" checked={peca.bancoBox}
+                onChange={e => onChange('bancoBox', e.target.checked)} />
+              Banco/assento no box
+            </label>
+            <label className="text-[10px] flex items-center gap-1">
+              <input type="checkbox" checked={peca.raloLinear}
+                onChange={e => onChange('raloLinear', e.target.checked)} />
+              Ralo linear esculpido
+            </label>
+          </div>
+
+          {peca.bancoBox && (
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <Label className="text-[10px]">Larg. banco (cm)</Label>
+                <Input type="number" step="0.1" value={peca.bancoLargura}
+                  onChange={e => onChange('bancoLargura', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Comp. banco (cm)</Label>
+                <Input type="number" step="0.1" value={peca.bancoComprimento}
+                  onChange={e => onChange('bancoComprimento', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Altura banco (cm)</Label>
+                <Input type="number" step="0.1" value={peca.bancoAltura}
+                  onChange={e => onChange('bancoAltura', e.target.value)} className="h-8 text-xs" />
+              </div>
+            </div>
+          )}
+
+          {peca.raloLinear && (
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <Label className="text-[10px]">Comp. ralo (cm)</Label>
+                <Input type="number" step="0.1" value={peca.raloComprimento}
+                  onChange={e => onChange('raloComprimento', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Larg. canal (cm)</Label>
+                <Input type="number" step="0.1" value={peca.raloLargura}
+                  onChange={e => onChange('raloLargura', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Valor serviço (R$)</Label>
+                <Input type="number" step="0.01" value={peca.valorServicoRalo}
+                  onChange={e => onChange('valorServicoRalo', e.target.value)} className="h-8 text-xs" />
+              </div>
+            </div>
+          )}
+
+          {/* Nicho no box */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div>
+              <Label className="text-[10px]">Nichos no box</Label>
+              <Input type="number" min="0" value={peca.nichoBoxQtd}
+                onChange={e => onChange('nichoBoxQtd', e.target.value)} className="h-8 text-xs" />
+            </div>
+            {(parseInt(peca.nichoBoxQtd) || 0) > 0 && (
+              <>
+                <div>
+                  <Label className="text-[10px]">Larg. nicho (cm)</Label>
+                  <Input type="number" step="0.1" value={peca.nichoBoxLargura}
+                    onChange={e => onChange('nichoBoxLargura', e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-[10px]">Alt. nicho (cm)</Label>
+                  <Input type="number" step="0.1" value={peca.nichoBoxAltura}
+                    onChange={e => onChange('nichoBoxAltura', e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-[10px]">Prof. nicho (cm)</Label>
+                  <Input type="number" step="0.1" value={peca.nichoBoxProfundidade}
+                    onChange={e => onChange('nichoBoxProfundidade', e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-[10px]">R$/nicho serviço</Label>
+                  <Input type="number" step="0.01" value={peca.valorServicoNichoBox}
+                    onChange={e => onChange('valorServicoNichoBox', e.target.value)} className="h-8 text-xs" />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ AREA SUMMARY ═══ */}
+      {areaLiq > 0 && (
+        <div className="text-[11px] text-muted-foreground flex flex-wrap gap-3 bg-primary/5 rounded-md p-2">
+          <span className="font-medium">m² líquido: <b className="text-foreground">{fmt(areaLiq)}</b></span>
+          <span className="font-medium">m² compra (+desp.): <b className="text-primary">{fmt(areaCompra)}</b></span>
+          {mlBorda > 0 && <span>Borda: <b>{fmt(mlBorda)} ml</b></span>}
         </div>
       )}
     </div>
