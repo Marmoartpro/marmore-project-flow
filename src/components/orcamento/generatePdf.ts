@@ -53,51 +53,78 @@ const loadImage = (url: string): Promise<string | null> => {
   });
 };
 
-/** Build detailed description for a piece */
+/** Build detailed, client-friendly description for a piece */
 const buildPecaDescricao = (p: any): string => {
   const wCm = Math.round((parseFloat(p.largura) || 0) * 100);
   const lCm = Math.round((parseFloat(p.comprimento) || 0) * 100);
   const q = parseInt(p.quantidade) || 1;
+  const area = ((parseFloat(p.largura) || 0) * (parseFloat(p.comprimento) || 0) * q);
   const lines: string[] = [];
   lines.push(`${p.tipo}`);
-  lines.push(`Medidas: ${lCm} × ${wCm} cm`);
+  lines.push(`Dimensões: ${lCm} cm (comp.) × ${wCm} cm (larg.)`);
   if (q > 1) lines.push(`Quantidade: ${q} unidades`);
-  if (p.descricao) lines.push(p.descricao);
+  if (area > 0) lines.push(`Área da peça: ${fmt(area)} m²`);
+  if (p.descricao) lines.push(`Obs: ${p.descricao}`);
   return lines.join('\n');
 };
 
-/** Build detailed acabamentos lines for a piece */
+/** Build detailed, client-friendly acabamentos for a piece */
 const buildAcabamentos = (p: any): string => {
   const lines: string[] = [];
+
+  // Acabamento de borda — sempre visível
+  const bordaDesc = p.acabamentoBorda === 'Reto' ? 'Acabamento reto (padrão)' : `Acabamento ${p.acabamentoBorda}`;
+  const bordasLabel = p.bordasComAcabamento === 'Só frontal' ? 'aplicado na borda frontal'
+    : p.bordasComAcabamento === 'Frontal e laterais' ? 'aplicado na borda frontal e laterais'
+    : p.bordasComAcabamento === 'Todas as bordas' ? 'aplicado em todas as bordas' : '';
+  lines.push(`${bordaDesc}, ${bordasLabel}`);
+
+  // Cuba
   if (p.tipoCuba !== 'Sem cuba') {
-    let cubaLine = `Cuba: ${p.tipoCuba}`;
-    if (p.valorCuba && parseFloat(p.valorCuba) > 0) cubaLine += ` (R$ ${fmt(parseFloat(p.valorCuba))})`;
-    lines.push(cubaLine);
+    const cubaDescMap: Record<string, string> = {
+      'Cuba de embutir': 'Recorte para cuba de embutir',
+      'Cuba esculpida': 'Cuba esculpida no próprio material',
+      'Cuba colada por baixo (undermount)': 'Recorte e colagem para cuba undermount',
+      'Cuba sobreposta': 'Furo para encaixe de cuba sobreposta',
+      'Cuba flush': 'Cuba nivelada (flush) com a bancada',
+    };
+    lines.push(cubaDescMap[p.tipoCuba] || `Cuba: ${p.tipoCuba}`);
   }
+
+  // Rebaixo
   if (p.tipoRebaixo !== 'Sem rebaixo') {
-    let rebLine = `Rebaixo: ${p.tipoRebaixo}`;
-    if (p.valorRebaixo && parseFloat(p.valorRebaixo) > 0) rebLine += ` (R$ ${fmt(parseFloat(p.valorRebaixo))})`;
-    lines.push(rebLine);
+    const rebDescMap: Record<string, string> = {
+      'Rebaixo americano': 'Rebaixo estilo americano para encaixe de pia',
+      'Rebaixo italiano': 'Rebaixo estilo italiano com canais de escoamento',
+      'Rebaixo tradicional': 'Rebaixo tradicional na bancada',
+    };
+    lines.push(rebDescMap[p.tipoRebaixo] || `Rebaixo: ${p.tipoRebaixo}`);
   }
-  lines.push(`Acabamento borda: ${p.acabamentoBorda}`);
-  lines.push(`Bordas: ${p.bordasComAcabamento || 'Só frontal'}`);
-  if (p.valorAcabamentoBorda && parseFloat(p.valorAcabamentoBorda) > 0) {
-    lines.push(`Acabamento borda: R$ ${fmt(parseFloat(p.valorAcabamentoBorda))}/m`);
+
+  // Furos
+  if (p.furosTorneira !== 'Nenhum') {
+    lines.push(`Perfuração para torneira (${p.furosTorneira})`);
   }
-  if (p.furosTorneira !== 'Nenhum') lines.push(`Furos torneira: ${p.furosTorneira}`);
+
+  // Espelho / Frontão
   if (p.espelhoBacksplash && p.espelhoBacksplashAltura) {
-    lines.push(`Frontão (rodapia): ${p.espelhoBacksplashAltura} cm de altura`);
+    lines.push(`Frontão (rodapé/espelho) com ${p.espelhoBacksplashAltura} cm de altura`);
   }
+
+  // Saia
   if (p.saiaFrontal && p.saiaFrontalAltura) {
-    lines.push(`Saia frontal: ${p.saiaFrontalAltura} cm de altura`);
+    lines.push(`Saia frontal decorativa com ${p.saiaFrontalAltura} cm de altura`);
   }
+
+  // Cooktop
   if (p.rebaixoCooktop) {
-    lines.push(`Recorte cooktop: ${p.rebaixoCooktopLargura || '—'} × ${p.rebaixoCooktopComprimento || '—'} cm`);
+    lines.push(`Recorte para cooktop: ${p.rebaixoCooktopLargura || '—'} × ${p.rebaixoCooktopComprimento || '—'} cm`);
   }
+
   // Extras
   if (p.extras && p.extras.length > 0) {
     p.extras.forEach((e: any) => {
-      if (e.descricao) lines.push(`Extra: ${e.descricao} (R$ ${fmt(e.valor || 0)})`);
+      if (e.descricao) lines.push(`Serviço adicional: ${e.descricao}`);
     });
   }
   return lines.length > 0 ? lines.join('\n') : '—';
@@ -333,7 +360,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100);
-    doc.text(`Área total: ${fmt(area)} m² | Com desperdício (+10%): ${fmt(area * 1.1)} m²`, marginL, y);
+    doc.text(`Área total do ambiente: ${fmt(area)} m²`, marginL, y);
     y += 6;
 
     const laborCost = calcAmbienteLaborCost(amb) * fServ;
