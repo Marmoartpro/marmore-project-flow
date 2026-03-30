@@ -22,10 +22,9 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
   const showRebaixo = ['Bancada', 'Bancada de Banheiro'].includes(peca.tipo);
   const showBorda = ['Bancada', 'Lavatório', 'Bancada de Banheiro', 'Soleira', 'Borda de Piscina', 'Escada/Degrau'].includes(peca.tipo);
   const showFuros = ['Bancada', 'Lavatório', 'Bancada de Banheiro'].includes(peca.tipo);
-  // Espelho disponível para bancadas e banheiros
   const showBacksplash = ['Bancada', 'Bancada de Banheiro', 'Lavatório', 'Bancada Tanque'].includes(peca.tipo);
   const showCooktop = peca.tipo === 'Bancada';
-  // Piscina: mostrar valor por metro do acabamento
+  const showIlhargas = ['Bancada', 'Bancada de Banheiro', 'Bancada Tanque', 'Lavatório'].includes(peca.tipo);
   const isPiscina = peca.tipo === 'Borda de Piscina' || peca.tipo === 'Escada/Degrau';
 
   return (
