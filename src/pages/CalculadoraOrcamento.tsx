@@ -11,11 +11,13 @@ import AmbienteBlock from '@/components/orcamento/AmbienteBlock';
 import AcessoriosSection from '@/components/orcamento/AcessoriosSection';
 import TotaisSection from '@/components/orcamento/TotaisSection';
 import LogoUpload from '@/components/orcamento/LogoUpload';
+import ResumoConsumo from '@/components/orcamento/ResumoConsumo';
 import {
   OrcamentoData, Ambiente, AcessorioItem,
   AMBIENTE_TIPOS, newAmbiente, newAcessorio,
-  calcAmbienteMaterialCost, calcAmbienteLaborCost, calcAmbienteInstallCost, fmt,
+  calcAmbienteMaterialCost, calcAmbienteLaborCost, calcAmbienteInstallCost, gerarAlertas, fmt,
 } from '@/components/orcamento/types';
+import AlertasOrcamento from '@/components/orcamento/AlertasOrcamento';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -371,8 +373,24 @@ const CalculadoraOrcamento = () => {
           ))}
         </div>
 
+        {/* Alertas globais */}
+        <AlertasOrcamento alertas={gerarAlertas(ambientes)} />
+
         {/* Acessórios */}
         <AcessoriosSection acessorios={acessorios} onUpdate={setAcessorios} />
+
+        {/* Resumo de consumo (interno) */}
+        <ResumoConsumo
+          ambientes={ambientes}
+          subtotalMaterials={subtotalMaterials}
+          subtotalLabor={subtotalLabor}
+          subtotalAccessories={subtotalAccessories}
+          subtotalInstallation={subtotalInstallation}
+          margemMaterial={margemMaterial}
+          margemServicos={margemServicos}
+          margemAcessorios={margemAcessorios}
+          margemInstalacao={margemInstalacao}
+        />
 
         {/* Totais */}
         <TotaisSection
