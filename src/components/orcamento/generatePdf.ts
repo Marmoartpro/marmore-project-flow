@@ -121,6 +121,12 @@ const buildAcabamentos = (p: any): string => {
     lines.push(`Recorte para cooktop: ${p.rebaixoCooktopLargura || '—'} × ${p.rebaixoCooktopComprimento || '—'} cm`);
   }
 
+  // Ilhargas / pés revestidos
+  if (p.ilhargas) {
+    const qtd = parseInt(p.ilhargasQtd) || 0;
+    lines.push(`${qtd} ilharga(s) / pé(s) revestido(s) — ${p.ilhargasAltura || '—'} × ${p.ilhargasLargura || '—'} cm`);
+  }
+
   // Extras
   if (p.extras && p.extras.length > 0) {
     p.extras.forEach((e: any) => {
