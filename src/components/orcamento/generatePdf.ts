@@ -2,7 +2,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
   Ambiente, AcessorioItem,
-  calcAmbienteArea, calcAmbienteMaterialCost, calcAmbienteLaborCost, calcAmbienteInstallCost, fmt,
+  calcAmbienteArea, calcAmbienteAreaCompra, calcAmbienteMaterialCost,
+  calcAmbienteLaborCost, calcAmbienteInstallCost, calcCubaEsculpida, fmt,
 } from './types';
 
 interface PdfParams {
@@ -53,17 +54,18 @@ const loadImage = (url: string): Promise<string | null> => {
   });
 };
 
-/** Build detailed, client-friendly description for a piece */
+/** Build detailed, client-friendly description for a piece (measurements in cm) */
 const buildPecaDescricao = (p: any): string => {
-  const wCm = Math.round((parseFloat(p.largura) || 0) * 100);
-  const lCm = Math.round((parseFloat(p.comprimento) || 0) * 100);
+  const w = parseFloat(p.largura) || 0;
+  const l = parseFloat(p.comprimento) || 0;
   const q = parseInt(p.quantidade) || 1;
-  const area = ((parseFloat(p.largura) || 0) * (parseFloat(p.comprimento) || 0) * q);
+  const areaCm2 = w * l;
+  const areaM2 = areaCm2 / 10000 * q;
   const lines: string[] = [];
   lines.push(`${p.tipo}`);
-  lines.push(`Dimensões: ${lCm} cm (comp.) × ${wCm} cm (larg.)`);
+  if (w > 0 && l > 0) lines.push(`Dimensões: ${l} cm (comp.) × ${w} cm (larg.)`);
   if (q > 1) lines.push(`Quantidade: ${q} unidades`);
-  if (area > 0) lines.push(`Área da peça: ${fmt(area)} m²`);
+  if (areaM2 > 0) lines.push(`Área da peça: ${fmt(areaM2)} m²`);
   if (p.descricao) lines.push(`Obs: ${p.descricao}`);
   return lines.join('\n');
 };
