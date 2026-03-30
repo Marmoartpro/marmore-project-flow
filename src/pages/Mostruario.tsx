@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { compressImage } from '@/lib/compressImage';
 import { useAuth } from '@/hooks/useAuth';
 import AppLayout from '@/components/AppLayout';
 import { Badge } from '@/components/ui/badge';
@@ -104,8 +105,9 @@ const Mostruario = () => {
         toast.error('Arquivo muito grande. Máximo 10MB.');
         return;
       }
+      const compressed = await compressImage(file);
       const path = `stones/${user.id}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('mostruario').upload(path, file);
+      const { error } = await supabase.storage.from('mostruario').upload(path, compressed);
       if (error) throw error;
       const { data: urlData } = supabase.storage.from('mostruario').getPublicUrl(path);
       setForm(f => ({ ...f, photo_url: urlData.publicUrl }));

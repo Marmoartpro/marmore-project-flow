@@ -5,9 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
   Home, DollarSign, FileText, Users, LogOut, Plus, Menu, X, Bell,
-  Package, Truck, Calculator, CheckCheck,
+  Package, Truck, Calculator, CheckCheck, Search,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import GlobalSearch from './GlobalSearch';
 
 interface Props {
   children: ReactNode;
@@ -37,6 +38,7 @@ const AppLayout = ({ children, alertCount = 0 }: Props) => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
+  const [searchOpen, setSearchOpen] = useState(false);
   const isMarmorista = profile?.role === 'marmorista';
   const navItems = isMarmorista ? marmoristNavItems : architectNavItems;
 
@@ -67,6 +69,16 @@ const AppLayout = ({ children, alertCount = 0 }: Props) => {
         <div className="p-4 border-b border-sidebar-border">
           <h1 className="text-lg font-display font-bold text-foreground">MármoreProart</h1>
           <p className="text-xs text-muted-foreground truncate">{profile?.full_name || 'Usuário'}</p>
+        </div>
+        <div className="px-2 pt-2">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
+          >
+            <Search className="w-4 h-4" />
+            <span className="flex-1 text-left">Buscar</span>
+            <kbd className="text-[10px] px-1.5 py-0.5 rounded bg-muted border border-border text-muted-foreground">⌘K</kbd>
+          </button>
         </div>
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
           {navItems.map(item => {
@@ -237,6 +249,8 @@ const AppLayout = ({ children, alertCount = 0 }: Props) => {
       <main className={`flex-1 md:ml-56 pt-14 md:pt-0 pb-16 md:pb-0 ${showNotifications ? 'md:ml-[calc(14rem+20rem)]' : ''}`}>
         {children}
       </main>
+
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
     </div>
   );
 };

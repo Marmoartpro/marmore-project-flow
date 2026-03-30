@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import AppLayout from '@/components/AppLayout';
@@ -47,6 +47,51 @@ const CalculadoraOrcamento = () => {
   const [nomeResponsavel, setNomeResponsavel] = useState('');
   const [enderecoEmpresa, setEnderecoEmpresa] = useState('');
   const [telefoneEmpresa, setTelefoneEmpresa] = useState('');
+
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  // Autosave to localStorage every 30s
+  useEffect(() => {
+    const data = { clienteNome, tipoAmbiente, dataOrcamento, validadeDias, ambientes, acessorios,
+      margemMaterial, margemServicos, margemAcessorios, margemInstalacao, descontoValor, descontoTipo,
+      condicoesPagamento, observacoes, nomeEmpresa, nomeResponsavel, enderecoEmpresa, telefoneEmpresa };
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      localStorage.setItem('orcamento_autosave', JSON.stringify(data));
+      setAutoSaveStatus('saved');
+      setTimeout(() => setAutoSaveStatus('idle'), 2000);
+    }, 30000);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  }, [clienteNome, tipoAmbiente, ambientes, acessorios, margemMaterial, margemServicos, margemAcessorios, margemInstalacao, descontoValor, observacoes]);
+
+  // Restore autosave on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('orcamento_autosave');
+    if (saved && !clienteNome) {
+      try {
+        const d = JSON.parse(saved);
+        if (d.clienteNome) {
+          const restore = confirm('Existe um rascunho salvo automaticamente. Deseja restaurar?');
+          if (restore) {
+            setClienteNome(d.clienteNome || ''); setTipoAmbiente(d.tipoAmbiente || '');
+            setDataOrcamento(d.dataOrcamento || today()); setValidadeDias(d.validadeDias || '15');
+            if (d.ambientes) setAmbientes(d.ambientes);
+            if (d.acessorios) setAcessorios(d.acessorios);
+            setMargemMaterial(d.margemMaterial ?? 30); setMargemServicos(d.margemServicos ?? 30);
+            setMargemAcessorios(d.margemAcessorios ?? 30); setMargemInstalacao(d.margemInstalacao ?? 20);
+            setDescontoValor(d.descontoValor || ''); setDescontoTipo(d.descontoTipo || 'percent');
+            setCondicoesPagamento(d.condicoesPagamento || ''); setObservacoes(d.observacoes || '');
+            setNomeEmpresa(d.nomeEmpresa || 'Marmoraria Artesanal'); setNomeResponsavel(d.nomeResponsavel || '');
+            setEnderecoEmpresa(d.enderecoEmpresa || ''); setTelefoneEmpresa(d.telefoneEmpresa || '');
+            toast.success('Rascunho restaurado!');
+          } else {
+            localStorage.removeItem('orcamento_autosave');
+          }
+        }
+      } catch {}
+    }
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -183,6 +228,7 @@ const CalculadoraOrcamento = () => {
         });
       }
 
+      localStorage.removeItem('orcamento_autosave');
       toast.success('Orçamento salvo com sucesso!');
     } catch (err: any) {
       toast.error(err.message || 'Erro ao salvar orçamento');
@@ -256,9 +302,14 @@ const CalculadoraOrcamento = () => {
       <div className="p-4 md:p-6 space-y-4 max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <h2 className="text-xl font-display font-bold flex items-center gap-2">
-            <Calculator className="w-5 h-5 text-primary" /> Calculadora de Orçamento
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-display font-bold flex items-center gap-2">
+              <Calculator className="w-5 h-5 text-primary" /> Calculadora de Orçamento
+            </h2>
+            {autoSaveStatus === 'saved' && (
+              <span className="text-[10px] text-success animate-fade-in">✓ Rascunho salvo</span>
+            )}
+          </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={limparTudo}>
               <Trash2 className="w-4 h-4 mr-1" /> Limpar
