@@ -48,6 +48,51 @@ const CalculadoraOrcamento = () => {
   const [enderecoEmpresa, setEnderecoEmpresa] = useState('');
   const [telefoneEmpresa, setTelefoneEmpresa] = useState('');
 
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  // Autosave to localStorage every 30s
+  useEffect(() => {
+    const data = { clienteNome, tipoAmbiente, dataOrcamento, validadeDias, ambientes, acessorios,
+      margemMaterial, margemServicos, margemAcessorios, margemInstalacao, descontoValor, descontoTipo,
+      condicoesPagamento, observacoes, nomeEmpresa, nomeResponsavel, enderecoEmpresa, telefoneEmpresa };
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      localStorage.setItem('orcamento_autosave', JSON.stringify(data));
+      setAutoSaveStatus('saved');
+      setTimeout(() => setAutoSaveStatus('idle'), 2000);
+    }, 30000);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  }, [clienteNome, tipoAmbiente, ambientes, acessorios, margemMaterial, margemServicos, margemAcessorios, margemInstalacao, descontoValor, observacoes]);
+
+  // Restore autosave on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('orcamento_autosave');
+    if (saved && !clienteNome) {
+      try {
+        const d = JSON.parse(saved);
+        if (d.clienteNome) {
+          const restore = confirm('Existe um rascunho salvo automaticamente. Deseja restaurar?');
+          if (restore) {
+            setClienteNome(d.clienteNome || ''); setTipoAmbiente(d.tipoAmbiente || '');
+            setDataOrcamento(d.dataOrcamento || today()); setValidadeDias(d.validadeDias || '15');
+            if (d.ambientes) setAmbientes(d.ambientes);
+            if (d.acessorios) setAcessorios(d.acessorios);
+            setMargemMaterial(d.margemMaterial ?? 30); setMargemServicos(d.margemServicos ?? 30);
+            setMargemAcessorios(d.margemAcessorios ?? 30); setMargemInstalacao(d.margemInstalacao ?? 20);
+            setDescontoValor(d.descontoValor || ''); setDescontoTipo(d.descontoTipo || 'percent');
+            setCondicoesPagamento(d.condicoesPagamento || ''); setObservacoes(d.observacoes || '');
+            setNomeEmpresa(d.nomeEmpresa || 'Marmoraria Artesanal'); setNomeResponsavel(d.nomeResponsavel || '');
+            setEnderecoEmpresa(d.enderecoEmpresa || ''); setTelefoneEmpresa(d.telefoneEmpresa || '');
+            toast.success('Rascunho restaurado!');
+          } else {
+            localStorage.removeItem('orcamento_autosave');
+          }
+        }
+      } catch {}
+    }
+  }, []);
+
   useEffect(() => {
     if (user) {
       supabase.from('stones').select('id, name, price_per_m2, category').order('name').then(({ data }) => setStones(data || []));
