@@ -171,7 +171,24 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
         )}
       </div>
 
-      {/* Area info */}
+      {/* Ilhargas details */}
+      {peca.ilhargas && showIlhargas && (
+        <div className="grid grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
+          <div>
+            <Label className="text-[10px]">Qtd ilhargas</Label>
+            <Input type="number" min="1" value={peca.ilhargasQtd} onChange={e => onChange('ilhargasQtd', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Altura (cm)</Label>
+            <Input type="number" step="0.1" value={peca.ilhargasAltura} onChange={e => onChange('ilhargasAltura', e.target.value)} className="h-8 text-xs" placeholder="Ex: 80" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Largura (cm)</Label>
+            <Input type="number" step="0.1" value={peca.ilhargasLargura} onChange={e => onChange('ilhargasLargura', e.target.value)} className="h-8 text-xs" placeholder="Ex: 60" />
+          </div>
+        </div>
+      )}
+
       {area > 0 && (
         <div className="text-[11px] text-muted-foreground flex gap-3">
           <span>Área: {fmt(area)} m²</span>
