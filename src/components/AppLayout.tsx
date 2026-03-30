@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
   Home, DollarSign, FileText, Users, LogOut, Plus, Menu, X, Bell,
-  Package, Truck, Calculator, CheckCheck, Search,
+  Package, Truck, Calculator, CheckCheck, Search, BarChart3,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import GlobalSearch from './GlobalSearch';
@@ -23,6 +23,7 @@ const marmoristNavItems = [
   { path: '/mostruario', label: 'Mostruário', icon: Package },
   { path: '/fornecedores', label: 'Fornecedores', icon: Truck },
   { path: '/calculadora', label: 'Orçamento', icon: Calculator },
+  { path: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ];
 
 const architectNavItems = [
@@ -43,9 +44,22 @@ const AppLayout = ({ children, alertCount = 0 }: Props) => {
   const navItems = isMarmorista ? marmoristNavItems : architectNavItems;
 
   useEffect(() => {
-    if (user) {
-      supabase.from('notifications').select('*').eq('user_id', user.id).eq('read', false).order('created_at', { ascending: false }).limit(20).then(({ data }) => setNotifications(data || []));
-    }
+    if (!user) return;
+    supabase.from('notifications').select('*').eq('user_id', user.id).eq('read', false).order('created_at', { ascending: false }).limit(20).then(({ data }) => setNotifications(data || []));
+
+    // Realtime notifications
+    const channel = supabase
+      .channel('user-notifications')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          setNotifications(prev => [payload.new as any, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user, location.pathname]);
 
   const markRead = async (id: string) => {

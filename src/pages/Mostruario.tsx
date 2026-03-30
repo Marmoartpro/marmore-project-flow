@@ -181,13 +181,25 @@ const Mostruario = () => {
   };
 
   const deleteStone = async (id: string) => {
+    if (!user) return;
+    const stone = stones.find(s => s.id === id);
+    if (stone && stone.owner_id !== user.id) {
+      toast.error('Você só pode excluir pedras que você cadastrou.');
+      return;
+    }
     if (!confirm('Tem certeza que deseja excluir esta pedra?')) return;
-    await supabase.from('stone_photos').delete().eq('stone_id', id);
-    await supabase.from('stones').delete().eq('id', id);
-    toast.success('Pedra excluída');
-    setShowForm(false);
-    resetForm();
-    fetchStones();
+    try {
+      const { error: photoErr } = await supabase.from('stone_photos').delete().eq('stone_id', id);
+      if (photoErr) throw photoErr;
+      const { error: stoneErr } = await supabase.from('stones').delete().eq('id', id);
+      if (stoneErr) throw stoneErr;
+      toast.success('Pedra excluída');
+      setShowForm(false);
+      resetForm();
+      fetchStones();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir pedra. Verifique se ela pertence a você.');
+    }
   };
 
   const openDetail = async (s: any) => {

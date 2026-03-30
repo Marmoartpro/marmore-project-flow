@@ -17,6 +17,7 @@ import Mostruario from "./pages/Mostruario";
 import Fornecedores from "./pages/Fornecedores";
 import CalculadoraOrcamento from "./pages/CalculadoraOrcamento";
 import Portfolio from "./pages/Portfolio";
+import Relatorios from "./pages/Relatorios";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const AppRoutes = () => (
     <Route path="/mostruario" element={<ProtectedRoute><Mostruario /></ProtectedRoute>} />
     <Route path="/fornecedores" element={<ProtectedRoute><Fornecedores /></ProtectedRoute>} />
     <Route path="/calculadora" element={<ProtectedRoute><CalculadoraOrcamento /></ProtectedRoute>} />
+    <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
     <Route path="/projeto/novo" element={<ProtectedRoute><NewProject /></ProtectedRoute>} />
     <Route path="/projeto/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
