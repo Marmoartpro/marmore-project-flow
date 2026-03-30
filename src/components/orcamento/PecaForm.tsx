@@ -163,6 +163,12 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
             Rebaixo cooktop
           </label>
         )}
+        {showIlhargas && (
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={peca.ilhargas} onChange={e => onChange('ilhargas', e.target.checked)} />
+            Ilhargas / pés revestidos
+          </label>
+        )}
       </div>
 
       {/* Area info */}
