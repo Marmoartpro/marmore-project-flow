@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import AppLayout from '@/components/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,19 +13,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, MoreVertical, Edit, Trash2, Calculator, FileText } from 'lucide-react';
+import { Plus, MoreVertical, Edit, Trash2, Calculator, FileText, Eye, Copy, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const statusLabels: Record<string, string> = {
+  rascunho: 'Rascunho', enviado: 'Enviado', aceito: 'Aceito', recusado: 'Recusado',
   aguardando: 'Aguardando resposta', negociando: 'Negociando',
   aprovado: 'Aprovado', perdido: 'Perdido',
-  rascunho: 'Rascunho', enviado: 'Enviado', aceito: 'Aceito',
 };
 const statusColors: Record<string, string> = {
-  aguardando: 'bg-muted text-muted-foreground', negociando: 'bg-warning text-warning-foreground',
-  aprovado: 'bg-success text-success-foreground', perdido: 'bg-destructive text-destructive-foreground',
-  rascunho: 'bg-muted text-muted-foreground', enviado: 'bg-accent text-accent-foreground',
-  aceito: 'bg-success text-success-foreground',
+  rascunho: 'bg-warning/20 text-warning-foreground border-warning/30',
+  aguardando: 'bg-muted text-muted-foreground',
+  negociando: 'bg-accent/50 text-accent-foreground',
+  enviado: 'bg-accent/50 text-accent-foreground',
+  aprovado: 'bg-primary/20 text-primary',
+  aceito: 'bg-primary/20 text-primary',
+  perdido: 'bg-destructive/20 text-destructive',
+  recusado: 'bg-destructive/20 text-destructive',
 };
 
 const emptyForm = {
@@ -34,6 +38,7 @@ const emptyForm = {
 };
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+const daysSince = (date: string) => Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24));
 
 const Orcamentos = () => {
   const { user } = useAuth();
@@ -45,6 +50,7 @@ const Orcamentos = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteType, setDeleteType] = useState<'quote' | 'budget'>('quote');
   const [form, setForm] = useState(emptyForm);
+  const [mainTab, setMainTab] = useState('calculados');
 
   useEffect(() => { if (user) { fetchQuotes(); fetchBudgetQuotes(); } }, [user]);
 
@@ -52,7 +58,6 @@ const Orcamentos = () => {
     const { data } = await supabase.from('quotes').select('*').order('created_at', { ascending: false });
     setQuotes(data || []);
   };
-
   const fetchBudgetQuotes = async () => {
     const { data } = await supabase.from('budget_quotes').select('*').order('created_at', { ascending: false });
     setBudgetQuotes(data || []);
@@ -98,14 +103,14 @@ const Orcamentos = () => {
     setDeleteId(null); toast.success('Orçamento excluído!');
   };
 
-  const updateStatus = async (id: string, status: string) => {
-    await supabase.from('quotes').update({ status }).eq('id', id);
-    fetchQuotes(); toast.success('Status atualizado!');
-  };
-
   const updateBudgetStatus = async (id: string, status: string) => {
     await supabase.from('budget_quotes').update({ status }).eq('id', id);
     fetchBudgetQuotes(); toast.success('Status atualizado!');
+  };
+
+  const updateStatus = async (id: string, status: string) => {
+    await supabase.from('quotes').update({ status }).eq('id', id);
+    fetchQuotes(); toast.success('Status atualizado!');
   };
 
   const convertToProject = async (q: any) => {
@@ -116,7 +121,6 @@ const Orcamentos = () => {
       total_value: Number(q.estimated_value || q.total || 0),
     }).select().single();
     if (error) { toast.error('Erro ao converter'); return; }
-    // Update status on both tables
     if (q.quote_number) {
       await supabase.from('budget_quotes').update({ status: 'aceito' }).eq('id', q.id);
       fetchBudgetQuotes();
@@ -127,8 +131,64 @@ const Orcamentos = () => {
     toast.success('Convertido em projeto!'); navigate(`/projeto/${project.id}`);
   };
 
-  const daysSince = (date: string) => Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24));
+  // Split budget quotes
+  const bqEmAndamento = budgetQuotes.filter(bq => ['rascunho', 'enviado'].includes(bq.status));
+  const bqFinalizados = budgetQuotes.filter(bq => ['aceito', 'recusado', 'aprovado', 'perdido'].includes(bq.status));
   const groupedStatuses = ['aguardando', 'negociando', 'aprovado', 'perdido'];
+
+  const BudgetCard = ({ bq }: { bq: any }) => (
+    <Card key={bq.id}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <p className="font-medium text-sm truncate">{bq.client_name || 'Sem cliente'}</p>
+            <Badge variant="outline" className="text-[10px] shrink-0">{bq.quote_number}</Badge>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <Badge className={`${statusColors[bq.status] || statusColors.rascunho} text-[10px] border`}>
+              {statusLabels[bq.status] || bq.status}
+            </Badge>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="ghost" className="h-7 w-7"><MoreVertical className="w-4 h-4" /></Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate(`/calculadora/${bq.id}`)}>
+                  <Edit className="w-3.5 h-3.5 mr-2" /> Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate(`/calculadora/${bq.id}?duplicate=true`)}>
+                  <Copy className="w-3.5 h-3.5 mr-2" /> Duplicar
+                </DropdownMenuItem>
+                {bq.status === 'rascunho' && (
+                  <DropdownMenuItem onClick={() => updateBudgetStatus(bq.id, 'enviado')}>Marcar como enviado</DropdownMenuItem>
+                )}
+                {['rascunho', 'enviado'].includes(bq.status) && (
+                  <DropdownMenuItem onClick={() => convertToProject(bq)}>Converter em projeto</DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => { setDeleteId(bq.id); setDeleteType('budget'); }} className="text-destructive">
+                  <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+        <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
+          <span className="font-semibold text-foreground">R$ {fmt(Number(bq.total || 0))}</span>
+          {bq.environment_type && <span>• {bq.environment_type}</span>}
+          <span>• {daysSince(bq.created_at)} dias atrás</span>
+          <span>• V{bq.version}</span>
+        </div>
+        {bq.status === 'rascunho' && (
+          <Button size="sm" variant="outline" className="text-xs h-7 mt-2" onClick={() => navigate(`/calculadora/${bq.id}`)}>
+            <Edit className="w-3 h-3 mr-1" /> Continuar editando
+          </Button>
+        )}
+        {bq.payment_conditions && (
+          <p className="text-[11px] text-muted-foreground mt-1 truncate">{bq.payment_conditions}</p>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   return (
     <AppLayout>
@@ -139,81 +199,58 @@ const Orcamentos = () => {
             <Button size="sm" variant="outline" onClick={() => navigate('/calculadora')}>
               <Calculator className="w-4 h-4 mr-1" /> Calculadora
             </Button>
-            <Button size="sm" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true); }}>
+            <Button size="sm" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true); setMainTab('rapidos'); }}>
               <Plus className="w-4 h-4 mr-1" /> Rápido
             </Button>
           </div>
         </div>
 
-        <Tabs defaultValue="calculados">
+        <Tabs value={mainTab} onValueChange={setMainTab}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="calculados" className="text-xs">
-              <Calculator className="w-3.5 h-3.5 mr-1" /> Orçamentos Calculados ({budgetQuotes.length})
+              <Calculator className="w-3.5 h-3.5 mr-1" /> Calculados ({budgetQuotes.length})
             </TabsTrigger>
             <TabsTrigger value="rapidos" className="text-xs">
-              <FileText className="w-3.5 h-3.5 mr-1" /> Orçamentos Rápidos ({quotes.length})
+              <FileText className="w-3.5 h-3.5 mr-1" /> Rápidos ({quotes.length})
             </TabsTrigger>
           </TabsList>
 
-          {/* Budget quotes from calculator */}
+          {/* Budget quotes */}
           <TabsContent value="calculados" className="space-y-3 mt-4">
-            {budgetQuotes.length === 0 && (
-              <Card>
-                <CardContent className="p-6 text-center text-muted-foreground text-sm">
-                  Nenhum orçamento calculado ainda. Use a <button onClick={() => navigate('/calculadora')} className="text-primary underline">Calculadora</button> para criar.
-                </CardContent>
-              </Card>
-            )}
-            {budgetQuotes.map(bq => (
-              <Card key={bq.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-sm">{bq.client_name || 'Sem cliente'}</p>
-                      <Badge variant="outline" className="text-[10px]">{bq.quote_number}</Badge>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Badge className={`${statusColors[bq.status] || statusColors.rascunho} text-[10px]`}>
-                        {statusLabels[bq.status] || bq.status}
-                      </Badge>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="icon" variant="ghost" className="h-7 w-7"><MoreVertical className="w-4 h-4" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {bq.status === 'rascunho' && (
-                            <DropdownMenuItem onClick={() => updateBudgetStatus(bq.id, 'enviado')}>Marcar como enviado</DropdownMenuItem>
-                          )}
-                          {(bq.status === 'rascunho' || bq.status === 'enviado') && (
-                            <DropdownMenuItem onClick={() => convertToProject(bq)}>Converter em projeto</DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem onClick={() => { setDeleteId(bq.id); setDeleteType('budget'); }} className="text-destructive">
-                            <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                  <div className="text-xs text-muted-foreground space-x-3">
-                    <span className="font-semibold text-foreground">R$ {fmt(Number(bq.total || 0))}</span>
-                    {bq.environment_type && <span>• {bq.environment_type}</span>}
-                    <span>• {daysSince(bq.created_at)} dias atrás</span>
-                    <span>• V{bq.version}</span>
-                  </div>
-                  {bq.payment_conditions && (
-                    <p className="text-[11px] text-muted-foreground mt-1 truncate">{bq.payment_conditions}</p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+            <Tabs defaultValue="andamento">
+              <TabsList className="w-full grid grid-cols-2 h-8">
+                <TabsTrigger value="andamento" className="text-[11px] h-7">
+                  <Clock className="w-3 h-3 mr-1" /> Em andamento ({bqEmAndamento.length})
+                </TabsTrigger>
+                <TabsTrigger value="finalizados" className="text-[11px] h-7">
+                  Finalizados ({bqFinalizados.length})
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="andamento" className="space-y-3 mt-3">
+                {bqEmAndamento.length === 0 && (
+                  <Card><CardContent className="p-6 text-center text-muted-foreground text-sm">
+                    Nenhum orçamento em andamento. <button onClick={() => navigate('/calculadora')} className="text-primary underline">Criar novo</button>
+                  </CardContent></Card>
+                )}
+                {bqEmAndamento.map(bq => <BudgetCard key={bq.id} bq={bq} />)}
+              </TabsContent>
+              <TabsContent value="finalizados" className="space-y-3 mt-3">
+                {bqFinalizados.length === 0 && (
+                  <Card><CardContent className="p-6 text-center text-muted-foreground text-sm">
+                    Nenhum orçamento finalizado ainda.
+                  </CardContent></Card>
+                )}
+                {bqFinalizados.map(bq => <BudgetCard key={bq.id} bq={bq} />)}
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           {/* Quick quotes */}
           <TabsContent value="rapidos" className="space-y-4 mt-4">
             {showForm && (
               <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm font-display">{editingId ? 'Editar orçamento' : 'Novo orçamento rápido'}</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="p-4 space-y-3">
+                  <p className="text-sm font-display font-semibold">{editingId ? 'Editar orçamento' : 'Novo orçamento rápido'}</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div><Label className="text-xs">Nome do cliente *</Label><Input value={form.client_name} onChange={e => setForm(f => ({ ...f, client_name: e.target.value }))} className="h-8 text-sm" /></div>
                     <div><Label className="text-xs">WhatsApp</Label><Input value={form.client_whatsapp} onChange={e => setForm(f => ({ ...f, client_whatsapp: e.target.value }))} className="h-8 text-sm" /></div>
@@ -228,16 +265,14 @@ const Orcamentos = () => {
                       <Label className="text-xs">Status</Label>
                       <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
                         <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {groupedStatuses.map(s => <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>)}
-                        </SelectContent>
+                        <SelectContent>{groupedStatuses.map(s => <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                     <div><Label className="text-xs">Lembrar em</Label><Input type="date" value={form.follow_up_date} onChange={e => setForm(f => ({ ...f, follow_up_date: e.target.value }))} className="h-8 text-sm" /></div>
                   </div>
                   <div><Label className="text-xs">Observações</Label><Textarea value={form.observations} onChange={e => setForm(f => ({ ...f, observations: e.target.value }))} rows={2} className="text-sm" /></div>
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={saveQuote} disabled={!form.client_name}>{editingId ? 'Salvar alterações' : 'Salvar'}</Button>
+                    <Button size="sm" onClick={saveQuote} disabled={!form.client_name}>{editingId ? 'Salvar' : 'Salvar'}</Button>
                     <Button size="sm" variant="ghost" onClick={() => { setShowForm(false); setEditingId(null); }}>Cancelar</Button>
                   </div>
                 </CardContent>
@@ -256,7 +291,7 @@ const Orcamentos = () => {
                         <div className="flex items-center justify-between mb-1">
                           <p className="font-medium text-sm">{q.client_name}</p>
                           <div className="flex items-center gap-1">
-                            <Badge className={statusColors[q.status] + ' text-[10px]'}>{statusLabels[q.status]}</Badge>
+                            <Badge className={`${statusColors[q.status]} text-[10px] border`}>{statusLabels[q.status]}</Badge>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button size="icon" variant="ghost" className="h-7 w-7"><MoreVertical className="w-4 h-4" /></Button>
@@ -291,11 +326,10 @@ const Orcamentos = () => {
         </Tabs>
       </div>
 
-      {/* Delete confirmation */}
       <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Excluir orçamento</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita.</p>
+          <p className="text-sm text-muted-foreground">Tem certeza? Esta ação não pode ser desfeita.</p>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDeleteId(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={confirmDelete}>Excluir</Button>
