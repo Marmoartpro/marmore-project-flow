@@ -197,6 +197,152 @@ export type Database = {
           },
         ]
       }
+      contracts: {
+        Row: {
+          additional_clauses: string | null
+          budget_quote_id: string | null
+          cancellation_policy: string | null
+          client_address: string | null
+          client_cpf_cnpj: string | null
+          client_name: string
+          client_phone: string | null
+          company_address: string | null
+          company_cnpj: string | null
+          company_name: string | null
+          company_phone: string | null
+          company_responsible: string | null
+          contract_date: string
+          contract_number: string
+          created_at: string
+          data: Json
+          end_date: string | null
+          exclusions: string | null
+          id: string
+          owner_id: string
+          payment_conditions: string | null
+          scope_description: string | null
+          start_date: string | null
+          status: string
+          total_value: number
+          updated_at: string
+          warranty_days: number
+        }
+        Insert: {
+          additional_clauses?: string | null
+          budget_quote_id?: string | null
+          cancellation_policy?: string | null
+          client_address?: string | null
+          client_cpf_cnpj?: string | null
+          client_name?: string
+          client_phone?: string | null
+          company_address?: string | null
+          company_cnpj?: string | null
+          company_name?: string | null
+          company_phone?: string | null
+          company_responsible?: string | null
+          contract_date?: string
+          contract_number: string
+          created_at?: string
+          data?: Json
+          end_date?: string | null
+          exclusions?: string | null
+          id?: string
+          owner_id: string
+          payment_conditions?: string | null
+          scope_description?: string | null
+          start_date?: string | null
+          status?: string
+          total_value?: number
+          updated_at?: string
+          warranty_days?: number
+        }
+        Update: {
+          additional_clauses?: string | null
+          budget_quote_id?: string | null
+          cancellation_policy?: string | null
+          client_address?: string | null
+          client_cpf_cnpj?: string | null
+          client_name?: string
+          client_phone?: string | null
+          company_address?: string | null
+          company_cnpj?: string | null
+          company_name?: string | null
+          company_phone?: string | null
+          company_responsible?: string | null
+          contract_date?: string
+          contract_number?: string
+          created_at?: string
+          data?: Json
+          end_date?: string | null
+          exclusions?: string | null
+          id?: string
+          owner_id?: string
+          payment_conditions?: string | null
+          scope_description?: string | null
+          start_date?: string | null
+          status?: string
+          total_value?: number
+          updated_at?: string
+          warranty_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_budget_quote_id_fkey"
+            columns: ["budget_quote_id"]
+            isOneToOne: false
+            referencedRelation: "budget_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      digital_signatures: {
+        Row: {
+          created_at: string
+          document_id: string
+          document_type: string
+          expires_at: string
+          id: string
+          owner_id: string
+          sign_token: string
+          signature_image: string | null
+          signed_at: string | null
+          signer_ip: string | null
+          signer_location: string | null
+          signer_name: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          document_type?: string
+          expires_at?: string
+          id?: string
+          owner_id: string
+          sign_token?: string
+          signature_image?: string | null
+          signed_at?: string | null
+          signer_ip?: string | null
+          signer_location?: string | null
+          signer_name?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          document_type?: string
+          expires_at?: string
+          id?: string
+          owner_id?: string
+          sign_token?: string
+          signature_image?: string | null
+          signed_at?: string | null
+          signer_ip?: string | null
+          signer_location?: string | null
+          signer_name?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
