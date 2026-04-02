@@ -52,6 +52,7 @@ const Orcamentos = () => {
   const [deleteType, setDeleteType] = useState<'quote' | 'budget'>('quote');
   const [form, setForm] = useState(emptyForm);
   const [mainTab, setMainTab] = useState('calculados');
+  const [contratoQuote, setContratoQuote] = useState<any>(null);
 
   useEffect(() => { if (user) { fetchQuotes(); fetchBudgetQuotes(); } }, [user]);
 
