@@ -184,6 +184,16 @@ const Orcamentos = () => {
                 {['rascunho', 'enviado'].includes(bq.status) && (
                   <DropdownMenuItem onClick={() => convertToProject(bq)}>Converter em projeto</DropdownMenuItem>
                 )}
+                {['enviado', 'aceito', 'aprovado'].includes(bq.status) && (
+                  <DropdownMenuItem onClick={() => setContratoQuote(bq)}>
+                    <FileSignature className="w-3.5 h-3.5 mr-2" /> Gerar Contrato
+                  </DropdownMenuItem>
+                )}
+                {['enviado', 'aceito', 'aprovado'].includes(bq.status) && (
+                  <DropdownMenuItem onClick={() => requestSignature(bq)}>
+                    <PenTool className="w-3.5 h-3.5 mr-2" /> Solicitar assinatura
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => { setDeleteId(bq.id); setDeleteType('budget'); }} className="text-destructive">
                   <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
                 </DropdownMenuItem>
