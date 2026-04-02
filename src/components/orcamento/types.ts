@@ -37,6 +37,7 @@ export type FormatoPeca =
 
 export interface PecaItem {
   id: string;
+  nomePeca: string;
   tipo: string;
   descricao: string;
   formato: FormatoPeca;
