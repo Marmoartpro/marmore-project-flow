@@ -64,7 +64,12 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
     <div className="border border-border rounded-md p-3 space-y-3">
       {/* Header row */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="flex-1 grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <div className="col-span-2 sm:col-span-1">
+            <Label className="text-[10px] text-primary font-semibold">Nome da peça *</Label>
+            <Input value={peca.nomePeca || ''} onChange={e => onChange('nomePeca', e.target.value)}
+              className="h-8 text-xs border-primary/30" placeholder="Ex: Bancada principal" />
+          </div>
           <div>
             <Label className="text-[10px]">Tipo de peça</Label>
             <select value={peca.tipo} onChange={e => onChange('tipo', e.target.value)}
