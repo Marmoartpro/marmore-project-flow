@@ -37,6 +37,7 @@ export type FormatoPeca =
 
 export interface PecaItem {
   id: string;
+  nomePeca: string;
   tipo: string;
   descricao: string;
   formato: FormatoPeca;
@@ -295,6 +296,7 @@ const emptyCubaEsculpida = (): CubaEsculpidaData => ({
 
 export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   id: crypto.randomUUID(),
+  nomePeca: '',
   tipo,
   descricao: '',
   formato: 'retangular',

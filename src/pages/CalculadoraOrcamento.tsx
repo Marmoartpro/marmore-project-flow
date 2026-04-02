@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
-import { Calculator, Plus, Save, Trash2, FileText } from 'lucide-react';
+import { Calculator, Plus, Save, Trash2, FileText, Clock } from 'lucide-react';
 import { generateOrcamentoPdf } from '@/components/orcamento/generatePdf';
 import { toast } from 'sonner';
 import ClienteSection from '@/components/orcamento/ClienteSection';
@@ -23,10 +24,18 @@ const today = () => new Date().toISOString().split('T')[0];
 
 const CalculadoraOrcamento = () => {
   const { user, profile } = useAuth();
+  const { quoteId } = useParams();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const isDuplicate = searchParams.get('duplicate') === 'true';
+
   const [stones, setStones] = useState<any[]>([]);
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(quoteId || null);
+  const [editingVersion, setEditingVersion] = useState(1);
+  const [editingQuoteNumber, setEditingQuoteNumber] = useState('');
 
   // Orcamento state
   const [clienteNome, setClienteNome] = useState('');
@@ -35,7 +44,6 @@ const CalculadoraOrcamento = () => {
   const [validadeDias, setValidadeDias] = useState('15');
   const [ambientes, setAmbientes] = useState<Ambiente[]>([newAmbiente('Cozinha')]);
   const [acessorios, setAcessorios] = useState<AcessorioItem[]>([newAcessorio()]);
-  // Per-section margins
   const [margemMaterial, setMargemMaterial] = useState(30);
   const [margemServicos, setMargemServicos] = useState(30);
   const [margemAcessorios, setMargemAcessorios] = useState(30);
@@ -50,50 +58,50 @@ const CalculadoraOrcamento = () => {
   const [enderecoEmpresa, setEnderecoEmpresa] = useState('');
   const [telefoneEmpresa, setTelefoneEmpresa] = useState('');
 
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
+  const [autoSaveStatus, setAutoSaveStatus] = useState<string>('');
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const draftIdRef = useRef<string | null>(null);
+  const loadedRef = useRef(false);
 
-  // Autosave to localStorage every 30s
+  // Load existing quote for editing
   useEffect(() => {
-    const data = { clienteNome, tipoAmbiente, dataOrcamento, validadeDias, ambientes, acessorios,
-      margemMaterial, margemServicos, margemAcessorios, margemInstalacao, descontoValor, descontoTipo,
-      condicoesPagamento, observacoes, nomeEmpresa, nomeResponsavel, enderecoEmpresa, telefoneEmpresa };
-    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    autoSaveTimer.current = setTimeout(() => {
-      localStorage.setItem('orcamento_autosave', JSON.stringify(data));
-      setAutoSaveStatus('saved');
-      setTimeout(() => setAutoSaveStatus('idle'), 2000);
-    }, 30000);
-    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
-  }, [clienteNome, tipoAmbiente, ambientes, acessorios, margemMaterial, margemServicos, margemAcessorios, margemInstalacao, descontoValor, observacoes]);
+    if (!user || !quoteId || loadedRef.current) return;
+    loadedRef.current = true;
+    (async () => {
+      const { data } = await supabase.from('budget_quotes').select('*').eq('id', quoteId).single();
+      if (!data) { toast.error('Orçamento não encontrado'); return; }
+      const d = data.data as any;
+      setClienteNome(data.client_name || '');
+      setTipoAmbiente(data.environment_type || '');
+      setDataOrcamento(data.quote_date || today());
+      setValidadeDias(String(data.validity_days || 15));
+      if (d?.ambientes) setAmbientes(d.ambientes);
+      if (d?.acessorios) setAcessorios(d.acessorios);
+      setMargemMaterial(d?.margemMaterial ?? data.profit_margin_percent ?? 30);
+      setMargemServicos(d?.margemServicos ?? 30);
+      setMargemAcessorios(d?.margemAcessorios ?? 30);
+      setMargemInstalacao(d?.margemInstalacao ?? 20);
+      setDescontoValor(String(data.discount || ''));
+      setDescontoTipo((data.discount_type as any) || 'percent');
+      setCondicoesPagamento(data.payment_conditions || '');
+      setObservacoes(data.observations || '');
+      setNomeEmpresa(d?.nomeEmpresa || 'Marmoraria Artesanal');
+      setNomeResponsavel(d?.nomeResponsavel || '');
+      setEnderecoEmpresa(d?.enderecoEmpresa || '');
+      setTelefoneEmpresa(d?.telefoneEmpresa || '');
 
-  // Restore autosave on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('orcamento_autosave');
-    if (saved && !clienteNome) {
-      try {
-        const d = JSON.parse(saved);
-        if (d.clienteNome) {
-          const restore = confirm('Existe um rascunho salvo automaticamente. Deseja restaurar?');
-          if (restore) {
-            setClienteNome(d.clienteNome || ''); setTipoAmbiente(d.tipoAmbiente || '');
-            setDataOrcamento(d.dataOrcamento || today()); setValidadeDias(d.validadeDias || '15');
-            if (d.ambientes) setAmbientes(d.ambientes);
-            if (d.acessorios) setAcessorios(d.acessorios);
-            setMargemMaterial(d.margemMaterial ?? 30); setMargemServicos(d.margemServicos ?? 30);
-            setMargemAcessorios(d.margemAcessorios ?? 30); setMargemInstalacao(d.margemInstalacao ?? 20);
-            setDescontoValor(d.descontoValor || ''); setDescontoTipo(d.descontoTipo || 'percent');
-            setCondicoesPagamento(d.condicoesPagamento || ''); setObservacoes(d.observacoes || '');
-            setNomeEmpresa(d.nomeEmpresa || 'Marmoraria Artesanal'); setNomeResponsavel(d.nomeResponsavel || '');
-            setEnderecoEmpresa(d.enderecoEmpresa || ''); setTelefoneEmpresa(d.telefoneEmpresa || '');
-            toast.success('Rascunho restaurado!');
-          } else {
-            localStorage.removeItem('orcamento_autosave');
-          }
-        }
-      } catch {}
-    }
-  }, []);
+      if (isDuplicate) {
+        setEditingQuoteId(null);
+        setEditingVersion(1);
+        setEditingQuoteNumber('');
+        toast.info('Orçamento duplicado — salve como novo');
+      } else {
+        setEditingQuoteId(data.id);
+        setEditingVersion(data.version || 1);
+        setEditingQuoteNumber(data.quote_number);
+      }
+    })();
+  }, [user, quoteId, isDuplicate]);
 
   useEffect(() => {
     if (user) {
@@ -102,10 +110,28 @@ const CalculadoraOrcamento = () => {
   }, [user]);
 
   useEffect(() => {
-    if (profile) {
-      setCompanyLogo((profile as any).company_logo_url || null);
-    }
+    if (profile) setCompanyLogo((profile as any).company_logo_url || null);
   }, [profile]);
+
+  // Auto-save to Supabase every 15s
+  useEffect(() => {
+    if (!user || !clienteNome) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      try {
+        const payload = buildPayload('rascunho');
+        if (draftIdRef.current && !editingQuoteId) {
+          await supabase.from('budget_quotes').update(payload).eq('id', draftIdRef.current);
+        } else if (!editingQuoteId) {
+          const { data } = await supabase.from('budget_quotes').insert([{ ...payload, quote_number: generateQuoteNumber() }]).select('id').single();
+          if (data) draftIdRef.current = data.id;
+        }
+        const now = new Date();
+        setAutoSaveStatus(`Rascunho salvo às ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`);
+      } catch {}
+    }, 15000);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  }, [clienteNome, tipoAmbiente, ambientes, acessorios, margemMaterial, margemServicos, margemAcessorios, margemInstalacao, descontoValor, observacoes]);
 
   // Auto-add marble warning
   useEffect(() => {
@@ -140,18 +166,16 @@ const CalculadoraOrcamento = () => {
   const updateAmbiente = (id: string, amb: Ambiente) => {
     setAmbientes(prev => prev.map(a => a.id === id ? amb : a));
   };
-
   const removeAmbiente = (id: string) => {
     if (ambientes.length <= 1) return;
     setAmbientes(prev => prev.filter(a => a.id !== id));
   };
-
   const addAmbiente = (tipo: string) => {
     setAmbientes(prev => [...prev, newAmbiente(tipo)]);
     setShowAddAmbiente(false);
   };
 
-  // Calculate totals (using first material option as default)
+  // Totals
   const subtotalMaterials = ambientes.reduce((sum, amb) => sum + calcAmbienteMaterialCost(amb, 0), 0);
   const subtotalLabor = ambientes.reduce((sum, amb) => sum + calcAmbienteLaborCost(amb), 0);
   const subtotalAccessories = acessorios.reduce((sum, a) => sum + (parseInt(a.quantidade) || 1) * (parseFloat(a.valorUnitario) || 0), 0);
@@ -166,74 +190,77 @@ const CalculadoraOrcamento = () => {
     return `${y}-${m}-${day}-${initials}-V1`;
   };
 
+  const buildPayload = (status: string) => {
+    const materialComMargem = subtotalMaterials * (1 + margemMaterial / 100);
+    const servicosComMargem = subtotalLabor * (1 + margemServicos / 100);
+    const acessoriosComMargem = subtotalAccessories * (1 + margemAcessorios / 100);
+    const instalacaoComMargem = subtotalInstallation * (1 + margemInstalacao / 100);
+    const totalBruto = materialComMargem + servicosComMargem + acessoriosComMargem + instalacaoComMargem;
+    const desconto = descontoTipo === 'percent'
+      ? totalBruto * ((parseFloat(descontoValor) || 0) / 100)
+      : (parseFloat(descontoValor) || 0);
+    const totalFinal = totalBruto - desconto;
+
+    return {
+      owner_id: user!.id,
+      client_name: clienteNome,
+      environment_type: tipoAmbiente,
+      quote_date: dataOrcamento,
+      validity_days: parseInt(validadeDias) || 15,
+      data: JSON.parse(JSON.stringify({
+        ambientes, acessorios, condicoesPagamento, observacoes,
+        margemMaterial, margemServicos, margemAcessorios, margemInstalacao,
+        nomeEmpresa, nomeResponsavel, enderecoEmpresa, telefoneEmpresa,
+      })),
+      subtotal_materials: subtotalMaterials,
+      subtotal_labor: subtotalLabor,
+      subtotal_accessories: subtotalAccessories,
+      subtotal_installation: subtotalInstallation,
+      profit_margin_percent: margemMaterial,
+      discount: parseFloat(descontoValor) || 0,
+      discount_type: descontoTipo,
+      total: totalFinal,
+      payment_conditions: condicoesPagamento,
+      observations: observacoes,
+      status,
+    };
+  };
+
   const saveOrcamento = async () => {
-    if (!user || !clienteNome) {
-      toast.error('Informe o nome do cliente');
-      return;
-    }
+    if (!user || !clienteNome) { toast.error('Informe o nome do cliente'); return; }
     setSaving(true);
     try {
-      const materialComMargem = subtotalMaterials * (1 + margemMaterial / 100);
-      const servicosComMargem = subtotalLabor * (1 + margemServicos / 100);
-      const acessoriosComMargem = subtotalAccessories * (1 + margemAcessorios / 100);
-      const instalacaoComMargem = subtotalInstallation * (1 + margemInstalacao / 100);
-      const totalBruto = materialComMargem + servicosComMargem + acessoriosComMargem + instalacaoComMargem;
-      const desconto = descontoTipo === 'percent'
-        ? totalBruto * ((parseFloat(descontoValor) || 0) / 100)
-        : (parseFloat(descontoValor) || 0);
-      const totalFinal = totalBruto - desconto;
+      if (editingQuoteId) {
+        // Create new version
+        const newVersion = editingVersion + 1;
+        const newNumber = editingQuoteNumber.replace(/V\d+$/, `V${newVersion}`);
+        const payload = { ...buildPayload('rascunho'), version: newVersion, quote_number: newNumber };
+        await supabase.from('budget_quotes').update(payload).eq('id', editingQuoteId);
+        setEditingVersion(newVersion);
+        setEditingQuoteNumber(newNumber);
+        toast.success(`Orçamento atualizado para V${newVersion}!`);
+      } else {
+        const quoteNumber = generateQuoteNumber();
+        const payload = { ...buildPayload('rascunho'), quote_number: quoteNumber };
+        const { data, error } = await supabase.from('budget_quotes').insert([payload]).select('id').single();
+        if (error) throw error;
+        setEditingQuoteId(data.id);
+        setEditingQuoteNumber(quoteNumber);
+        // Remove draft if different
+        if (draftIdRef.current && draftIdRef.current !== data.id) {
+          await supabase.from('budget_quotes').delete().eq('id', draftIdRef.current);
+        }
+        draftIdRef.current = null;
 
-      const quoteNumber = generateQuoteNumber();
-
-      const payload = {
-        owner_id: user.id,
-        quote_number: quoteNumber,
-        client_name: clienteNome,
-        environment_type: tipoAmbiente,
-        quote_date: dataOrcamento,
-        validity_days: parseInt(validadeDias) || 15,
-        data: JSON.parse(JSON.stringify({
-          ambientes, acessorios, condicoesPagamento, observacoes,
-          margemMaterial, margemServicos, margemAcessorios, margemInstalacao,
-          nomeEmpresa, nomeResponsavel, enderecoEmpresa, telefoneEmpresa,
-        })),
-        subtotal_materials: subtotalMaterials,
-        subtotal_labor: subtotalLabor,
-        subtotal_accessories: subtotalAccessories,
-        subtotal_installation: subtotalInstallation,
-        profit_margin_percent: margemMaterial, // store primary margin
-        discount: parseFloat(descontoValor) || 0,
-        discount_type: descontoTipo,
-        total: totalFinal,
-        payment_conditions: condicoesPagamento,
-        observations: observacoes,
-        status: 'rascunho',
-      };
-
-      const { error } = await supabase.from('budget_quotes').insert([payload]);
-      if (error) throw error;
-
-      // Also save/update client profile
-      const { data: existingClients } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('owner_id', user.id)
-        .eq('name', clienteNome)
-        .limit(1);
-
-      if (!existingClients || existingClients.length === 0) {
-        await supabase.from('clients').insert({
-          owner_id: user.id,
-          name: clienteNome,
-          service_type: tipoAmbiente,
-          observations: `Orçamento ${quoteNumber} gerado em ${new Date().toLocaleDateString('pt-BR')}`,
-        });
+        // Save client if new
+        const { data: existing } = await supabase.from('clients').select('id').eq('owner_id', user.id).eq('name', clienteNome).limit(1);
+        if (!existing || existing.length === 0) {
+          await supabase.from('clients').insert({ owner_id: user.id, name: clienteNome, service_type: tipoAmbiente });
+        }
+        toast.success('Orçamento salvo com sucesso!');
       }
-
-      localStorage.removeItem('orcamento_autosave');
-      toast.success('Orçamento salvo com sucesso!');
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao salvar orçamento');
+      toast.error(err.message || 'Erro ao salvar');
     } finally {
       setSaving(false);
     }
@@ -241,62 +268,32 @@ const CalculadoraOrcamento = () => {
 
   const limparTudo = () => {
     if (!confirm('Tem certeza que deseja limpar todos os campos?')) return;
-    setClienteNome('');
-    setTipoAmbiente('');
-    setDataOrcamento(today());
-    setValidadeDias('15');
-    setAmbientes([newAmbiente('Cozinha')]);
-    setAcessorios([newAcessorio()]);
-    setMargemMaterial(30);
-    setMargemServicos(30);
-    setMargemAcessorios(30);
-    setMargemInstalacao(20);
-    setDescontoValor('');
-    setDescontoTipo('percent');
+    setClienteNome(''); setTipoAmbiente(''); setDataOrcamento(today()); setValidadeDias('15');
+    setAmbientes([newAmbiente('Cozinha')]); setAcessorios([newAcessorio()]);
+    setMargemMaterial(30); setMargemServicos(30); setMargemAcessorios(30); setMargemInstalacao(20);
+    setDescontoValor(''); setDescontoTipo('percent');
     setCondicoesPagamento('Entrada 40%, parcela intermediária 30%, saldo na conclusão 30%');
-    setObservacoes('');
+    setObservacoes(''); setEditingQuoteId(null); setEditingVersion(1); setEditingQuoteNumber('');
+    draftIdRef.current = null;
     toast.success('Campos limpos!');
   };
 
   const handleGeneratePdf = async () => {
-    if (!clienteNome) {
-      toast.error('Informe o nome do cliente antes de gerar o PDF');
-      return;
-    }
+    if (!clienteNome) { toast.error('Informe o nome do cliente'); return; }
     setGeneratingPdf(true);
     try {
       await generateOrcamentoPdf({
-        quoteNumber: generateQuoteNumber(),
-        clienteNome,
-        tipoAmbiente,
-        dataOrcamento,
-        validadeDias,
-        ambientes,
-        acessorios,
-        subtotalMaterials,
-        subtotalLabor,
-        subtotalAccessories,
-        subtotalInstallation,
-        margemMaterial,
-        margemServicos,
-        margemAcessorios,
-        margemInstalacao,
-        descontoValor,
-        descontoTipo,
-        condicoesPagamento,
-        observacoes,
-        logoUrl: companyLogo,
-        companyName: nomeEmpresa || 'Marmoraria Artesanal',
-        responsibleName: nomeResponsavel,
-        companyAddress: enderecoEmpresa,
+        quoteNumber: editingQuoteNumber || generateQuoteNumber(),
+        clienteNome, tipoAmbiente, dataOrcamento, validadeDias, ambientes, acessorios,
+        subtotalMaterials, subtotalLabor, subtotalAccessories, subtotalInstallation,
+        margemMaterial, margemServicos, margemAcessorios, margemInstalacao,
+        descontoValor, descontoTipo, condicoesPagamento, observacoes,
+        logoUrl: companyLogo, companyName: nomeEmpresa || 'Marmoraria Artesanal',
+        responsibleName: nomeResponsavel, companyAddress: enderecoEmpresa,
         companyPhone: telefoneEmpresa || (profile as any)?.phone || '',
       });
-      toast.success('PDF gerado e baixado com sucesso!');
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao gerar PDF');
-    } finally {
-      setGeneratingPdf(false);
-    }
+      toast.success('PDF gerado!');
+    } catch (err: any) { toast.error(err.message || 'Erro ao gerar PDF'); } finally { setGeneratingPdf(false); }
   };
 
   return (
@@ -306,10 +303,13 @@ const CalculadoraOrcamento = () => {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-display font-bold flex items-center gap-2">
-              <Calculator className="w-5 h-5 text-primary" /> Calculadora de Orçamento
+              <Calculator className="w-5 h-5 text-primary" />
+              {editingQuoteId ? `Editando ${editingQuoteNumber} (V${editingVersion})` : 'Calculadora de Orçamento'}
             </h2>
-            {autoSaveStatus === 'saved' && (
-              <span className="text-[10px] text-success animate-fade-in">✓ Rascunho salvo</span>
+            {autoSaveStatus && (
+              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <Clock className="w-3 h-3" /> {autoSaveStatus}
+              </span>
             )}
           </div>
           <div className="flex gap-2">
@@ -320,25 +320,23 @@ const CalculadoraOrcamento = () => {
               <FileText className="w-4 h-4 mr-1" /> {generatingPdf ? 'Gerando...' : 'Gerar PDF'}
             </Button>
             <Button size="sm" onClick={saveOrcamento} disabled={saving || !clienteNome}>
-              <Save className="w-4 h-4 mr-1" /> {saving ? 'Salvando...' : 'Salvar orçamento'}
+              <Save className="w-4 h-4 mr-1" /> {saving ? 'Salvando...' : editingQuoteId ? 'Salvar nova versão' : 'Salvar orçamento'}
             </Button>
           </div>
         </div>
 
-        {/* Logo upload */}
+        {editingQuoteId && (
+          <div className="bg-accent/50 border border-accent rounded-md px-3 py-2 text-xs text-accent-foreground">
+            Editando orçamento Nº <strong>{editingQuoteNumber}</strong> — versão anterior disponível no histórico.
+          </div>
+        )}
+
         <LogoUpload logoUrl={companyLogo} onUpdate={setCompanyLogo} />
 
-        {/* Client section */}
         <ClienteSection
-          clienteNome={clienteNome}
-          tipoAmbiente={tipoAmbiente}
-          dataOrcamento={dataOrcamento}
-          validadeDias={validadeDias}
-          nomeEmpresa={nomeEmpresa}
-          nomeResponsavel={nomeResponsavel}
-          enderecoEmpresa={enderecoEmpresa}
-          telefoneEmpresa={telefoneEmpresa}
-          onChange={handleClienteChange}
+          clienteNome={clienteNome} tipoAmbiente={tipoAmbiente} dataOrcamento={dataOrcamento}
+          validadeDias={validadeDias} nomeEmpresa={nomeEmpresa} nomeResponsavel={nomeResponsavel}
+          enderecoEmpresa={enderecoEmpresa} telefoneEmpresa={telefoneEmpresa} onChange={handleClienteChange}
         />
 
         {/* Ambientes */}
@@ -349,74 +347,46 @@ const CalculadoraOrcamento = () => {
               <Plus className="w-4 h-4 mr-1" /> Adicionar ambiente
             </Button>
           </div>
-
           {showAddAmbiente && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
               {AMBIENTE_TIPOS.map(tipo => (
-                <Button key={tipo} size="sm" variant="outline" className="text-xs h-8 justify-start"
-                  onClick={() => addAmbiente(tipo)}>
+                <Button key={tipo} size="sm" variant="outline" className="text-xs h-8 justify-start" onClick={() => addAmbiente(tipo)}>
                   {tipo}
                 </Button>
               ))}
             </div>
           )}
-
           {ambientes.map(amb => (
-            <AmbienteBlock
-              key={amb.id}
-              ambiente={amb}
-              stones={stones}
+            <AmbienteBlock key={amb.id} ambiente={amb} stones={stones}
               onUpdate={(updated) => updateAmbiente(amb.id, updated)}
-              onRemove={() => removeAmbiente(amb.id)}
-              canRemove={ambientes.length > 1}
-            />
+              onRemove={() => removeAmbiente(amb.id)} canRemove={ambientes.length > 1} />
           ))}
         </div>
 
-        {/* Alertas globais */}
         <AlertasOrcamento alertas={gerarAlertas(ambientes)} />
-
-        {/* Acessórios */}
         <AcessoriosSection acessorios={acessorios} onUpdate={setAcessorios} />
 
-        {/* Resumo de consumo (interno) */}
         <ResumoConsumo
-          ambientes={ambientes}
-          subtotalMaterials={subtotalMaterials}
-          subtotalLabor={subtotalLabor}
-          subtotalAccessories={subtotalAccessories}
-          subtotalInstallation={subtotalInstallation}
-          margemMaterial={margemMaterial}
-          margemServicos={margemServicos}
-          margemAcessorios={margemAcessorios}
-          margemInstalacao={margemInstalacao}
+          ambientes={ambientes} subtotalMaterials={subtotalMaterials} subtotalLabor={subtotalLabor}
+          subtotalAccessories={subtotalAccessories} subtotalInstallation={subtotalInstallation}
+          margemMaterial={margemMaterial} margemServicos={margemServicos}
+          margemAcessorios={margemAcessorios} margemInstalacao={margemInstalacao}
         />
 
-        {/* Totais */}
         <TotaisSection
-          subtotalMaterials={subtotalMaterials}
-          subtotalLabor={subtotalLabor}
-          subtotalAccessories={subtotalAccessories}
-          subtotalInstallation={subtotalInstallation}
-          margemMaterial={margemMaterial}
-          setMargemMaterial={setMargemMaterial}
-          margemServicos={margemServicos}
-          setMargemServicos={setMargemServicos}
-          margemAcessorios={margemAcessorios}
-          setMargemAcessorios={setMargemAcessorios}
-          margemInstalacao={margemInstalacao}
-          setMargemInstalacao={setMargemInstalacao}
-          descontoValor={descontoValor}
-          descontoTipo={descontoTipo}
-          setDescontoValor={setDescontoValor}
-          setDescontoTipo={setDescontoTipo}
-          condicoesPagamento={condicoesPagamento}
-          setCondicoesPagamento={setCondicoesPagamento}
-          observacoes={observacoes}
-          setObservacoes={setObservacoes}
+          subtotalMaterials={subtotalMaterials} subtotalLabor={subtotalLabor}
+          subtotalAccessories={subtotalAccessories} subtotalInstallation={subtotalInstallation}
+          margemMaterial={margemMaterial} setMargemMaterial={setMargemMaterial}
+          margemServicos={margemServicos} setMargemServicos={setMargemServicos}
+          margemAcessorios={margemAcessorios} setMargemAcessorios={setMargemAcessorios}
+          margemInstalacao={margemInstalacao} setMargemInstalacao={setMargemInstalacao}
+          descontoValor={descontoValor} descontoTipo={descontoTipo}
+          setDescontoValor={setDescontoValor} setDescontoTipo={setDescontoTipo}
+          condicoesPagamento={condicoesPagamento} setCondicoesPagamento={setCondicoesPagamento}
+          observacoes={observacoes} setObservacoes={setObservacoes}
         />
 
-        {/* Scenario table when multiple material options exist */}
+        {/* Scenario table */}
         {ambientes.some(a => a.materialOptions.length > 1) && (
           <div className="space-y-2">
             <h3 className="text-sm font-display font-semibold">Cenários de Investimento</h3>
@@ -429,7 +399,7 @@ const CalculadoraOrcamento = () => {
                       <th key={amb.id} className="text-right px-3 py-2">{amb.tipo === 'Ambiente Personalizado' ? (amb.nomeCustom || 'Personalizado') : amb.tipo}</th>
                     ))}
                     <th className="text-right px-3 py-2">Instalação</th>
-                    <th className="text-right px-3 py-2 font-bold" style={{ color: '#2E7DB5' }}>Total</th>
+                    <th className="text-right px-3 py-2 font-bold text-primary">Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -439,7 +409,6 @@ const CalculadoraOrcamento = () => {
                       const labCost = calcAmbienteLaborCost(amb) * (1 + margemServicos / 100);
                       return sum + matCost + labCost;
                     }, 0) + subtotalAccessories * (1 + margemAcessorios / 100) + subtotalInstallation * (1 + margemInstalacao / 100);
-
                     return (
                       <tr key={optIdx} className="border-t border-border">
                         <td className="px-3 py-2 font-medium">Cenário {String.fromCharCode(65 + optIdx)}</td>
@@ -456,7 +425,7 @@ const CalculadoraOrcamento = () => {
                           );
                         })}
                         <td className="text-right px-3 py-2">R$ {fmt(subtotalInstallation * (1 + margemInstalacao / 100))}</td>
-                        <td className="text-right px-3 py-2 font-bold" style={{ color: '#2E7DB5' }}>R$ {fmt(scenarioTotal)}</td>
+                        <td className="text-right px-3 py-2 font-bold text-primary">R$ {fmt(scenarioTotal)}</td>
                       </tr>
                     );
                   })}

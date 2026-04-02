@@ -62,7 +62,8 @@ const buildPecaDescricao = (p: any): string => {
   const areaCm2 = w * l;
   const areaM2 = areaCm2 / 10000 * q;
   const lines: string[] = [];
-  lines.push(`${p.tipo}`);
+  const nome = p.nomePeca || p.tipo;
+  lines.push(nome);
   if (w > 0 && l > 0) lines.push(`Dimensões: ${l} cm (comp.) × ${w} cm (larg.)`);
   if (q > 1) lines.push(`Quantidade: ${q} unidades`);
   if (areaM2 > 0) lines.push(`Área da peça: ${fmt(areaM2)} m²`);
@@ -316,7 +317,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     subTitle(ambName);
 
     const pecasData = amb.pecas.map((p) => [
-      p.tipo,
+      p.nomePeca || p.tipo,
       buildPecaDescricao(p),
       buildAcabamentos(p),
     ]);
