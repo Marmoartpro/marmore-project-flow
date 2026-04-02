@@ -56,6 +56,7 @@ const AppRoutes = () => (
     <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
     <Route path="/projeto/novo" element={<ProtectedRoute><NewProject /></ProtectedRoute>} />
     <Route path="/projeto/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
+    <Route path="/assinar/:token" element={<AssinaturaPublica />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
