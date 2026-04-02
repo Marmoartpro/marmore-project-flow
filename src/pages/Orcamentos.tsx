@@ -138,6 +138,23 @@ const Orcamentos = () => {
   const bqFinalizados = budgetQuotes.filter(bq => ['aceito', 'recusado', 'aprovado', 'perdido'].includes(bq.status));
   const groupedStatuses = ['aguardando', 'negociando', 'aprovado', 'perdido'];
 
+  const requestSignature = async (bq: any, docType: string = 'orcamento') => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase.from('digital_signatures').insert({
+        owner_id: user.id,
+        document_type: docType,
+        document_id: bq.id,
+      } as any).select('sign_token').single();
+      if (error) throw error;
+      const url = `${window.location.origin}/assinar/${(data as any).sign_token}`;
+      await navigator.clipboard.writeText(url);
+      toast.success('Link de assinatura copiado! Envie ao cliente por WhatsApp.');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao gerar link');
+    }
+  };
+
   const BudgetCard = ({ bq }: { bq: any }) => (
     <Card key={bq.id}>
       <CardContent className="p-4">
