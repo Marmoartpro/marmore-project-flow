@@ -365,6 +365,14 @@ const Orcamentos = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {contratoQuote && (
+        <ContratoDialog
+          open={!!contratoQuote}
+          onClose={() => setContratoQuote(null)}
+          budgetQuote={contratoQuote}
+        />
+      )}
     </AppLayout>
   );
 };
