@@ -296,6 +296,7 @@ const emptyCubaEsculpida = (): CubaEsculpidaData => ({
 
 export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   id: crypto.randomUUID(),
+  nomePeca: '',
   tipo,
   descricao: '',
   formato: 'retangular',
