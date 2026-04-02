@@ -13,8 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, MoreVertical, Edit, Trash2, Calculator, FileText, Eye, Copy, Clock } from 'lucide-react';
+import { Plus, MoreVertical, Edit, Trash2, Calculator, FileText, Eye, Copy, Clock, PenTool, FileSignature } from 'lucide-react';
 import { toast } from 'sonner';
+import ContratoDialog from '@/components/contrato/ContratoDialog';
 
 const statusLabels: Record<string, string> = {
   rascunho: 'Rascunho', enviado: 'Enviado', aceito: 'Aceito', recusado: 'Recusado',
@@ -51,6 +52,7 @@ const Orcamentos = () => {
   const [deleteType, setDeleteType] = useState<'quote' | 'budget'>('quote');
   const [form, setForm] = useState(emptyForm);
   const [mainTab, setMainTab] = useState('calculados');
+  const [contratoQuote, setContratoQuote] = useState<any>(null);
 
   useEffect(() => { if (user) { fetchQuotes(); fetchBudgetQuotes(); } }, [user]);
 
@@ -136,6 +138,23 @@ const Orcamentos = () => {
   const bqFinalizados = budgetQuotes.filter(bq => ['aceito', 'recusado', 'aprovado', 'perdido'].includes(bq.status));
   const groupedStatuses = ['aguardando', 'negociando', 'aprovado', 'perdido'];
 
+  const requestSignature = async (bq: any, docType: string = 'orcamento') => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase.from('digital_signatures').insert({
+        owner_id: user.id,
+        document_type: docType,
+        document_id: bq.id,
+      } as any).select('sign_token').single();
+      if (error) throw error;
+      const url = `${window.location.origin}/assinar/${(data as any).sign_token}`;
+      await navigator.clipboard.writeText(url);
+      toast.success('Link de assinatura copiado! Envie ao cliente por WhatsApp.');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao gerar link');
+    }
+  };
+
   const BudgetCard = ({ bq }: { bq: any }) => (
     <Card key={bq.id}>
       <CardContent className="p-4">
@@ -164,6 +183,16 @@ const Orcamentos = () => {
                 )}
                 {['rascunho', 'enviado'].includes(bq.status) && (
                   <DropdownMenuItem onClick={() => convertToProject(bq)}>Converter em projeto</DropdownMenuItem>
+                )}
+                {['enviado', 'aceito', 'aprovado'].includes(bq.status) && (
+                  <DropdownMenuItem onClick={() => setContratoQuote(bq)}>
+                    <FileSignature className="w-3.5 h-3.5 mr-2" /> Gerar Contrato
+                  </DropdownMenuItem>
+                )}
+                {['enviado', 'aceito', 'aprovado'].includes(bq.status) && (
+                  <DropdownMenuItem onClick={() => requestSignature(bq)}>
+                    <PenTool className="w-3.5 h-3.5 mr-2" /> Solicitar assinatura
+                  </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={() => { setDeleteId(bq.id); setDeleteType('budget'); }} className="text-destructive">
                   <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
@@ -336,6 +365,14 @@ const Orcamentos = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {contratoQuote && (
+        <ContratoDialog
+          open={!!contratoQuote}
+          onClose={() => setContratoQuote(null)}
+          budgetQuote={contratoQuote}
+        />
+      )}
     </AppLayout>
   );
 };
