@@ -317,7 +317,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     subTitle(ambName);
 
     const pecasData = amb.pecas.map((p) => [
-      p.tipo,
+      p.nomePeca || p.tipo,
       buildPecaDescricao(p),
       buildAcabamentos(p),
     ]);
