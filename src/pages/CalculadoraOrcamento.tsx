@@ -317,7 +317,11 @@ const CalculadoraOrcamento = () => {
               </span>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button size="sm" variant="outline" onClick={() => setShowAIGenerator(true)}>
+              <Sparkles className="w-4 h-4 mr-1" /> Preencher com IA
+            </Button>
+            <AIReviewButton ambientes={ambientes} acessorios={acessorios} />
             <Button size="sm" variant="outline" onClick={limparTudo}>
               <Trash2 className="w-4 h-4 mr-1" /> Limpar
             </Button>
