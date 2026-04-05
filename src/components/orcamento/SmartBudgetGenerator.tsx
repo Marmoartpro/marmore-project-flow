@@ -81,7 +81,7 @@ export default function SmartBudgetGenerator({
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
       
-      const supabaseUrl = 'https://xbyewjvfrshemjvtgacz.supabase.co';
+      const supabaseUrl = 'https://xbyewjvfrshemjvtgacz.supabase.co'; // URL corrigida
       
       const response = await fetch(
         `${supabaseUrl}/functions/v1/generate-budget-gemini`,
@@ -89,7 +89,7 @@ export default function SmartBudgetGenerator({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+            
           },
           body: JSON.stringify(payload),
         }
