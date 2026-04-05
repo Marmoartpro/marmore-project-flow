@@ -55,8 +55,6 @@ const Orcamentos = () => {
   const [mainTab, setMainTab] = useState('calculados');
   const [contratoQuote, setContratoQuote] = useState<any>(null);
   
-  const [clients, setClients] = useState<any[]>([]);
-  const [materials, setMaterials] = useState<any[]>([]);
 
   useEffect(() => { if (user) { fetchQuotes(); fetchBudgetQuotes(); fetchClients(); fetchMaterials(); } }, [user]);
 
