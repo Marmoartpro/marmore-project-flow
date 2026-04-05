@@ -105,12 +105,23 @@ export default function SmartBudgetGenerator({
         owner_id: user.id,
         client_name: selectedClientData?.name || '',
         environment_type: 'Não especificado',
-        stone_type: selectedMaterialData?.name || '',
-        total: generatedBudget.total_price,
+        total: generatedBudget.total_price || 0,
+        subtotal_materials: generatedBudget.material_cost || 0,
+        subtotal_labor: generatedBudget.labor_cost || 0,
+        subtotal_accessories: 0,
+        subtotal_installation: 0,
         status: 'rascunho',
         quote_number: `AI-${Date.now()}`,
         version: 1,
         payment_conditions: 'A definir',
+        data: {
+          generated_by: 'ai',
+          material_name: selectedMaterialData?.name || '',
+          material_price_m2: selectedMaterialData?.price_per_m2 || 0,
+          total_area_m2: generatedBudget.total_area_m2 || 0,
+          items: generatedBudget.items || [],
+          description: generatedBudget.description || '',
+        },
       });
 
       if (error) throw error;
