@@ -332,10 +332,17 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
         <CubaEsculpidaFields data={peca.cubaEsculpida} onChange={handleCubaEsculpidaChange} />
       )}
       {peca.tipoCuba === 'Cuba esculpida' && (
-        <div>
-          <Label className="text-[10px]">Valor total escultura (R$)</Label>
-          <Input type="number" step="0.01" value={peca.valorCuba}
-            onChange={e => onChange('valorCuba', e.target.value)} className="h-8 text-xs" />
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-[10px]">Valor escultura (R$/m²)</Label>
+            <Input type="number" step="0.01" value={peca.valorCuba}
+              onChange={e => onChange('valorCuba', e.target.value)} className="h-8 text-xs" />
+          </div>
+          {calcCubaEsculpida(peca.cubaEsculpida).totalM2 > 0 && (
+            <div className="flex items-end text-[10px] text-muted-foreground pb-1">
+              Custo total: <b className="text-foreground ml-1">R$ {fmt((parseFloat(peca.valorCuba) || 0) * calcCubaEsculpida(peca.cubaEsculpida).totalM2)}</b>
+            </div>
+          )}
         </div>
       )}
 
