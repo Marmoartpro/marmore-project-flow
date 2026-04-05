@@ -391,13 +391,7 @@ const Orcamentos = () => {
         />
       )}
 
-      <SmartBudgetGenerator
-        open={showSmartGenerator}
-        onOpenChange={setShowSmartGenerator}
-        clients={clients}
-        materials={materials}
-        onBudgetGenerated={fetchBudgetQuotes}
-      />
+      
     </AppLayout>
   );
 };
