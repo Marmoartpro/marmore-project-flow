@@ -56,7 +56,7 @@ const Orcamentos = () => {
   const [contratoQuote, setContratoQuote] = useState<any>(null);
   
 
-  useEffect(() => { if (user) { fetchQuotes(); fetchBudgetQuotes(); fetchClients(); fetchMaterials(); } }, [user]);
+  useEffect(() => { if (user) { fetchQuotes(); fetchBudgetQuotes(); } }, [user]);
 
   const fetchClients = async () => {
     const { data } = await supabase.from('clients').select('*');
