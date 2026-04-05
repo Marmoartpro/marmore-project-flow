@@ -173,7 +173,7 @@ export interface MaoDeObra {
   corte: string;
   corteTipo: 'fixo' | 'm2';
   polimento: string;
-  polimentoTipo: 'fixo' | 'm2';
+  polimentoTipo: 'fixo' | 'm2' | 'ml';
   instalacao: string;
   instalacaoTipo: 'fixo' | 'm2';
   visitaTecnica: string;
