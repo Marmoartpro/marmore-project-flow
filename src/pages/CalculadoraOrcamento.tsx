@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
-import { Calculator, Plus, Save, Trash2, FileText, Clock } from 'lucide-react';
+import { Calculator, Plus, Save, Trash2, FileText, Clock, Sparkles } from 'lucide-react';
 import { generateOrcamentoPdf } from '@/components/orcamento/generatePdf';
 import { toast } from 'sonner';
 import ClienteSection from '@/components/orcamento/ClienteSection';
@@ -19,6 +19,8 @@ import {
   calcAmbienteMaterialCost, calcAmbienteLaborCost, calcAmbienteInstallCost, gerarAlertas, fmt,
 } from '@/components/orcamento/types';
 import AlertasOrcamento from '@/components/orcamento/AlertasOrcamento';
+import SmartBudgetGenerator from '@/components/orcamento/SmartBudgetGenerator';
+import AIReviewButton from '@/components/orcamento/AIReviewButton';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -28,6 +30,9 @@ const CalculadoraOrcamento = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isDuplicate = searchParams.get('duplicate') === 'true';
+  const openAI = searchParams.get('ai') === 'true';
+
+  const [showAIGenerator, setShowAIGenerator] = useState(openAI);
 
   const [stones, setStones] = useState<any[]>([]);
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
@@ -312,7 +317,11 @@ const CalculadoraOrcamento = () => {
               </span>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button size="sm" variant="outline" onClick={() => setShowAIGenerator(true)}>
+              <Sparkles className="w-4 h-4 mr-1" /> Preencher com IA
+            </Button>
+            <AIReviewButton ambientes={ambientes} acessorios={acessorios} />
             <Button size="sm" variant="outline" onClick={limparTudo}>
               <Trash2 className="w-4 h-4 mr-1" /> Limpar
             </Button>
@@ -435,6 +444,16 @@ const CalculadoraOrcamento = () => {
           </div>
         )}
       </div>
+
+      <SmartBudgetGenerator
+        open={showAIGenerator}
+        onOpenChange={setShowAIGenerator}
+        stones={stones}
+        onAmbientesGenerated={(newAmbs, resumo) => {
+          setAmbientes(prev => [...prev.filter(a => a.pecas.some(p => p.nomePeca || p.largura)), ...newAmbs]);
+          if (resumo) toast.info(resumo, { duration: 8000 });
+        }}
+      />
     </AppLayout>
   );
 };

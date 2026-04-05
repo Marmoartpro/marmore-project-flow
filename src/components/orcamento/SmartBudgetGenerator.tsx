@@ -6,61 +6,114 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Upload, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { Ambiente, PecaItem, newPeca, newAmbiente, newMaterialOption, PECA_TIPOS } from './types';
 
 interface SmartBudgetGeneratorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  clients: any[];
-  materials: any[];
-  onBudgetGenerated?: () => void;
+  stones: any[];
+  onAmbientesGenerated: (ambientes: Ambiente[], resumo: string) => void;
 }
 
 export default function SmartBudgetGenerator({
   open,
   onOpenChange,
-  clients,
-  materials,
-  onBudgetGenerated,
+  stones,
+  onAmbientesGenerated,
 }: SmartBudgetGeneratorProps) {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [selectedClient, setSelectedClient] = useState('');
   const [selectedMaterial, setSelectedMaterial] = useState('');
   const [measurements, setMeasurements] = useState('');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [generatedBudget, setGeneratedBudget] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('manual');
 
-  const selectedMaterialData = materials.find((m) => m.id === selectedMaterial);
-  const selectedClientData = clients.find((c) => c.id === selectedClient);
+  const selectedStone = stones.find((s) => s.id === selectedMaterial);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
-    reader.onload = (event) => {
-      setUploadedImage(event.target?.result as string);
-    };
+    reader.onload = (event) => setUploadedImage(event.target?.result as string);
     reader.readAsDataURL(file);
   };
 
+  const buildAmbientesFromAI = (aiAmbientes: any[]): Ambiente[] => {
+    return aiAmbientes.map((aiAmb: any) => {
+      const tipo = aiAmb.tipo || 'Ambiente Personalizado';
+      const amb = newAmbiente(tipo);
+
+      // Set material if selected
+      if (selectedStone) {
+        amb.materialOptions = [
+          {
+            ...newMaterialOption('Opção A'),
+            stoneId: selectedStone.id,
+            stoneName: selectedStone.name,
+            pricePerM2: selectedStone.price_per_m2 || 0,
+          },
+        ];
+      }
+
+      // Build pecas from AI
+      const pecaTipos = PECA_TIPOS[tipo] || PECA_TIPOS['Ambiente Personalizado'];
+      amb.pecas = (aiAmb.pecas || []).map((aiPeca: any) => {
+        const pecaTipo = pecaTipos.includes(aiPeca.tipo) ? aiPeca.tipo : (pecaTipos[0] || 'Peça Personalizada');
+        const peca = newPeca(pecaTipo);
+
+        peca.nomePeca = aiPeca.nomePeca || aiPeca.nome || '';
+        peca.tipo = pecaTipo;
+        peca.descricao = aiPeca.descricao || '';
+        peca.formato = aiPeca.formato || 'retangular';
+        peca.largura = String(aiPeca.largura || '');
+        peca.comprimento = String(aiPeca.comprimento || '');
+        peca.quantidade = String(aiPeca.quantidade || '1');
+
+        // Optional fields
+        if (aiPeca.espelhoBacksplash) {
+          peca.espelhoBacksplash = true;
+          peca.espelhoBacksplashAltura = String(aiPeca.espelhoBacksplashAltura || '15');
+        }
+        if (aiPeca.saiaFrontal) {
+          peca.saiaFrontal = true;
+          peca.saiaFrontalAltura = String(aiPeca.saiaFrontalAltura || '10');
+        }
+        if (aiPeca.tipoCuba && aiPeca.tipoCuba !== 'Sem cuba') {
+          peca.tipoCuba = aiPeca.tipoCuba;
+        }
+        if (aiPeca.furosTorneira && aiPeca.furosTorneira !== 'Nenhum') {
+          peca.furosTorneira = aiPeca.furosTorneira;
+        }
+        if (aiPeca.rebaixoCooktop) {
+          peca.rebaixoCooktop = true;
+          peca.rebaixoCooktopLargura = String(aiPeca.rebaixoCooktopLargura || '');
+          peca.rebaixoCooktopComprimento = String(aiPeca.rebaixoCooktopComprimento || '');
+        }
+        if (aiPeca.acabamentoBorda) peca.acabamentoBorda = aiPeca.acabamentoBorda;
+        if (aiPeca.bordasComAcabamento) peca.bordasComAcabamento = aiPeca.bordasComAcabamento;
+
+        return peca;
+      });
+
+      if (amb.pecas.length === 0) {
+        amb.pecas = [newPeca(pecaTipos[0] || 'Bancada')];
+      }
+
+      return amb;
+    });
+  };
+
   const generateBudget = async (useImage: boolean = false) => {
-    if (!user || !selectedClient || !selectedMaterial) {
-      toast.error('Preencha cliente e material');
+    if (!selectedMaterial) {
+      toast.error('Selecione um material');
       return;
     }
-
     if (!useImage && !measurements) {
       toast.error('Preencha as medidas');
       return;
     }
-
     if (useImage && !uploadedImage) {
       toast.error('Envie uma imagem');
       return;
@@ -69,73 +122,42 @@ export default function SmartBudgetGenerator({
     setLoading(true);
     try {
       const payload = {
-        client_id: selectedClient,
-        material_id: selectedMaterial,
-        material_price: selectedMaterialData?.price_per_m2 || 0,
+        mode: 'generate',
+        material_name: selectedStone?.name || '',
+        material_price: selectedStone?.price_per_m2 || 0,
+        stone_id: selectedMaterial,
         measurements: measurements || 'Analisar imagem anexa',
         service_type: 'Corte e Acabamento padrão',
         image_base64: useImage ? uploadedImage : null,
       };
 
-      // Chamar a Edge Function usando supabase.functions.invoke
       const { data, error } = await supabase.functions.invoke('generate-budget-gemini', {
         body: payload,
         headers: { Authorization: '' },
       });
 
-      if (error) {
-        throw new Error(error.message || 'Erro ao chamar a função');
+      if (error) throw new Error(error.message || 'Erro ao chamar a função');
+      if (data?.error) throw new Error(data.error);
+
+      const ambientes = buildAmbientesFromAI(data.ambientes || []);
+
+      if (ambientes.length === 0) {
+        toast.error('A IA não conseguiu identificar peças. Tente ser mais específico.');
+        return;
       }
 
-      setGeneratedBudget(data);
-      toast.success('Orçamento gerado com sucesso!');
+      onAmbientesGenerated(ambientes, data.resumo || '');
+      toast.success(`${ambientes.length} ambiente(s) gerado(s) pela IA! Revise e ajuste os valores.`);
+      onOpenChange(false);
+
+      // Reset
+      setMeasurements('');
+      setUploadedImage(null);
     } catch (err: any) {
       toast.error(err.message || 'Erro ao gerar orçamento');
       console.error(err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const saveBudget = async () => {
-    if (!user || !generatedBudget) return;
-
-    try {
-      const { error } = await supabase.from('budget_quotes').insert({
-        owner_id: user.id,
-        client_name: selectedClientData?.name || '',
-        environment_type: 'Não especificado',
-        total: generatedBudget.total_price || 0,
-        subtotal_materials: generatedBudget.material_cost || 0,
-        subtotal_labor: generatedBudget.labor_cost || 0,
-        subtotal_accessories: 0,
-        subtotal_installation: 0,
-        status: 'rascunho',
-        quote_number: `AI-${Date.now()}`,
-        version: 1,
-        payment_conditions: 'A definir',
-        data: {
-          generated_by: 'ai',
-          material_name: selectedMaterialData?.name || '',
-          material_price_m2: selectedMaterialData?.price_per_m2 || 0,
-          total_area_m2: generatedBudget.total_area_m2 || 0,
-          items: generatedBudget.items || [],
-          description: generatedBudget.description || '',
-        },
-      });
-
-      if (error) throw error;
-
-      toast.success('Orçamento salvo como rascunho!');
-      setGeneratedBudget(null);
-      setMeasurements('');
-      setUploadedImage(null);
-      setSelectedClient('');
-      setSelectedMaterial('');
-      onOpenChange(false);
-      onBudgetGenerated?.();
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao salvar orçamento');
     }
   };
 
@@ -145,240 +167,96 @@ export default function SmartBudgetGenerator({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-yellow-500" />
-            Gerador Inteligente de Orçamentos
+            Gerador Inteligente — Preencher Orçamento com IA
           </DialogTitle>
         </DialogHeader>
 
-        {!generatedBudget ? (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="manual">Por Medidas</TabsTrigger>
-              <TabsTrigger value="image">Por Planta/Foto</TabsTrigger>
-            </TabsList>
+        <p className="text-xs text-muted-foreground">
+          A IA vai analisar as informações e preencher os ambientes e peças automaticamente. 
+          Você poderá editar tudo depois, incluindo valores, e gerar o PDF normalmente.
+        </p>
 
-            {/* Aba: Por Medidas */}
-            <TabsContent value="manual" className="space-y-4">
-              <div className="space-y-2">
-                <Label>Cliente</Label>
-                <Select value={selectedClient} onValueChange={setSelectedClient}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="manual">Por Medidas</TabsTrigger>
+            <TabsTrigger value="image">Por Planta/Foto</TabsTrigger>
+          </TabsList>
 
-              <div className="space-y-2">
-                <Label>Material</Label>
-                <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um material" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {materials.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name} - R$ {m.price_per_m2}/m²
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Medidas e Descrição</Label>
-                <Textarea
-                  placeholder="Ex: Bancada de 2.5m x 0.6m com frontão de 15cm, ilha de 1.8m x 0.9m..."
-                  value={measurements}
-                  onChange={(e) => setMeasurements(e.target.value)}
-                  rows={4}
-                />
-              </div>
-
-              <Button
-                onClick={() => generateBudget(false)}
-                disabled={loading || !selectedClient || !selectedMaterial || !measurements}
-                className="w-full"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Gerando orçamento...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Gerar Orçamento
-                  </>
-                )}
-              </Button>
-            </TabsContent>
-
-            {/* Aba: Por Planta/Foto */}
-            <TabsContent value="image" className="space-y-4">
-              <div className="space-y-2">
-                <Label>Cliente</Label>
-                <Select value={selectedClient} onValueChange={setSelectedClient}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Material</Label>
-                <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um material" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {materials.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name} - R$ {m.price_per_m2}/m²
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Planta/Foto do Projeto</Label>
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                  {uploadedImage ? (
-                    <div className="space-y-2">
-                      <img
-                        src={uploadedImage}
-                        alt="Preview"
-                        className="max-h-48 mx-auto rounded"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setUploadedImage(null)}
-                      >
-                        Remover Imagem
-                      </Button>
-                    </div>
-                  ) : (
-                    <label className="cursor-pointer">
-                      <div className="flex flex-col items-center gap-2">
-                        <Upload className="w-8 h-8 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">
-                          Clique ou arraste uma imagem aqui
-                        </span>
-                      </div>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  )}
-                </div>
-              </div>
-
-              <Button
-                onClick={() => generateBudget(true)}
-                disabled={loading || !selectedClient || !selectedMaterial || !uploadedImage}
-                className="w-full"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Analisando imagem...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Analisar e Gerar
-                  </>
-                )}
-              </Button>
-            </TabsContent>
-          </Tabs>
-        ) : (
-          <div className="space-y-4">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Área Total</p>
-                      <p className="text-lg font-semibold">
-                        {generatedBudget.total_area_m2?.toFixed(2)} m²
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Custo Material</p>
-                      <p className="text-lg font-semibold">
-                        R$ {generatedBudget.material_cost?.toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Mão de Obra</p>
-                      <p className="text-lg font-semibold">
-                        R$ {generatedBudget.labor_cost?.toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Preço Total</p>
-                      <p className="text-lg font-bold text-green-600">
-                        R$ {generatedBudget.total_price?.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {generatedBudget.description && (
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-2">Descrição</p>
-                      <p className="text-sm">{generatedBudget.description}</p>
-                    </div>
-                  )}
-
-                  {generatedBudget.items && generatedBudget.items.length > 0 && (
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-2">Itens</p>
-                      <ul className="text-sm space-y-1">
-                        {generatedBudget.items.map((item: any, idx: number) => (
-                          <li key={idx} className="flex justify-between">
-                            <span>{item.name}</span>
-                            <span>{item.area?.toFixed(2)} m²</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setGeneratedBudget(null)}
-                className="flex-1"
-              >
-                Gerar Novo
-              </Button>
-              <Button onClick={saveBudget} className="flex-1">
-                Salvar Orçamento
-              </Button>
-            </div>
+          {/* Common material selector */}
+          <div className="space-y-2 mt-4">
+            <Label>Material Base</Label>
+            <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um material do mostruário" />
+              </SelectTrigger>
+              <SelectContent>
+                {stones.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name} - R$ {s.price_per_m2}/m²
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        )}
+
+          <TabsContent value="manual" className="space-y-4">
+            <div className="space-y-2">
+              <Label>Medidas e Descrição do Projeto</Label>
+              <Textarea
+                placeholder="Ex: Cozinha com bancada de 2.50m x 0.60m com frontão de 15cm, 1 furo de torneira, cuba de embutir. Banheiro com bancada de 1.20m x 0.50m com espelho..."
+                value={measurements}
+                onChange={(e) => setMeasurements(e.target.value)}
+                rows={5}
+              />
+            </div>
+            <Button
+              onClick={() => generateBudget(false)}
+              disabled={loading || !selectedMaterial || !measurements}
+              className="w-full"
+            >
+              {loading ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Gerando peças...</>
+              ) : (
+                <><Sparkles className="w-4 h-4 mr-2" />Preencher Orçamento com IA</>
+              )}
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="image" className="space-y-4">
+            <div className="space-y-2">
+              <Label>Planta/Foto do Projeto</Label>
+              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                {uploadedImage ? (
+                  <div className="space-y-2">
+                    <img src={uploadedImage} alt="Preview" className="max-h-48 mx-auto rounded" />
+                    <Button variant="outline" size="sm" onClick={() => setUploadedImage(null)}>
+                      Remover Imagem
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer">
+                    <div className="flex flex-col items-center gap-2">
+                      <Upload className="w-8 h-8 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Clique ou arraste uma imagem aqui</span>
+                    </div>
+                    <Input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                  </label>
+                )}
+              </div>
+            </div>
+            <Button
+              onClick={() => generateBudget(true)}
+              disabled={loading || !selectedMaterial || !uploadedImage}
+              className="w-full"
+            >
+              {loading ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analisando imagem...</>
+              ) : (
+                <><Sparkles className="w-4 h-4 mr-2" />Analisar e Preencher</>
+              )}
+            </Button>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

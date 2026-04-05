@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, MoreVertical, Edit, Trash2, Calculator, FileText, Eye, Copy, Clock, PenTool, FileSignature, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import ContratoDialog from '@/components/contrato/ContratoDialog';
-import SmartBudgetGenerator from '@/components/orcamento/SmartBudgetGenerator';
+
 
 const statusLabels: Record<string, string> = {
   rascunho: 'Rascunho', enviado: 'Enviado', aceito: 'Aceito', recusado: 'Recusado',
@@ -54,21 +54,10 @@ const Orcamentos = () => {
   const [form, setForm] = useState(emptyForm);
   const [mainTab, setMainTab] = useState('calculados');
   const [contratoQuote, setContratoQuote] = useState<any>(null);
-  const [showSmartGenerator, setShowSmartGenerator] = useState(false);
-  const [clients, setClients] = useState<any[]>([]);
-  const [materials, setMaterials] = useState<any[]>([]);
+  
 
-  useEffect(() => { if (user) { fetchQuotes(); fetchBudgetQuotes(); fetchClients(); fetchMaterials(); } }, [user]);
+  useEffect(() => { if (user) { fetchQuotes(); fetchBudgetQuotes(); } }, [user]);
 
-  const fetchClients = async () => {
-    const { data } = await supabase.from('clients').select('*');
-    setClients(data || []);
-  };
-
-  const fetchMaterials = async () => {
-    const { data } = await supabase.from('stones').select('*');
-    setMaterials(data || []);
-  };
 
   const fetchQuotes = async () => {
     const { data } = await supabase.from('quotes').select('*').order('created_at', { ascending: false });
@@ -239,7 +228,7 @@ const Orcamentos = () => {
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-display font-bold">Orçamentos</h2>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => setShowSmartGenerator(true)} className="gap-1">
+            <Button size="sm" variant="outline" onClick={() => navigate('/calculadora/novo?ai=true')} className="gap-1">
               <Sparkles className="w-4 h-4" /> IA
             </Button>
             <Button size="sm" variant="outline" onClick={() => navigate('/calculadora')}>
@@ -391,13 +380,7 @@ const Orcamentos = () => {
         />
       )}
 
-      <SmartBudgetGenerator
-        open={showSmartGenerator}
-        onOpenChange={setShowSmartGenerator}
-        clients={clients}
-        materials={materials}
-        onBudgetGenerated={fetchBudgetQuotes}
-      />
+      
     </AppLayout>
   );
 };
