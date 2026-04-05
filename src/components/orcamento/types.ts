@@ -721,8 +721,19 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
   const mo = amb.maoDeObra;
   let total = 0;
 
+  // Corte
   total += mo.corteTipo === 'm2' ? (parseFloat(mo.corte) || 0) * areaCompra : (parseFloat(mo.corte) || 0);
-  total += mo.polimentoTipo === 'm2' ? (parseFloat(mo.polimento) || 0) * areaCompra : (parseFloat(mo.polimento) || 0);
+
+  // Polimento — fixo, m² ou ml
+  if (mo.polimentoTipo === 'm2') {
+    total += (parseFloat(mo.polimento) || 0) * areaCompra;
+  } else if (mo.polimentoTipo === 'ml') {
+    const totalML = amb.pecas.reduce((s, p) => s + calcMetrosLinearesBorda(p), 0);
+    total += (parseFloat(mo.polimento) || 0) * totalML;
+  } else {
+    total += parseFloat(mo.polimento) || 0;
+  }
+
   total += mo.instalacaoTipo === 'm2' ? (parseFloat(mo.instalacao) || 0) * areaCompra : (parseFloat(mo.instalacao) || 0);
   total += parseFloat(mo.visitaTecnica) || 0;
 
@@ -736,17 +747,19 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
   amb.pecas.forEach(p => {
     const q = parseInt(p.quantidade) || 1;
 
-    // Rebaixo
-    if (p.tipoRebaixo !== 'Sem rebaixo') total += parseFloat(p.valorRebaixo) || 0;
+    // CORREÇÃO 2: Rebaixo por m²
+    if (p.tipoRebaixo !== 'Sem rebaixo') {
+      const areaRebaixo = cm(p.rebaixoComprimento) * cm(p.rebaixoLargura) / 10000;
+      total += (parseFloat(p.valorRebaixo) || 0) * areaRebaixo * q;
+    }
 
-    // Cuba value
+    // CORREÇÃO 3: Cuba — esculpida por m², outras fixo
     if (p.tipoCuba !== 'Sem cuba') {
-      total += parseFloat(p.valorCuba) || 0;
-      // Cuba esculpida service cost
       if (p.tipoCuba === 'Cuba esculpida') {
         const cubaCalc = calcCubaEsculpida(p.cubaEsculpida);
-        // cubaCalc.totalM2 is already the sculpted area — cost = totalM2 * valor per m² (stored in valorCuba)
-        // valorCuba is the total cost set by user, so we don't multiply again
+        total += (parseFloat(p.valorCuba) || 0) * cubaCalc.totalM2 * q;
+      } else {
+        total += (parseFloat(p.valorCuba) || 0) * q;
       }
     }
 
@@ -759,83 +772,77 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
     // Furos torneira
     if (p.furosTorneira !== 'Nenhum') {
       const nFuros = parseInt(p.furosTorneira) || 0;
-      total += nFuros * (parseFloat(p.valorFuroTorneira) || 0);
+      total += nFuros * (parseFloat(p.valorFuroTorneira) || 0) * q;
     }
 
     // Recorte cooktop
-    if (p.rebaixoCooktop) total += parseFloat(p.valorRecorteCooktop) || 0;
+    if (p.rebaixoCooktop) total += (parseFloat(p.valorRecorteCooktop) || 0) * q;
 
     // Piscina cantos
-    total += (parseInt(p.cantosInternos) || 0) * (parseFloat(p.valorCantoInterno) || 0);
-    total += (parseInt(p.cantosExternos) || 0) * (parseFloat(p.valorCantoExterno) || 0);
+    total += (parseInt(p.cantosInternos) || 0) * (parseFloat(p.valorCantoInterno) || 0) * q;
+    total += (parseInt(p.cantosExternos) || 0) * (parseFloat(p.valorCantoExterno) || 0) * q;
 
     // Canaleta escoamento
     if (p.canaletaEscoamento) {
-      total += (parseFloat(p.canaletaMetros) || 0) * (parseFloat(p.valorCanaletaMetro) || 0);
+      total += (parseFloat(p.canaletaMetros) || 0) * (parseFloat(p.valorCanaletaMetro) || 0) * q;
     }
 
-    // Escada frisos antiderrapante
+    // CORREÇÃO 13: Escada frisos antiderrapante
     if (p.frisosAntiderrapante) {
-      const mlFrisos = (cm(p.comprimento) / 100) * (parseInt(p.qtdFrisosPorDegrau) || 0) * q;
-      total += mlFrisos * (parseFloat(p.valorFrisoMetro) || 0);
+      total += (parseFloat(p.valorFrisoMetro) || 0) * (parseInt(p.qtdFrisosPorDegrau) || 2) * (cm(p.comprimento) / 100) * q;
     }
 
-    // Soleira/Peitoril boleado
+    // CORREÇÃO 8: Soleira/Peitoril boleado
     if (parseInt(p.boleadoLados) > 0) {
-      const mlSoleira = cm(p.comprimento) / 100 * q;
-      total += parseInt(p.boleadoLados) * mlSoleira * (parseFloat(p.valorBoleadoMetro) || 0);
+      total += (parseFloat(p.valorBoleadoMetro) || 0) * (cm(p.comprimento) / 100) * parseInt(p.boleadoLados) * q;
     }
 
-    // Pingadeira
+    // CORREÇÃO 10: Pingadeira
     if (p.pingadeira) {
-      total += (cm(p.comprimento) / 100 * q) * (parseFloat(p.valorPingadeiraMetro) || 0);
+      total += (parseFloat(p.valorPingadeiraMetro) || 0) * (cm(p.comprimento) / 100) * q;
     }
 
-    // Encaixe porta
-    if (p.encaixePorta) total += parseFloat(p.valorEncaixe) || 0;
+    // CORREÇÃO 9: Encaixe porta
+    if (p.encaixePorta) total += (parseFloat(p.valorEncaixe) || 0) * q;
 
-    // Rodapé cantos
-    total += (parseInt(p.rodapeCantosInternos) || 0) * (parseFloat(p.valorCantoRodape) || 0);
-    total += (parseInt(p.rodapeCantosExternos) || 0) * (parseFloat(p.valorCantoRodape) || 0);
-
-    // Rodapé acabamento superior
-    if (parseFloat(p.valorAcabSuperior) > 0) {
-      total += (cm(p.comprimento) / 100 * q) * (parseFloat(p.valorAcabSuperior) || 0);
+    // CORREÇÃO 11: Rodapé cantos e acabamento superior
+    if (p.tipo === 'Rodapé/Filete') {
+      total += (parseInt(p.rodapeCantosInternos) || 0) * (parseFloat(p.valorCantoRodape) || 0) * q;
+      total += (parseInt(p.rodapeCantosExternos) || 0) * (parseFloat(p.valorCantoRodape) || 0) * q;
+      if (parseFloat(p.valorAcabSuperior) > 0) {
+        total += (parseFloat(p.valorAcabSuperior) || 0) * (cm(p.comprimento) / 100) * q;
+      }
     }
 
     // Painel ripado
-    if (p.painelRipado) total += parseFloat(p.valorRecorteDecorat) || 0;
-
-    // Piso rodapé integrado
-    if (p.rodapeIntegrado) {
-      const perimM = cm(p.perimetroAmbiente) / 100;
-      const portasM = cm(p.larguraPortas) / 100;
-      const mlRodape = perimM - portasM;
-      // rodapé cost added as a separate line (user sets in serviços customizados)
-    }
+    if (p.painelRipado) total += (parseFloat(p.valorRecorteDecorat) || 0) * q;
 
     // Furo coluna tampo
-    if (p.furoColuna) total += parseFloat(p.valorFuroColuna) || 0;
+    if (p.furoColuna) total += (parseFloat(p.valorFuroColuna) || 0) * q;
 
-    // Nicho serviço
-    if (p.tipo === 'Nicho Embutido') total += parseFloat(p.valorServicoNicho) || 0;
+    // CORREÇÃO 12: Nicho serviço
+    if (p.tipo === 'Nicho Embutido') total += (parseFloat(p.valorServicoNicho) || 0) * q;
 
     // Box ralo
-    if (p.raloLinear) total += parseFloat(p.valorServicoRalo) || 0;
+    if (p.raloLinear) total += (parseFloat(p.valorServicoRalo) || 0) * q;
 
     // Box nicho
     if ((parseInt(p.nichoBoxQtd) || 0) > 0) {
-      total += (parseInt(p.nichoBoxQtd) || 0) * (parseFloat(p.valorServicoNichoBox) || 0);
+      total += (parseInt(p.nichoBoxQtd) || 0) * (parseFloat(p.valorServicoNichoBox) || 0) * q;
     }
 
-    // Extras
-    p.extras.forEach(e => { total += e.valor; });
+    // CORREÇÃO 14: Extras (multiplicar por q)
+    (p.extras || []).forEach(e => { total += (e.valor || 0) * q; });
   });
 
   // Serviços customizados
   (mo.servicosCustom || []).forEach(s => {
     const val = parseFloat(s.valor) || 0;
     if (s.tipo === 'm2') total += val * areaCompra;
+    else if (s.tipo === 'ml') {
+      const totalML = amb.pecas.reduce((sum, p) => sum + calcMetrosLinearesBorda(p), 0);
+      total += val * totalML;
+    }
     else total += val;
   });
 
