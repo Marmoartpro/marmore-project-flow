@@ -48,6 +48,7 @@ export interface PecaItem {
   // L-shape (two rectangles)
   lTrecho2Largura: string;
   lTrecho2Comprimento: string;
+  lPosicao: string; // 'superior_direito' | 'superior_esquerdo' | 'inferior_direito' | 'inferior_esquerdo'
   // Geometric shapes
   raio: string;          // redondo / semicircular / setor
   baseMaior: string;     // trapézio
