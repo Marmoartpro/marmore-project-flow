@@ -30,6 +30,9 @@ const CalculadoraOrcamento = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isDuplicate = searchParams.get('duplicate') === 'true';
+  const openAI = searchParams.get('ai') === 'true';
+
+  const [showAIGenerator, setShowAIGenerator] = useState(openAI);
 
   const [stones, setStones] = useState<any[]>([]);
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
