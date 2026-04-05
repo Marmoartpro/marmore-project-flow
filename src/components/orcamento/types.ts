@@ -613,16 +613,88 @@ export const calcCubaEsculpida = (ce: CubaEsculpidaData): CubaEsculpidaCalc => {
   };
 };
 
-/** Metros lineares de borda */
+/** Metros lineares de borda — calcula perímetro real por formato */
 export const calcMetrosLinearesBorda = (p: PecaItem): number => {
-  const l = cm(p.comprimento) / 100; // convert to meters
-  const w = cm(p.largura) / 100;
   const q = parseInt(p.quantidade) || 1;
   let ml = 0;
-  if (p.bordasComAcabamento === 'Só frontal') ml = l;
-  else if (p.bordasComAcabamento === 'Frontal e laterais') ml = l + w * 2;
-  else if (p.bordasComAcabamento === 'Todas as bordas') ml = (l + w) * 2;
-  else ml = l;
+
+  // Soleira/Peitoril usa boleadoLados para definir ml
+  if (['Soleira', 'Peitoril'].includes(p.tipo)) {
+    const lados = parseInt(p.boleadoLados) || 0;
+    if (lados === 0) {
+      // Still calculate for acabamento borda if set
+      const l = cm(p.comprimento) / 100;
+      if (p.bordasComAcabamento === 'Só frontal') ml = l;
+      else if (p.bordasComAcabamento === 'Frontal e laterais') ml = l + (cm(p.largura) / 100) * 2;
+      else if (p.bordasComAcabamento === 'Todas as bordas') ml = (l + cm(p.largura) / 100) * 2;
+      else ml = l;
+      return ceilML(ml * q);
+    }
+    ml = (cm(p.comprimento) / 100) * lados;
+    return ceilML(ml * q);
+  }
+
+  switch (p.formato) {
+    case 'l_shape': {
+      const c1 = cm(p.comprimento) / 100;
+      const w1 = cm(p.largura) / 100;
+      const c2 = cm(p.lTrecho2Comprimento) / 100;
+      const w2 = cm(p.lTrecho2Largura) / 100;
+      const overlapSide = Math.min(w1, w2);
+      if (p.bordasComAcabamento === 'Só frontal') {
+        ml = c1 + c2 - overlapSide;
+      } else if (p.bordasComAcabamento === 'Frontal e laterais') {
+        ml = c1 + c2 - overlapSide + w1 + w2;
+      } else if (p.bordasComAcabamento === 'Todas as bordas') {
+        // Full outer perimeter of L
+        ml = 2 * (c1 + w1) + 2 * (c2 + w2) - 4 * overlapSide;
+      } else {
+        ml = c1 + c2 - overlapSide;
+      }
+      break;
+    }
+    case 'redondo':
+      ml = 2 * Math.PI * cm(p.raio) / 100;
+      break;
+    case 'oval': {
+      const a = cm(p.comprimento) / 2 / 100;
+      const b = cm(p.largura) / 2 / 100;
+      // Ramanujan approximation
+      ml = Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b)));
+      break;
+    }
+    case 'semicircular':
+      ml = (Math.PI * cm(p.raio) + 2 * cm(p.raio)) / 100;
+      break;
+    case 'triangular': {
+      const base = cm(p.comprimento) / 100;
+      const lado = cm(p.largura) / 100;
+      ml = base + lado * 2;
+      break;
+    }
+    case 'trapezoidal': {
+      const bM = cm(p.baseMaior) / 100;
+      const bm = cm(p.baseMenor) / 100;
+      const h = cm(p.alturaForma) / 100;
+      const ladoT = Math.sqrt(Math.pow((bM - bm) / 2, 2) + h * h);
+      ml = bM + bm + ladoT * 2;
+      break;
+    }
+    default: {
+      const l = cm(p.comprimento) / 100;
+      const w = cm(p.largura) / 100;
+      if (p.bordasComAcabamento === 'Só frontal') ml = l;
+      else if (p.bordasComAcabamento === 'Frontal e laterais') ml = l + w * 2;
+      else if (p.bordasComAcabamento === 'Todas as bordas') ml = (l + w) * 2;
+      else ml = l;
+    }
+  }
+
+  // Borda de Piscina com boleado duplo (duas faces) — dobra o ml
+  if (p.tipo === 'Borda de Piscina' && p.bordasComAcabamento === 'Todas as bordas') {
+    ml = ml; // already full perimeter; cost doubling handled via acabamento value
+  }
+
   return ceilML(ml * q);
 };
 
