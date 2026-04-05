@@ -444,6 +444,16 @@ const CalculadoraOrcamento = () => {
           </div>
         )}
       </div>
+
+      <SmartBudgetGenerator
+        open={showAIGenerator}
+        onOpenChange={setShowAIGenerator}
+        stones={stones}
+        onAmbientesGenerated={(newAmbs, resumo) => {
+          setAmbientes(prev => [...prev.filter(a => a.pecas.some(p => p.nomePeca || p.largura)), ...newAmbs]);
+          if (resumo) toast.info(resumo, { duration: 8000 });
+        }}
+      />
     </AppLayout>
   );
 };
