@@ -77,12 +77,28 @@ export default function SmartBudgetGenerator({
         image_base64: useImage ? uploadedImage : null,
       };
 
-      // Chamar a Edge Function do Supabase
-      const { data, error } = await supabase.functions.invoke('generate-budget-gemini', {
-        body: payload,
-      });
+      // Chamar a Edge Function do Supabase usando fetch
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      
+      const response = await fetch(
+        `${process.env.VITE_SUPABASE_URL}/functions/v1/generate-budget-gemini`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao chamar a função');
+      }
+
+      const data = await response.json();
 
       setGeneratedBudget(data);
       toast.success('Orçamento gerado com sucesso!');
