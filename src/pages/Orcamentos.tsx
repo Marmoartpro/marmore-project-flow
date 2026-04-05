@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, MoreVertical, Edit, Trash2, Calculator, FileText, Eye, Copy, Clock, PenTool, FileSignature, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import ContratoDialog from '@/components/contrato/ContratoDialog';
-import SmartBudgetGenerator from '@/components/orcamento/SmartBudgetGenerator';
+
 
 const statusLabels: Record<string, string> = {
   rascunho: 'Rascunho', enviado: 'Enviado', aceito: 'Aceito', recusado: 'Recusado',
