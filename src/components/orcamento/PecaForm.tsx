@@ -178,8 +178,8 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
 
       {/* L-Shape second segment */}
       {peca.formato === 'l_shape' && (
-        <div className="grid grid-cols-2 gap-2 bg-muted/30 rounded-md p-2">
-          <div className="col-span-2 text-[10px] font-medium text-muted-foreground">Trecho 2 do L:</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
+          <div className="col-span-full text-[10px] font-medium text-muted-foreground">Trecho 2 do L:</div>
           <div>
             <Label className="text-[10px]">Larg. trecho 2 (cm)</Label>
             <Input type="number" step="0.1" value={peca.lTrecho2Largura}
@@ -189,6 +189,16 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
             <Label className="text-[10px]">Comp. trecho 2 (cm)</Label>
             <Input type="number" step="0.1" value={peca.lTrecho2Comprimento}
               onChange={e => onChange('lTrecho2Comprimento', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Posição do L</Label>
+            <select value={peca.lPosicao || 'superior_direito'} onChange={e => onChange('lPosicao', e.target.value)}
+              className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
+              <option value="superior_direito">Canto superior direito</option>
+              <option value="superior_esquerdo">Canto superior esquerdo</option>
+              <option value="inferior_direito">Canto inferior direito</option>
+              <option value="inferior_esquerdo">Canto inferior esquerdo</option>
+            </select>
           </div>
         </div>
       )}
