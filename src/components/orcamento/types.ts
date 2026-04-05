@@ -302,7 +302,7 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   descricao: '',
   formato: 'retangular',
   largura: '', comprimento: '', quantidade: '1',
-  lTrecho2Largura: '', lTrecho2Comprimento: '',
+  lTrecho2Largura: '', lTrecho2Comprimento: '', lPosicao: 'superior_direito',
   raio: '', baseMaior: '', baseMenor: '', alturaForma: '',
   angulo: '', areaManualCm2: '',
   tipoCuba: 'Sem cuba', valorCuba: '',
