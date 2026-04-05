@@ -2,31 +2,24 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
 }
 
 serve(async (req) => {
-  // Lida com requisições CORS (Preflight)
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { client_id, material_id, material_price, measurements, service_type, image_base64 } = await req.json()
+    const { material_price, measurements, service_type, image_base64 } = await req.json()
 
-    const apiKey = Deno.env.get('GEMINI_API_KEY')
+    const apiKey = Deno.env.get('LOVABLE_API_KEY')
     if (!apiKey) {
-      throw new Error("Chave da API do Gemini não configurada.")
+      throw new Error("LOVABLE_API_KEY não configurada.")
     }
 
-    // Define o modelo com base na presença da imagem
-    const model = image_base64 ? "gemini-1.5-pro-latest" : "gemini-1.5-flash-latest"
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
-
-    // Constrói o prompt dinamicamente
-    let promptText = `
+    const promptText = `
     Você é um orçamentista especialista em marmoraria.
     Material Escolhido: Preço R$ ${material_price}/m²
     Serviço: ${service_type || 'Corte e Acabamento padrão'}
@@ -49,65 +42,71 @@ serve(async (req) => {
     }
     `
 
-    // Prepara o corpo da requisição para a API do Gemini
-    let contents: any[] = [{
-      parts: [{ text: promptText }]
-    }]
+    const messages: any[] = [
+      { role: "system", content: "Você é um orçamentista especialista em marmoraria. Responda sempre em JSON válido." },
+    ]
 
-    // Se houver imagem, adiciona ao conteúdo
     if (image_base64) {
-      // Limpa o prefixo data:image/...;base64, se existir
-      const base64Data = image_base64.replace(/^data:image\/\w+;base64,/, "");
-      contents[0].parts.push({
-        inline_data: {
-          mime_type: "image/jpeg",
-          data: base64Data
-        }
-      });
+      const base64Data = image_base64.replace(/^data:image\/\w+;base64,/, "")
+      messages.push({
+        role: "user",
+        content: [
+          { type: "text", text: promptText },
+          { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Data}` } },
+        ],
+      })
+    } else {
+      messages.push({ role: "user", content: promptText })
     }
 
-    // Faz a chamada para a API do Google Gemini
-    const response = await fetch(url, {
+    const model = image_base64 ? "google/gemini-2.5-flash" : "google/gemini-3-flash-preview"
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        contents: contents,
-        generationConfig: {
-          temperature: 0.1,
-          responseMimeType: "application/json",
-        }
-      })
+        model,
+        messages,
+        temperature: 0.1,
+      }),
     })
 
-    const geminiData = await response.json()
-
     if (!response.ok) {
-      console.error("Erro do Gemini:", geminiData)
-      throw new Error(geminiData.error?.message || "Erro desconhecido na API do Gemini")
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns segundos." }), {
+          status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Adicione créditos no workspace." }), {
+          status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const errorText = await response.text()
+      console.error("AI gateway error:", response.status, errorText)
+      throw new Error("Erro ao chamar o serviço de IA")
     }
 
-    // Extrai o texto da resposta
-    const resultText = geminiData.candidates[0].content.parts[0].text
-    const parsedResult = JSON.parse(resultText)
+    const aiData = await response.json()
+    const resultText = aiData.choices?.[0]?.message?.content || ""
 
-    // Retorna o resultado para o frontend
+    // Limpa possíveis marcadores de código markdown
+    const cleanJson = resultText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+    const parsedResult = JSON.parse(cleanJson)
+
     return new Response(
       JSON.stringify(parsedResult),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
 
   } catch (error) {
+    console.error("generate-budget-gemini error:", error)
     return new Response(
       JSON.stringify({ error: error.message }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400 
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
     )
   }
 })
