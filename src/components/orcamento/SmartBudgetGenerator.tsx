@@ -81,8 +81,10 @@ export default function SmartBudgetGenerator({
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
       
+      const supabaseUrl = 'https://xbyewjvfrshemjvtgacz.supabase.co';
+      
       const response = await fetch(
-        `${process.env.VITE_SUPABASE_URL}/functions/v1/generate-budget-gemini`,
+        `${supabaseUrl}/functions/v1/generate-budget-gemini`,
         {
           method: 'POST',
           headers: {
