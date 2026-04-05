@@ -257,7 +257,7 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
             {peca.tipoRebaixo !== 'Sem rebaixo' && (
               <>
                 <div>
-                  <Label className="text-[10px]">Valor rebaixo (R$)</Label>
+                  <Label className="text-[10px]">Valor rebaixo (R$/m²)</Label>
                   <Input type="number" step="0.01" value={peca.valorRebaixo}
                     onChange={e => onChange('valorRebaixo', e.target.value)} className="h-8 text-xs" />
                 </div>
@@ -271,6 +271,11 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
                   <Input type="number" step="0.1" value={peca.rebaixoLargura}
                     onChange={e => onChange('rebaixoLargura', e.target.value)} className="h-8 text-xs" />
                 </div>
+                {(parseFloat(peca.rebaixoComprimento) > 0 && parseFloat(peca.rebaixoLargura) > 0) && (
+                  <div className="col-span-full text-[10px] text-muted-foreground">
+                    Área do rebaixo: <b className="text-foreground">{fmt(parseFloat(peca.rebaixoComprimento) * parseFloat(peca.rebaixoLargura) / 10000)} m²</b>
+                  </div>
+                )}
               </>
             )}
           </>
