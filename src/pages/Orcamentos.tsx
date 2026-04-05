@@ -239,7 +239,7 @@ const Orcamentos = () => {
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-display font-bold">Orçamentos</h2>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => setShowSmartGenerator(true)} className="gap-1">
+            <Button size="sm" variant="outline" onClick={() => navigate('/calculadora/novo?ai=true')} className="gap-1">
               <Sparkles className="w-4 h-4" /> IA
             </Button>
             <Button size="sm" variant="outline" onClick={() => navigate('/calculadora')}>
