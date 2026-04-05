@@ -77,30 +77,14 @@ export default function SmartBudgetGenerator({
         image_base64: useImage ? uploadedImage : null,
       };
 
-      // Chamar a Edge Function do Supabase usando fetch
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      
-      const supabaseUrl = 'https://xbyewjvfrshemjvtgacz.supabase.co'; // URL corrigida
-      
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/generate-budget-gemini`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      // Chamar a Edge Function usando supabase.functions.invoke
+      const { data, error } = await supabase.functions.invoke('generate-budget-gemini', {
+        body: payload,
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao chamar a função');
+      if (error) {
+        throw new Error(error.message || 'Erro ao chamar a função');
       }
-
-      const data = await response.json();
 
       setGeneratedBudget(data);
       toast.success('Orçamento gerado com sucesso!');
@@ -316,57 +300,56 @@ export default function SmartBudgetGenerator({
         ) : (
           <div className="space-y-4">
             <Card>
-              <CardContent className="pt-6 space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Área Total</p>
-                    <p className="text-lg font-semibold">
-                      {generatedBudget.total_area_m2} m²
-                    </p>
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Área Total</p>
+                      <p className="text-lg font-semibold">
+                        {generatedBudget.total_area_m2?.toFixed(2)} m²
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Custo Material</p>
+                      <p className="text-lg font-semibold">
+                        R$ {generatedBudget.material_cost?.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Mão de Obra</p>
+                      <p className="text-lg font-semibold">
+                        R$ {generatedBudget.labor_cost?.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Preço Total</p>
+                      <p className="text-lg font-bold text-green-600">
+                        R$ {generatedBudget.total_price?.toFixed(2)}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Custo Material</p>
-                    <p className="text-lg font-semibold">
-                      R$ {generatedBudget.material_cost.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                      })}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Mão de Obra</p>
-                    <p className="text-lg font-semibold">
-                      R$ {generatedBudget.labor_cost.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                      })}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Preço Final</p>
-                    <p className="text-xl font-bold text-primary">
-                      R$ {generatedBudget.total_price.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                      })}
-                    </p>
-                  </div>
-                </div>
 
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Detalhes</p>
-                  <p className="text-sm">{generatedBudget.description}</p>
-                </div>
+                  {generatedBudget.description && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Descrição</p>
+                      <p className="text-sm">{generatedBudget.description}</p>
+                    </div>
+                  )}
 
-                {generatedBudget.items && generatedBudget.items.length > 0 && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Itens</p>
-                    <ul className="text-sm space-y-1">
-                      {generatedBudget.items.map((item: any, i: number) => (
-                        <li key={i}>
-                          • {item.name}: {item.area} m²
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                  {generatedBudget.items && generatedBudget.items.length > 0 && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Itens</p>
+                      <ul className="text-sm space-y-1">
+                        {generatedBudget.items.map((item: any, idx: number) => (
+                          <li key={idx} className="flex justify-between">
+                            <span>{item.name}</span>
+                            <span>{item.area?.toFixed(2)} m²</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -376,10 +359,10 @@ export default function SmartBudgetGenerator({
                 onClick={() => setGeneratedBudget(null)}
                 className="flex-1"
               >
-                Voltar
+                Gerar Novo
               </Button>
               <Button onClick={saveBudget} className="flex-1">
-                Salvar como Rascunho
+                Salvar Orçamento
               </Button>
             </div>
           </div>
