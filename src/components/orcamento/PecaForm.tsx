@@ -178,8 +178,8 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
 
       {/* L-Shape second segment */}
       {peca.formato === 'l_shape' && (
-        <div className="grid grid-cols-2 gap-2 bg-muted/30 rounded-md p-2">
-          <div className="col-span-2 text-[10px] font-medium text-muted-foreground">Trecho 2 do L:</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
+          <div className="col-span-full text-[10px] font-medium text-muted-foreground">Trecho 2 do L:</div>
           <div>
             <Label className="text-[10px]">Larg. trecho 2 (cm)</Label>
             <Input type="number" step="0.1" value={peca.lTrecho2Largura}
@@ -189,6 +189,16 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
             <Label className="text-[10px]">Comp. trecho 2 (cm)</Label>
             <Input type="number" step="0.1" value={peca.lTrecho2Comprimento}
               onChange={e => onChange('lTrecho2Comprimento', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Posição do L</Label>
+            <select value={peca.lPosicao || 'superior_direito'} onChange={e => onChange('lPosicao', e.target.value)}
+              className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
+              <option value="superior_direito">Canto superior direito</option>
+              <option value="superior_esquerdo">Canto superior esquerdo</option>
+              <option value="inferior_direito">Canto inferior direito</option>
+              <option value="inferior_esquerdo">Canto inferior esquerdo</option>
+            </select>
           </div>
         </div>
       )}
@@ -247,7 +257,7 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
             {peca.tipoRebaixo !== 'Sem rebaixo' && (
               <>
                 <div>
-                  <Label className="text-[10px]">Valor rebaixo (R$)</Label>
+                  <Label className="text-[10px]">Valor rebaixo (R$/m²)</Label>
                   <Input type="number" step="0.01" value={peca.valorRebaixo}
                     onChange={e => onChange('valorRebaixo', e.target.value)} className="h-8 text-xs" />
                 </div>
@@ -261,6 +271,11 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
                   <Input type="number" step="0.1" value={peca.rebaixoLargura}
                     onChange={e => onChange('rebaixoLargura', e.target.value)} className="h-8 text-xs" />
                 </div>
+                {(parseFloat(peca.rebaixoComprimento) > 0 && parseFloat(peca.rebaixoLargura) > 0) && (
+                  <div className="col-span-full text-[10px] text-muted-foreground">
+                    Área do rebaixo: <b className="text-foreground">{fmt(parseFloat(peca.rebaixoComprimento) * parseFloat(peca.rebaixoLargura) / 10000)} m²</b>
+                  </div>
+                )}
               </>
             )}
           </>
@@ -317,10 +332,17 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
         <CubaEsculpidaFields data={peca.cubaEsculpida} onChange={handleCubaEsculpidaChange} />
       )}
       {peca.tipoCuba === 'Cuba esculpida' && (
-        <div>
-          <Label className="text-[10px]">Valor total escultura (R$)</Label>
-          <Input type="number" step="0.01" value={peca.valorCuba}
-            onChange={e => onChange('valorCuba', e.target.value)} className="h-8 text-xs" />
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-[10px]">Valor escultura (R$/m²)</Label>
+            <Input type="number" step="0.01" value={peca.valorCuba}
+              onChange={e => onChange('valorCuba', e.target.value)} className="h-8 text-xs" />
+          </div>
+          {calcCubaEsculpida(peca.cubaEsculpida).totalM2 > 0 && (
+            <div className="flex items-end text-[10px] text-muted-foreground pb-1">
+              Custo total: <b className="text-foreground ml-1">R$ {fmt((parseFloat(peca.valorCuba) || 0) * calcCubaEsculpida(peca.cubaEsculpida).totalM2)}</b>
+            </div>
+          )}
         </div>
       )}
 

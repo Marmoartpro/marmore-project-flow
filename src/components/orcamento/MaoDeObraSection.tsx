@@ -50,6 +50,7 @@ const MaoDeObraSection = ({ maoDeObra, instalacao, onChangeMO, onChangeInst }: P
               className="h-7 rounded-md border border-input bg-background px-1 text-[10px] w-14">
               <option value="fixo">fixo</option>
               <option value="m2">/m²</option>
+              <option value="ml">/ml</option>
             </select>
           </div>
         </div>
