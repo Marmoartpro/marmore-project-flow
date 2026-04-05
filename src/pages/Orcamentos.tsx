@@ -54,7 +54,7 @@ const Orcamentos = () => {
   const [form, setForm] = useState(emptyForm);
   const [mainTab, setMainTab] = useState('calculados');
   const [contratoQuote, setContratoQuote] = useState<any>(null);
-  const [showSmartGenerator, setShowSmartGenerator] = useState(false);
+  
   const [clients, setClients] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
 
