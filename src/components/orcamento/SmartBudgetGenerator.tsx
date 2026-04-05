@@ -80,6 +80,7 @@ export default function SmartBudgetGenerator({
       // Chamar a Edge Function usando supabase.functions.invoke
       const { data, error } = await supabase.functions.invoke('generate-budget-gemini', {
         body: payload,
+        headers: { Authorization: '' },
       });
 
       if (error) {
