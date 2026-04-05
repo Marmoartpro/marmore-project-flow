@@ -24,23 +24,23 @@ serve(async (req) => {
     let model: string
 
     if (mode === 'review') {
-      // Review/optimize existing budget
-      const { ambientes, acessorios } = body
+      // Review/optimize existing budget with pricing context
+      const { ambientes, acessorios, totalGeral, margemLucro } = body
       model = "google/gemini-3-flash-preview"
       messages = [
         {
           role: "system",
-          content: `Você é um consultor especialista em marmoraria. Analise o orçamento e retorne um JSON com:
+          content: `Você é um consultor especialista em marmoraria. Analise o orçamento completo incluindo custos de material, mão de obra e instalação. Retorne um JSON com:
 {
   "alertas": [{"tipo": "erro"|"aviso"|"dica", "mensagem": "texto"}],
-  "otimizacoes": [{"peca": "nome", "sugestao": "texto", "economia_estimada": numero_ou_null}],
+  "otimizacoes": [{"peca": "nome", "sugestao": "texto", "economia_estimada": numero_ou_null, "campo": "campo_do_formulario_ou_null", "ambiente_idx": indice_ou_null, "peca_idx": indice_ou_null}],
   "aproveitamento_chapa": {"observacao": "texto sobre como otimizar o corte das chapas"}
 }
-Verifique: preços inconsistentes, áreas suspeitas, peças que podem ser cortadas juntas, margens fora do padrão do mercado (25-40%), dimensões atípicas. Responda APENAS JSON válido sem markdown.`
+Verifique: preços inconsistentes, áreas suspeitas, peças que podem ser cortadas juntas, margens fora do padrão do mercado (25-40%), dimensões atípicas, custos de mão de obra que parecem altos ou baixos demais para o m² calculado, valor total do orçamento em relação ao mercado. Responda APENAS JSON válido sem markdown.`
         },
         {
           role: "user",
-          content: `Analise este orçamento:\n${JSON.stringify({ ambientes, acessorios }, null, 2)}`
+          content: `Analise este orçamento (margem de lucro: ${margemLucro || 30}%, total geral: R$ ${(totalGeral || 0).toFixed(2)}):\n${JSON.stringify({ ambientes, acessorios }, null, 2)}`
         }
       ]
     } else {
