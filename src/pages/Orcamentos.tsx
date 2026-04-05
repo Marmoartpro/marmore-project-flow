@@ -58,15 +58,6 @@ const Orcamentos = () => {
 
   useEffect(() => { if (user) { fetchQuotes(); fetchBudgetQuotes(); } }, [user]);
 
-  const fetchClients = async () => {
-    const { data } = await supabase.from('clients').select('*');
-    setClients(data || []);
-  };
-
-  const fetchMaterials = async () => {
-    const { data } = await supabase.from('stones').select('*');
-    setMaterials(data || []);
-  };
 
   const fetchQuotes = async () => {
     const { data } = await supabase.from('quotes').select('*').order('created_at', { ascending: false });
