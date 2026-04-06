@@ -13,7 +13,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json()
-    const { mode } = body // 'generate' | 'review'
+    const { mode } = body
 
     const apiKey = Deno.env.get('LOVABLE_API_KEY')
     if (!apiKey) {
@@ -23,8 +23,36 @@ serve(async (req) => {
     let messages: any[]
     let model: string
 
-    if (mode === 'review') {
-      // Review/optimize existing budget with pricing context
+    if (mode === 'chat') {
+      // Chat mode: refine budget via conversation
+      const { material_name, material_price, previous_result, chat_messages, measurements } = body
+      model = "google/gemini-3-flash-preview"
+
+      const contextStr = previous_result ? `\nOrçamento atual gerado:\n${JSON.stringify(previous_result, null, 2)}` : ''
+      const measureStr = measurements ? `\nDescrição original: ${measurements}` : ''
+
+      messages = [
+        {
+          role: "system",
+          content: `Você é um orçamentista especialista em marmoraria ajudando a refinar um orçamento.
+Material: ${material_name || 'Não especificado'} - R$ ${material_price}/m²${measureStr}${contextStr}
+
+O usuário pode pedir correções, adicionar peças, mudar medidas, etc.
+Se o pedido resultar em alterações no orçamento, retorne JSON com:
+{
+  "resposta": "explicação do que foi alterado",
+  "ambientes": [...array atualizado de ambientes...],
+  "resumo": "resumo atualizado"
+}
+Se for apenas uma pergunta sem alteração, retorne:
+{
+  "resposta": "sua resposta aqui"
+}
+Responda APENAS JSON válido sem markdown.`
+        },
+        ...(chat_messages || []).map((m: any) => ({ role: m.role, content: m.content })),
+      ]
+    } else if (mode === 'review') {
       const { ambientes, acessorios, totalGeral, margemLucro } = body
       model = "google/gemini-3-flash-preview"
       messages = [
@@ -44,7 +72,6 @@ Verifique: preços inconsistentes, áreas suspeitas, peças que podem ser cortad
         }
       ]
     } else {
-      // Generate budget - return Ambiente[] format
       const { material_name, material_price, stone_id, measurements, service_type, image_base64 } = body
       model = image_base64 ? "google/gemini-2.5-flash" : "google/gemini-3-flash-preview"
 
@@ -91,7 +118,6 @@ RETORNE APENAS JSON VÁLIDO com esta estrutura (sem markdown):
   "resumo": "Descrição geral do que foi identificado"
 }
 `
-
       messages = [
         { role: "system", content: "Você é um orçamentista especialista em marmoraria. Responda sempre em JSON válido." },
       ]
