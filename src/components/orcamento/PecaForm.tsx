@@ -7,6 +7,7 @@ import {
   PecaItem, CubaEsculpidaData, Abertura,
   TIPO_CUBA, TIPO_REBAIXO, ACABAMENTO_BORDA,
   BORDAS_COM_ACABAMENTO, FUROS_TORNEIRA, FORMATOS_PECA, PADROES_PISO,
+  SAIA_OPCOES,
   calcPecaAreaLiquida, calcPecaAreaCompra, calcMetrosLinearesBorda,
   calcCubaEsculpida, fmt, newAbertura,
 } from './types';
@@ -59,6 +60,8 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
   const updateAbertura = (id: string, field: keyof Abertura, value: string) => {
     onChange('aberturas', (peca.aberturas || []).map(a => a.id === id ? { ...a, [field]: value } : a));
   };
+
+  const isChanfrado45 = peca.acabamentoBorda === 'Chanfrado 45°';
 
   return (
     <div className="border border-border rounded-md p-3 space-y-3">
@@ -254,7 +257,8 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
                 {TIPO_REBAIXO.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
-            {peca.tipoRebaixo !== 'Sem rebaixo' && (
+            {/* Rebaixo americano / italiano = por m² */}
+            {peca.tipoRebaixo !== 'Sem rebaixo' && peca.tipoRebaixo !== 'Rebaixo tradicional' && (
               <>
                 <div>
                   <Label className="text-[10px]">Valor rebaixo (R$/m²)</Label>
@@ -274,6 +278,26 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
                 {(parseFloat(peca.rebaixoComprimento) > 0 && parseFloat(peca.rebaixoLargura) > 0) && (
                   <div className="col-span-full text-[10px] text-muted-foreground">
                     Área do rebaixo: <b className="text-foreground">{fmt(parseFloat(peca.rebaixoComprimento) * parseFloat(peca.rebaixoLargura) / 10000)} m²</b>
+                  </div>
+                )}
+              </>
+            )}
+            {/* Rebaixo tradicional = filete por ml */}
+            {peca.tipoRebaixo === 'Rebaixo tradicional' && (
+              <>
+                <div>
+                  <Label className="text-[10px]">Metros lineares do filete (ml)</Label>
+                  <Input type="number" step="0.01" value={peca.rebaixoTradicionalML}
+                    onChange={e => onChange('rebaixoTradicionalML', e.target.value)} className="h-8 text-xs" placeholder="0,00" />
+                </div>
+                <div>
+                  <Label className="text-[10px]">Valor do filete (R$/ml)</Label>
+                  <Input type="number" step="0.01" value={peca.valorRebaixoTradicionalML}
+                    onChange={e => onChange('valorRebaixoTradicionalML', e.target.value)} className="h-8 text-xs" />
+                </div>
+                {(parseFloat(peca.rebaixoTradicionalML) > 0 && parseFloat(peca.valorRebaixoTradicionalML) > 0) && (
+                  <div className="col-span-full text-[10px] text-muted-foreground">
+                    Custo do filete: <b className="text-foreground">R$ {fmt((parseFloat(peca.valorRebaixoTradicionalML) || 0) * (parseFloat(peca.rebaixoTradicionalML) || 0))}</b>
                   </div>
                 )}
               </>
@@ -299,9 +323,19 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
             </div>
             {(isPiscina || peca.acabamentoBorda !== 'Reto') && (
               <div>
-                <Label className="text-[10px]">Valor acab. (R$/m)</Label>
+                <Label className="text-[10px]">
+                  {isChanfrado45 ? 'Valor chanfrado 45° (R$/ml)' : 'Valor acab. (R$/ml)'}
+                </Label>
                 <Input type="number" step="0.01" value={peca.valorAcabamentoBorda}
                   onChange={e => onChange('valorAcabamentoBorda', e.target.value)} className="h-8 text-xs" />
+              </div>
+            )}
+            {isChanfrado45 && mlBorda > 0 && (
+              <div className="col-span-full text-[10px] text-muted-foreground">
+                Total ml de chanfrado: <b className="text-foreground">{fmt(mlBorda)} ml</b>
+                {parseFloat(peca.valorAcabamentoBorda) > 0 && (
+                  <> × R$ {fmt(parseFloat(peca.valorAcabamentoBorda))} = <b className="text-foreground">R$ {fmt(mlBorda * (parseFloat(peca.valorAcabamentoBorda) || 0))}</b></>
+                )}
               </div>
             )}
           </>
@@ -346,7 +380,7 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
         </div>
       )}
 
-      {/* Cuba dimensions for embutir/undermount */}
+      {/* Cuba dimensions for all non-esculpida types — including Qtd cubas */}
       {['Cuba de embutir', 'Cuba colada por baixo (undermount)', 'Cuba sobreposta', 'Cuba flush'].includes(peca.tipoCuba) && showCuba && (
         <div className="grid grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
           <div className="col-span-3 text-[10px] font-medium text-muted-foreground">Dimensões da cuba (para cálculo de recorte):</div>
@@ -414,6 +448,19 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
           </label>
         )}
       </div>
+
+      {/* Saia options (independent from bordas) */}
+      {peca.saiaFrontal && (
+        <div className="grid grid-cols-2 gap-2 bg-muted/30 rounded-md p-2">
+          <div>
+            <Label className="text-[10px]">Lados com saia</Label>
+            <select value={peca.saiaOpcao || 'Só frente'} onChange={e => onChange('saiaOpcao', e.target.value)}
+              className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
+              {SAIA_OPCOES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+      )}
 
       {/* Cooktop dimensions */}
       {peca.rebaixoCooktop && showCooktop && (
