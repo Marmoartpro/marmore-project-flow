@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Upload, Sparkles, CheckCircle2, MessageCircle, Send } from 'lucide-react';
+import { Loader2, Upload, Sparkles, CheckCircle2, MessageCircle, Send, ImagePlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Ambiente, PecaItem, newPeca, newAmbiente, newMaterialOption, PECA_TIPOS } from './types';
@@ -191,39 +191,68 @@ export default function SmartBudgetGenerator({
     setShowChat(false);
   };
 
+  // Chat image state
+  const [chatImage, setChatImage] = useState<string | null>(null);
+
+  const handleChatImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => setChatImage(event.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
   // Chat: refine the AI result via conversation
   const sendChatMessage = async () => {
-    if (!chatInput.trim() || chatLoading) return;
-    const userMsg: ChatMessage = { role: 'user', content: chatInput.trim() };
+    if ((!chatInput.trim() && !chatImage) || chatLoading) return;
+    const msgContent = chatInput.trim() + (chatImage ? ' [imagem anexada]' : '');
+    const userMsg: ChatMessage = { role: 'user', content: msgContent };
     const newMessages = [...chatMessages, userMsg];
     setChatMessages(newMessages);
+    const imageToSend = chatImage;
     setChatInput('');
+    setChatImage(null);
     setChatLoading(true);
 
     try {
-      const payload = {
+      // Send FULL budget data so AI can make precise corrections
+      const fullBudgetData = generatedAmbientes.map(a => ({
+        tipo: a.tipo,
+        nomeCustom: a.nomeCustom || '',
+        pecas: a.pecas.map(p => ({
+          nomePeca: p.nomePeca, tipo: p.tipo, formato: p.formato,
+          largura: p.largura, comprimento: p.comprimento, quantidade: p.quantidade,
+          descricao: p.descricao,
+          espelhoBacksplash: p.espelhoBacksplash, espelhoBacksplashAltura: p.espelhoBacksplashAltura,
+          saiaFrontal: p.saiaFrontal, saiaFrontalAltura: p.saiaFrontalAltura,
+          tipoCuba: p.tipoCuba, furosTorneira: p.furosTorneira,
+          rebaixoCooktop: p.rebaixoCooktop,
+          acabamentoBorda: p.acabamentoBorda, bordasComAcabamento: p.bordasComAcabamento,
+          tipoRebaixo: p.tipoRebaixo, rebaixoComprimento: p.rebaixoComprimento, rebaixoLargura: p.rebaixoLargura,
+          cantosInternos: p.cantosInternos, cantosExternos: p.cantosExternos,
+          boleadoLados: p.boleadoLados, pingadeira: p.pingadeira, encaixePorta: p.encaixePorta,
+          lTrecho2Largura: p.lTrecho2Largura, lTrecho2Comprimento: p.lTrecho2Comprimento,
+        })),
+      }));
+
+      const payload: any = {
         mode: 'chat',
         material_name: selectedStone?.name || '',
         material_price: selectedStone?.price_per_m2 || 0,
-        previous_result: generatedAmbientes.length > 0 ? {
-          ambientes: generatedAmbientes.map(a => ({
-            tipo: a.tipo,
-            pecas: a.pecas.map(p => ({
-              nomePeca: p.nomePeca, tipo: p.tipo, largura: p.largura,
-              comprimento: p.comprimento, quantidade: p.quantidade,
-            })),
-          })),
-        } : null,
-        chat_messages: newMessages,
+        previous_result: { ambientes: fullBudgetData },
+        chat_messages: newMessages.map(m => ({ role: m.role, content: m.content })),
         measurements: measurements || '',
       };
+
+      if (imageToSend) {
+        payload.chat_image_base64 = imageToSend;
+      }
 
       const { data, error } = await supabase.functions.invoke('generate-budget-gemini', { body: payload });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
 
-      if (data.ambientes) {
-        // AI returned updated budget
+      if (data.ambientes && Array.isArray(data.ambientes) && data.ambientes.length > 0) {
         const ambientes = buildAmbientesFromAI(data.ambientes);
         setGeneratedAmbientes(ambientes);
         const summaryData: AISummary = {
@@ -238,6 +267,7 @@ export default function SmartBudgetGenerator({
         setSummary(summaryData);
         if (data.resumo) setGeneratedResumo(data.resumo);
         setChatMessages(prev => [...prev, { role: 'assistant', content: data.resposta || 'Orçamento atualizado com as correções.' }]);
+        toast.success('Orçamento atualizado pela IA!');
       } else {
         setChatMessages(prev => [...prev, { role: 'assistant', content: data.resposta || 'Entendi. Pode dar mais detalhes?' }]);
       }
@@ -296,16 +326,28 @@ export default function SmartBudgetGenerator({
                     )}
                   </div>
                 </ScrollArea>
+                {chatImage && (
+                  <div className="flex items-center gap-2 p-1 bg-muted/30 rounded">
+                    <img src={chatImage} alt="Anexo" className="h-12 rounded" />
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setChatImage(null)}>
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )}
                 <div className="flex gap-1">
+                  <label className="cursor-pointer flex items-center justify-center h-8 w-8 shrink-0 rounded-md border border-input bg-background hover:bg-accent">
+                    <ImagePlus className="w-3.5 h-3.5 text-muted-foreground" />
+                    <Input type="file" accept="image/*" onChange={handleChatImageUpload} className="hidden" />
+                  </label>
                   <Input
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && sendChatMessage()}
-                    placeholder="Ex: Adicione uma soleira de 80cm na cozinha..."
+                    placeholder="Ex: Mude a bancada para 3m, adicione soleira..."
                     className="h-8 text-xs"
                     disabled={chatLoading}
                   />
-                  <Button size="icon" className="h-8 w-8 shrink-0" onClick={sendChatMessage} disabled={chatLoading || !chatInput.trim()}>
+                  <Button size="icon" className="h-8 w-8 shrink-0" onClick={sendChatMessage} disabled={chatLoading || (!chatInput.trim() && !chatImage)}>
                     <Send className="w-3.5 h-3.5" />
                   </Button>
                 </div>

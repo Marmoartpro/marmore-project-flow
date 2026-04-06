@@ -25,33 +25,55 @@ serve(async (req) => {
 
     if (mode === 'chat') {
       // Chat mode: refine budget via conversation
-      const { material_name, material_price, previous_result, chat_messages, measurements } = body
-      model = "google/gemini-3-flash-preview"
+      const { material_name, material_price, previous_result, chat_messages, measurements, chat_image_base64 } = body
+      model = chat_image_base64 ? "google/gemini-2.5-flash" : "google/gemini-3-flash-preview"
 
-      const contextStr = previous_result ? `\nOrçamento atual gerado:\n${JSON.stringify(previous_result, null, 2)}` : ''
+      const contextStr = previous_result ? `\nOrçamento atual completo:\n${JSON.stringify(previous_result, null, 2)}` : ''
       const measureStr = measurements ? `\nDescrição original: ${measurements}` : ''
 
-      messages = [
-        {
-          role: "system",
-          content: `Você é um orçamentista especialista em marmoraria ajudando a refinar um orçamento.
+      const systemPrompt = `Você é um orçamentista especialista em marmoraria ajudando a refinar um orçamento.
 Material: ${material_name || 'Não especificado'} - R$ ${material_price}/m²${measureStr}${contextStr}
 
-O usuário pode pedir correções, adicionar peças, mudar medidas, etc.
-Se o pedido resultar em alterações no orçamento, retorne JSON com:
+REGRAS IMPORTANTES:
+1. Quando o usuário pedir correções (mudar medidas, adicionar/remover peças, etc.), SEMPRE retorne o array "ambientes" completo e atualizado com TODAS as peças (não só as alteradas).
+2. Mantenha todas as peças existentes que não foram mencionadas pelo usuário.
+3. Se o usuário enviar uma imagem, analise-a para identificar medidas ou peças e aplique as correções.
+4. NUNCA peça ao usuário para enviar uma foto — ele pode anexar se quiser.
+5. Se o pedido for claro, faça a alteração imediatamente.
+
+Retorne SEMPRE JSON válido (sem markdown) com esta estrutura:
 {
-  "resposta": "explicação do que foi alterado",
-  "ambientes": [...array atualizado de ambientes...],
-  "resumo": "resumo atualizado"
+  "resposta": "explicação clara do que foi alterado ou respondido",
+  "ambientes": [...array COMPLETO atualizado de ambientes - OBRIGATÓRIO quando houver qualquer alteração...],
+  "resumo": "resumo atualizado do orçamento"
 }
-Se for apenas uma pergunta sem alteração, retorne:
+Se for APENAS uma pergunta sem alteração necessária:
 {
   "resposta": "sua resposta aqui"
-}
-Responda APENAS JSON válido sem markdown.`
-        },
-        ...(chat_messages || []).map((m: any) => ({ role: m.role, content: m.content })),
+}`
+
+      messages = [
+        { role: "system", content: systemPrompt },
       ]
+
+      // Add chat history
+      const chatHistory = (chat_messages || [])
+      for (let i = 0; i < chatHistory.length; i++) {
+        const m = chatHistory[i]
+        // Last user message might have image
+        if (i === chatHistory.length - 1 && m.role === 'user' && chat_image_base64) {
+          const base64Data = chat_image_base64.replace(/^data:image\/\w+;base64,/, "")
+          messages.push({
+            role: "user",
+            content: [
+              { type: "text", text: m.content.replace(' [imagem anexada]', '') },
+              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Data}` } },
+            ],
+          })
+        } else {
+          messages.push({ role: m.role, content: m.content })
+        }
+      }
     } else if (mode === 'review') {
       const { ambientes, acessorios, totalGeral, margemLucro } = body
       model = "google/gemini-3-flash-preview"
