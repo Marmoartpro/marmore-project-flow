@@ -326,16 +326,28 @@ export default function SmartBudgetGenerator({
                     )}
                   </div>
                 </ScrollArea>
+                {chatImage && (
+                  <div className="flex items-center gap-2 p-1 bg-muted/30 rounded">
+                    <img src={chatImage} alt="Anexo" className="h-12 rounded" />
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setChatImage(null)}>
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )}
                 <div className="flex gap-1">
+                  <label className="cursor-pointer flex items-center justify-center h-8 w-8 shrink-0 rounded-md border border-input bg-background hover:bg-accent">
+                    <ImagePlus className="w-3.5 h-3.5 text-muted-foreground" />
+                    <Input type="file" accept="image/*" onChange={handleChatImageUpload} className="hidden" />
+                  </label>
                   <Input
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && sendChatMessage()}
-                    placeholder="Ex: Adicione uma soleira de 80cm na cozinha..."
+                    placeholder="Ex: Mude a bancada para 3m, adicione soleira..."
                     className="h-8 text-xs"
                     disabled={chatLoading}
                   />
-                  <Button size="icon" className="h-8 w-8 shrink-0" onClick={sendChatMessage} disabled={chatLoading || !chatInput.trim()}>
+                  <Button size="icon" className="h-8 w-8 shrink-0" onClick={sendChatMessage} disabled={chatLoading || (!chatInput.trim() && !chatImage)}>
                     <Send className="w-3.5 h-3.5" />
                   </Button>
                 </div>
