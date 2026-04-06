@@ -48,14 +48,14 @@ export interface PecaItem {
   // L-shape (two rectangles)
   lTrecho2Largura: string;
   lTrecho2Comprimento: string;
-  lPosicao: string; // 'superior_direito' | 'superior_esquerdo' | 'inferior_direito' | 'inferior_esquerdo'
+  lPosicao: string;
   // Geometric shapes
-  raio: string;          // redondo / semicircular / setor
-  baseMaior: string;     // trapézio
-  baseMenor: string;     // trapézio
-  alturaForma: string;   // triângulo / trapézio
-  angulo: string;        // setor circular
-  areaManualCm2: string; // irregular
+  raio: string;
+  baseMaior: string;
+  baseMenor: string;
+  alturaForma: string;
+  angulo: string;
+  areaManualCm2: string;
   // Cuba
   tipoCuba: string;
   valorCuba: string;
@@ -63,30 +63,36 @@ export interface PecaItem {
   // Rebaixo
   tipoRebaixo: string;
   valorRebaixo: string;
-  rebaixoComprimento: string; // cm
-  rebaixoLargura: string;     // cm
+  rebaixoComprimento: string;
+  rebaixoLargura: string;
+  // Rebaixo tradicional (filete por ml)
+  rebaixoTradicionalML: string;
+  valorRebaixoTradicionalML: string;
   // Borda
   acabamentoBorda: string;
   valorAcabamentoBorda: string;
+  valorChanfrado45ML: string;
   bordasComAcabamento: string;
+  // Saia (independente das bordas)
+  saiaOpcao: string;
   // Furos
   furosTorneira: string;
   valorFuroTorneira: string;
   // Espelho / Saia
   espelhoBacksplash: boolean;
-  espelhoBacksplashAltura: string; // cm
+  espelhoBacksplashAltura: string;
   saiaFrontal: boolean;
-  saiaFrontalAltura: string;       // cm
+  saiaFrontalAltura: string;
   // Cooktop
   rebaixoCooktop: boolean;
-  rebaixoCooktopLargura: string;   // cm
-  rebaixoCooktopComprimento: string; // cm
+  rebaixoCooktopLargura: string;
+  rebaixoCooktopComprimento: string;
   valorRecorteCooktop: string;
   // Ilhargas / pés revestidos
   ilhargas: boolean;
   ilhargasQtd: string;
-  ilhargasAltura: string; // cm
-  ilhargasLargura: string; // cm
+  ilhargasAltura: string;
+  ilhargasLargura: string;
   // Prateleira inferior (lavatório)
   prateleira: boolean;
   prateleiraLargura: string;
@@ -99,20 +105,20 @@ export interface PecaItem {
   canaletaEscoamento: boolean;
   canaletaMetros: string;
   valorCanaletaMetro: string;
-  profundidadeSubmersa: string; // cm
+  profundidadeSubmersa: string;
   // Escada
-  alturaEspelho: string;  // cm (parte vertical do degrau)
+  alturaEspelho: string;
   frisosAntiderrapante: boolean;
   qtdFrisosPorDegrau: string;
   valorFrisoMetro: string;
   // Soleira / Peitoril
   metodoCalculo: 'area' | 'ml';
-  boleadoLados: string; // '0' | '1' | '2'
+  boleadoLados: string;
   valorBoleadoMetro: string;
   pingadeira: boolean;
   valorPingadeiraMetro: string;
   encaixePorta: boolean;
-  profundidadeEncaixe: string; // cm
+  profundidadeEncaixe: string;
   valorEncaixe: string;
   // Rodapé / Filete
   rodapeCantosInternos: string;
@@ -126,19 +132,19 @@ export interface PecaItem {
   // Piso
   padraoPiso: 'normal' | 'espinha' | 'diagonal' | 'xadrez';
   rodapeIntegrado: boolean;
-  perimetroAmbiente: string; // cm
-  larguraPortas: string;     // cm
+  perimetroAmbiente: string;
+  larguraPortas: string;
   // Tampo de mesa
   furoColuna: boolean;
   valorFuroColuna: string;
-  diametroFuro: string; // cm
+  diametroFuro: string;
   // Nicho
-  nichoProfundidade: string; // cm
+  nichoProfundidade: string;
   nichoQtdPrateleiras: string;
   valorServicoNicho: string;
   // Box banheiro
-  paredesBox: string; // qty of walls
-  alturaParede: string; // cm
+  paredesBox: string;
+  alturaParede: string;
   larguraParede1: string;
   larguraParede2: string;
   larguraParede3: string;
@@ -180,6 +186,9 @@ export interface MaoDeObra {
   corte45: string;
   corte45Tipo: 'fixo' | 'ml';
   corte45Metros: string;
+  // Chanfrado 45° independente (R$/ml)
+  polimentoChanfradoML: string;
+  polimentoChanfradoTipo: 'fixo' | 'ml';
   servicosCustom: ServicoCustom[];
 }
 
@@ -264,7 +273,21 @@ export const TIPO_CUBA = [
 ];
 export const TIPO_REBAIXO = ['Sem rebaixo', 'Rebaixo americano', 'Rebaixo italiano', 'Rebaixo tradicional'];
 export const ACABAMENTO_BORDA = ['Reto', 'Meia bola (boleado)', 'Chanfrado 45°', 'Ogiva', 'Quadrado com filete'];
-export const BORDAS_COM_ACABAMENTO = ['Só frontal', 'Frontal e laterais', 'Todas as bordas'];
+export const BORDAS_COM_ACABAMENTO = [
+  'Sem acabamento de borda',
+  'Só frontal',
+  'Frontal e lado direito',
+  'Frontal e lado esquerdo',
+  'Frontal e duas laterais',
+  'Todas as bordas',
+];
+export const SAIA_OPCOES = [
+  'Só frente',
+  'Frente e lado direito',
+  'Frente e lado esquerdo',
+  'Frente e duas laterais',
+  'Todas as 4 laterais',
+];
 export const FUROS_TORNEIRA = ['Nenhum', '1 furo', '2 furos', '3 furos'];
 export const FORMATOS_PECA: { value: FormatoPeca; label: string }[] = [
   { value: 'retangular', label: 'Retangular' },
@@ -309,8 +332,11 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   cubaEsculpida: emptyCubaEsculpida(),
   tipoRebaixo: 'Sem rebaixo', valorRebaixo: '',
   rebaixoComprimento: '', rebaixoLargura: '',
+  rebaixoTradicionalML: '', valorRebaixoTradicionalML: '',
   acabamentoBorda: 'Reto', valorAcabamentoBorda: '',
+  valorChanfrado45ML: '',
   bordasComAcabamento: 'Só frontal',
+  saiaOpcao: 'Só frente',
   furosTorneira: 'Nenhum', valorFuroTorneira: '',
   espelhoBacksplash: false, espelhoBacksplashAltura: '',
   saiaFrontal: false, saiaFrontalAltura: '',
@@ -353,7 +379,9 @@ export const newAmbiente = (tipo: string): Ambiente => ({
   maoDeObra: {
     corte: '', corteTipo: 'fixo', polimento: '', polimentoTipo: 'fixo',
     instalacao: '', instalacaoTipo: 'fixo', visitaTecnica: '',
-    corte45: '', corte45Tipo: 'ml', corte45Metros: '', servicosCustom: [],
+    corte45: '', corte45Tipo: 'ml', corte45Metros: '',
+    polimentoChanfradoML: '', polimentoChanfradoTipo: 'ml',
+    servicosCustom: [],
   },
   instalacao: { medicao: '', transporte: '', maoDeObra: '', semInstalacao: false },
 });
@@ -367,11 +395,8 @@ export const newAbertura = (): Abertura => ({
 });
 
 /* ─── Formatting ─── */
-/** Round up to 2 decimal places */
 export const ceilM2 = (v: number): number => Math.ceil(v * 100) / 100;
-/** Round up to 1 decimal place (for metros lineares) */
 export const ceilML = (v: number): number => Math.ceil(v * 10) / 10;
-/** Round up monetary values */
 export const ceilMoney = (v: number): number => Math.ceil(v * 100) / 100;
 export const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -382,7 +407,6 @@ const cm2toM2 = (cm2: number): number => cm2 / 10000;
 
 /* ─── Area Calculations (all inputs in cm) ─── */
 
-/** Calculate base area of piece in m² (without extras like espelho, saia) */
 export const calcPecaAreaBase = (p: PecaItem): number => {
   const q = parseInt(p.quantidade) || 1;
   let areaCm2 = 0;
@@ -394,9 +418,8 @@ export const calcPecaAreaBase = (p: PecaItem): number => {
     case 'l_shape': {
       const a1 = cm(p.largura) * cm(p.comprimento);
       const a2 = cm(p.lTrecho2Largura) * cm(p.lTrecho2Comprimento);
-      // Deduct overlap at corner (largura of piece 2 x largura of piece 1)
       const overlapW = Math.min(cm(p.largura), cm(p.lTrecho2Largura));
-      const overlap = overlapW * overlapW; // approximate square corner
+      const overlap = overlapW * overlapW;
       areaCm2 = a1 + a2 - overlap;
       break;
     }
@@ -428,32 +451,25 @@ export const calcPecaAreaBase = (p: PecaItem): number => {
   return cm2toM2(areaCm2) * q;
 };
 
-/** Deductions from base area */
 export const calcPecaDeductions = (p: PecaItem): number => {
   const q = parseInt(p.quantidade) || 1;
   let deductCm2 = 0;
 
-  // Cuba de embutir / undermount — deduct recorte
   if (['Cuba de embutir', 'Cuba colada por baixo (undermount)'].includes(p.tipoCuba)) {
     const ce = p.cubaEsculpida;
     const cubaQ = parseInt(ce.quantidade) || 1;
     deductCm2 += cm(ce.compExterno) * cm(ce.largExterno) * cubaQ;
   }
 
-  // Cuba esculpida — NÃO desconta
-  // Cuba sobreposta — small hole deduction (approximate)
   if (p.tipoCuba === 'Cuba sobreposta') {
     const ce = p.cubaEsculpida;
     deductCm2 += cm(ce.compExterno) * cm(ce.largExterno) * 0.8 * (parseInt(ce.quantidade) || 1);
   }
 
-  // Rebaixo area (for reference, not deducted from material but from finished surface)
-  // Cooktop recorte — deduct from m²
   if (p.rebaixoCooktop) {
     deductCm2 += cm(p.rebaixoCooktopLargura) * cm(p.rebaixoCooktopComprimento);
   }
 
-  // Furo coluna (tampo de mesa)
   if (p.furoColuna && cm(p.diametroFuro) > 0) {
     deductCm2 += Math.PI * Math.pow(cm(p.diametroFuro) / 2, 2);
   }
@@ -461,32 +477,52 @@ export const calcPecaDeductions = (p: PecaItem): number => {
   return cm2toM2(deductCm2) * q;
 };
 
-/** Calculates additional areas (espelho, saia, ilhargas, piscina submersa, etc.) in m² */
+/** Helper: calculate saia area based on saiaOpcao (independent from bordas) */
+const calcSaiaArea = (p: PecaItem): number => {
+  const saiaH = p.saiaFrontal ? cm(p.saiaFrontalAltura) : 0;
+  if (saiaH <= 0) return 0;
+  const w = cm(p.largura);
+  const l = cm(p.comprimento);
+  const opcao = p.saiaOpcao || 'Só frente';
+
+  switch (opcao) {
+    case 'Só frente': return l * saiaH;
+    case 'Frente e lado direito': return (l + w) * saiaH;
+    case 'Frente e lado esquerdo': return (l + w) * saiaH;
+    case 'Frente e duas laterais': return (l + w * 2) * saiaH;
+    case 'Todas as 4 laterais': return (l * 2 + w * 2) * saiaH;
+    default: return l * saiaH;
+  }
+};
+
+/** Helper: calculate espelho area based on bordasComAcabamento */
+const calcEspelhoArea = (p: PecaItem): number => {
+  const espH = p.espelhoBacksplash ? cm(p.espelhoBacksplashAltura) : 0;
+  if (espH <= 0) return 0;
+  const w = cm(p.largura);
+  const l = cm(p.comprimento);
+  const bordas = p.bordasComAcabamento || 'Só frontal';
+
+  switch (bordas) {
+    case 'Sem acabamento de borda': return 0;
+    case 'Só frontal': return l * espH;
+    case 'Frontal e lado direito': return (l + w) * espH;
+    case 'Frontal e lado esquerdo': return (l + w) * espH;
+    case 'Frontal e duas laterais': return (l + w * 2) * espH;
+    case 'Todas as bordas': return (l + w) * 2 * espH;
+    default: return l * espH;
+  }
+};
+
 export const calcPecaExtrasArea = (p: PecaItem): number => {
   const q = parseInt(p.quantidade) || 1;
   let extraCm2 = 0;
-  const w = cm(p.largura);
-  const l = cm(p.comprimento);
 
-  // Espelho / backsplash
-  const espH = p.espelhoBacksplash ? cm(p.espelhoBacksplashAltura) : 0;
-  // Saia frontal
-  const saiaH = p.saiaFrontal ? cm(p.saiaFrontalAltura) : 0;
+  // Espelho (uses bordasComAcabamento)
+  extraCm2 += calcEspelhoArea(p);
 
-  if (p.bordasComAcabamento === 'Só frontal') {
-    if (espH > 0) extraCm2 += l * espH;
-    if (saiaH > 0) extraCm2 += l * saiaH;
-  } else if (p.bordasComAcabamento === 'Frontal e laterais') {
-    if (espH > 0) extraCm2 += (l + w * 2) * espH;
-    if (saiaH > 0) extraCm2 += (l + w * 2) * saiaH;
-  } else if (p.bordasComAcabamento === 'Todas as bordas') {
-    const perim = (l + w) * 2;
-    if (espH > 0) extraCm2 += perim * espH;
-    if (saiaH > 0) extraCm2 += perim * saiaH;
-  } else {
-    if (espH > 0) extraCm2 += l * espH;
-    if (saiaH > 0) extraCm2 += l * saiaH;
-  }
+  // Saia (uses saiaOpcao, independent)
+  extraCm2 += calcSaiaArea(p);
 
   // Ilhargas / pés revestidos
   if (p.ilhargas) {
@@ -501,12 +537,12 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
 
   // Piscina submersa
   if (cm(p.profundidadeSubmersa) > 0) {
-    extraCm2 += cm(p.profundidadeSubmersa) * l;
+    extraCm2 += cm(p.profundidadeSubmersa) * cm(p.comprimento);
   }
 
   // Escada — espelho vertical
   if (p.tipo === 'Escada/Degrau' && cm(p.alturaEspelho) > 0) {
-    extraCm2 += cm(p.alturaEspelho) * l; // per step, q already handles multiples
+    extraCm2 += cm(p.alturaEspelho) * cm(p.comprimento);
   }
 
   // Box paredes
@@ -517,8 +553,8 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
 
   // Banco no box
   if (p.bancoBox) {
-    extraCm2 += cm(p.bancoLargura) * cm(p.bancoComprimento); // tampo
-    extraCm2 += cm(p.bancoAltura) * cm(p.bancoComprimento);  // frente
+    extraCm2 += cm(p.bancoLargura) * cm(p.bancoComprimento);
+    extraCm2 += cm(p.bancoAltura) * cm(p.bancoComprimento);
   }
 
   // Nicho no box
@@ -527,11 +563,10 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
     const nW = cm(p.nichoBoxLargura);
     const nH = cm(p.nichoBoxAltura);
     const nD = cm(p.nichoBoxProfundidade);
-    extraCm2 += nichoQ * (nW * nH + 2 * nD * nH); // fundo + 2 laterais
+    extraCm2 += nichoQ * (nW * nH + 2 * nD * nH);
   }
 
   // Revestimento — deduct aberturas
-  // (aberturas are subtracted, so they go as negative extras)
   if (p.aberturas && p.aberturas.length > 0) {
     p.aberturas.forEach(ab => {
       extraCm2 -= cm(ab.largura) * cm(ab.altura);
@@ -546,16 +581,15 @@ export const calcNichoArea = (p: PecaItem): number => {
   if (p.tipo !== 'Nicho Embutido') return 0;
   const q = parseInt(p.quantidade) || 1;
   const w = cm(p.largura);
-  const h = cm(p.comprimento); // using comprimento as height for nicho
+  const h = cm(p.comprimento);
   const d = cm(p.nichoProfundidade);
   const nPrat = parseInt(p.nichoQtdPrateleiras) || 0;
-  let areaCm2 = w * h; // fundo
-  areaCm2 += 2 * d * h; // laterais
-  areaCm2 += nPrat * w * d; // prateleiras
+  let areaCm2 = w * h;
+  areaCm2 += 2 * d * h;
+  areaCm2 += nPrat * w * d;
   return cm2toM2(areaCm2) * q;
 };
 
-/** Total area of piece (m² líquido) */
 export const calcPecaAreaLiquida = (p: PecaItem): number => {
   if (p.tipo === 'Nicho Embutido') return calcNichoArea(p);
   const base = calcPecaAreaBase(p);
@@ -564,17 +598,14 @@ export const calcPecaAreaLiquida = (p: PecaItem): number => {
   return Math.max(0, base - deductions + extras);
 };
 
-/** Total area with waste margin */
 export const calcPecaAreaCompra = (p: PecaItem): number => {
   const liquida = calcPecaAreaLiquida(p);
   const wastePercent = (p.padraoPiso === 'espinha' || p.padraoPiso === 'diagonal' || p.padraoPiso === 'xadrez')
     && ['Piso'].includes(p.tipo) ? 0.15 : 0.10;
   const withWaste = liquida * (1 + wastePercent);
-  // Minimum 0.10 m² for small pieces
   return ceilM2(Math.max(withWaste, liquida > 0 ? 0.10 : 0));
 };
 
-// Legacy compat aliases
 export const calcPecaArea = calcPecaAreaLiquida;
 
 /** Cuba esculpida detailed calculation */
@@ -613,6 +644,22 @@ export const calcCubaEsculpida = (ce: CubaEsculpidaData): CubaEsculpidaCalc => {
   };
 };
 
+/** Helper: calculate ml for bordasComAcabamento (expanded options) */
+const calcBordaML = (p: PecaItem, l: number, w: number): number => {
+  const bordas = p.bordasComAcabamento || 'Só frontal';
+  switch (bordas) {
+    case 'Sem acabamento de borda': return 0;
+    case 'Só frontal': return l;
+    case 'Frontal e lado direito': return l + w;
+    case 'Frontal e lado esquerdo': return l + w;
+    case 'Frontal e duas laterais': return l + w * 2;
+    case 'Todas as bordas': return (l + w) * 2;
+    // Legacy compat
+    case 'Frontal e laterais': return l + w * 2;
+    default: return l;
+  }
+};
+
 /** Metros lineares de borda — calcula perímetro real por formato */
 export const calcMetrosLinearesBorda = (p: PecaItem): number => {
   const q = parseInt(p.quantidade) || 1;
@@ -622,12 +669,9 @@ export const calcMetrosLinearesBorda = (p: PecaItem): number => {
   if (['Soleira', 'Peitoril'].includes(p.tipo)) {
     const lados = parseInt(p.boleadoLados) || 0;
     if (lados === 0) {
-      // Still calculate for acabamento borda if set
       const l = cm(p.comprimento) / 100;
-      if (p.bordasComAcabamento === 'Só frontal') ml = l;
-      else if (p.bordasComAcabamento === 'Frontal e laterais') ml = l + (cm(p.largura) / 100) * 2;
-      else if (p.bordasComAcabamento === 'Todas as bordas') ml = (l + cm(p.largura) / 100) * 2;
-      else ml = l;
+      const w = cm(p.largura) / 100;
+      ml = calcBordaML(p, l, w);
       return ceilML(ml * q);
     }
     ml = (cm(p.comprimento) / 100) * lados;
@@ -641,12 +685,16 @@ export const calcMetrosLinearesBorda = (p: PecaItem): number => {
       const c2 = cm(p.lTrecho2Comprimento) / 100;
       const w2 = cm(p.lTrecho2Largura) / 100;
       const overlapSide = Math.min(w1, w2);
-      if (p.bordasComAcabamento === 'Só frontal') {
+      const bordas = p.bordasComAcabamento || 'Só frontal';
+      if (bordas === 'Sem acabamento de borda') {
+        ml = 0;
+      } else if (bordas === 'Só frontal') {
         ml = c1 + c2 - overlapSide;
-      } else if (p.bordasComAcabamento === 'Frontal e laterais') {
+      } else if (['Frontal e lado direito', 'Frontal e lado esquerdo'].includes(bordas)) {
+        ml = c1 + c2 - overlapSide + Math.max(w1, w2);
+      } else if (['Frontal e laterais', 'Frontal e duas laterais'].includes(bordas)) {
         ml = c1 + c2 - overlapSide + w1 + w2;
-      } else if (p.bordasComAcabamento === 'Todas as bordas') {
-        // Full outer perimeter of L
+      } else if (bordas === 'Todas as bordas') {
         ml = 2 * (c1 + w1) + 2 * (c2 + w2) - 4 * overlapSide;
       } else {
         ml = c1 + c2 - overlapSide;
@@ -659,7 +707,6 @@ export const calcMetrosLinearesBorda = (p: PecaItem): number => {
     case 'oval': {
       const a = cm(p.comprimento) / 2 / 100;
       const b = cm(p.largura) / 2 / 100;
-      // Ramanujan approximation
       ml = Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b)));
       break;
     }
@@ -683,16 +730,8 @@ export const calcMetrosLinearesBorda = (p: PecaItem): number => {
     default: {
       const l = cm(p.comprimento) / 100;
       const w = cm(p.largura) / 100;
-      if (p.bordasComAcabamento === 'Só frontal') ml = l;
-      else if (p.bordasComAcabamento === 'Frontal e laterais') ml = l + w * 2;
-      else if (p.bordasComAcabamento === 'Todas as bordas') ml = (l + w) * 2;
-      else ml = l;
+      ml = calcBordaML(p, l, w);
     }
-  }
-
-  // Borda de Piscina com boleado duplo (duas faces) — dobra o ml
-  if (p.tipo === 'Borda de Piscina' && p.bordasComAcabamento === 'Todas as bordas') {
-    ml = ml; // already full perimeter; cost doubling handled via acabamento value
   }
 
   return ceilML(ml * q);
@@ -734,6 +773,16 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
     total += parseFloat(mo.polimento) || 0;
   }
 
+  // Chanfrado 45° independente (por ml das peças com chanfrado)
+  if (mo.polimentoChanfradoTipo === 'ml') {
+    const totalML45 = amb.pecas
+      .filter(p => p.acabamentoBorda === 'Chanfrado 45°')
+      .reduce((s, p) => s + calcMetrosLinearesBorda(p), 0);
+    total += (parseFloat(mo.polimentoChanfradoML) || 0) * totalML45;
+  } else {
+    total += parseFloat(mo.polimentoChanfradoML) || 0;
+  }
+
   total += mo.instalacaoTipo === 'm2' ? (parseFloat(mo.instalacao) || 0) * areaCompra : (parseFloat(mo.instalacao) || 0);
   total += parseFloat(mo.visitaTecnica) || 0;
 
@@ -747,19 +796,24 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
   amb.pecas.forEach(p => {
     const q = parseInt(p.quantidade) || 1;
 
-    // CORREÇÃO 2: Rebaixo por m²
+    // Rebaixo: tradicional = por ml, americano/italiano = por m²
     if (p.tipoRebaixo !== 'Sem rebaixo') {
-      const areaRebaixo = cm(p.rebaixoComprimento) * cm(p.rebaixoLargura) / 10000;
-      total += (parseFloat(p.valorRebaixo) || 0) * areaRebaixo * q;
+      if (p.tipoRebaixo === 'Rebaixo tradicional') {
+        total += (parseFloat(p.valorRebaixoTradicionalML) || 0) * (parseFloat(p.rebaixoTradicionalML) || 0) * q;
+      } else {
+        const areaRebaixo = cm(p.rebaixoComprimento) * cm(p.rebaixoLargura) / 10000;
+        total += (parseFloat(p.valorRebaixo) || 0) * areaRebaixo * q;
+      }
     }
 
-    // CORREÇÃO 3: Cuba — esculpida por m², outras fixo
+    // Cuba — esculpida por m², outras fixo
     if (p.tipoCuba !== 'Sem cuba') {
       if (p.tipoCuba === 'Cuba esculpida') {
         const cubaCalc = calcCubaEsculpida(p.cubaEsculpida);
         total += (parseFloat(p.valorCuba) || 0) * cubaCalc.totalM2 * q;
       } else {
-        total += (parseFloat(p.valorCuba) || 0) * q;
+        const cubaQ = parseInt(p.cubaEsculpida.quantidade) || 1;
+        total += (parseFloat(p.valorCuba) || 0) * cubaQ * q;
       }
     }
 
@@ -787,25 +841,25 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
       total += (parseFloat(p.canaletaMetros) || 0) * (parseFloat(p.valorCanaletaMetro) || 0) * q;
     }
 
-    // CORREÇÃO 13: Escada frisos antiderrapante
+    // Escada frisos antiderrapante
     if (p.frisosAntiderrapante) {
       total += (parseFloat(p.valorFrisoMetro) || 0) * (parseInt(p.qtdFrisosPorDegrau) || 2) * (cm(p.comprimento) / 100) * q;
     }
 
-    // CORREÇÃO 8: Soleira/Peitoril boleado
+    // Soleira/Peitoril boleado
     if (parseInt(p.boleadoLados) > 0) {
       total += (parseFloat(p.valorBoleadoMetro) || 0) * (cm(p.comprimento) / 100) * parseInt(p.boleadoLados) * q;
     }
 
-    // CORREÇÃO 10: Pingadeira
+    // Pingadeira
     if (p.pingadeira) {
       total += (parseFloat(p.valorPingadeiraMetro) || 0) * (cm(p.comprimento) / 100) * q;
     }
 
-    // CORREÇÃO 9: Encaixe porta
+    // Encaixe porta
     if (p.encaixePorta) total += (parseFloat(p.valorEncaixe) || 0) * q;
 
-    // CORREÇÃO 11: Rodapé cantos e acabamento superior
+    // Rodapé cantos e acabamento superior
     if (p.tipo === 'Rodapé/Filete') {
       total += (parseInt(p.rodapeCantosInternos) || 0) * (parseFloat(p.valorCantoRodape) || 0) * q;
       total += (parseInt(p.rodapeCantosExternos) || 0) * (parseFloat(p.valorCantoRodape) || 0) * q;
@@ -820,7 +874,7 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
     // Furo coluna tampo
     if (p.furoColuna) total += (parseFloat(p.valorFuroColuna) || 0) * q;
 
-    // CORREÇÃO 12: Nicho serviço
+    // Nicho serviço
     if (p.tipo === 'Nicho Embutido') total += (parseFloat(p.valorServicoNicho) || 0) * q;
 
     // Box ralo
@@ -831,7 +885,7 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
       total += (parseInt(p.nichoBoxQtd) || 0) * (parseFloat(p.valorServicoNichoBox) || 0) * q;
     }
 
-    // CORREÇÃO 14: Extras (multiplicar por q)
+    // Extras
     (p.extras || []).forEach(e => { total += (e.valor || 0) * q; });
   });
 
@@ -877,15 +931,13 @@ export const gerarAlertas = (ambientes: Ambiente[]): AlertaOrcamento[] => {
       const area = calcPecaAreaLiquida(p);
       areaTotal += area;
 
-      // Bancada > 4m (400cm)
       if (['Bancada', 'Ilha Gourmet', 'Bancada de Banheiro'].includes(p.tipo) && l > 400) {
         alertas.push({
           tipo: 'warning', pecaId: p.id,
-          mensagem: `Bancada muito longa (${(l / 100).toFixed(1)}m) — verifique se haverá emenda. Emendas podem gerar custo adicional.`,
+          mensagem: `Bancada muito longa (${(l / 100).toFixed(1)}m) — verifique se haverá emenda.`,
         });
       }
 
-      // Borda piscina > 50m lineares
       if (p.tipo === 'Borda de Piscina' && l / 100 > 50) {
         alertas.push({
           tipo: 'info', pecaId: p.id,
@@ -893,54 +945,50 @@ export const gerarAlertas = (ambientes: Ambiente[]): AlertaOrcamento[] => {
         });
       }
 
-      // Soleira < 8cm largura
       if (p.tipo === 'Soleira' && w > 0 && w < 8) {
         alertas.push({
           tipo: 'warning', pecaId: p.id,
-          mensagem: 'Soleira muito estreita — verifique disponibilidade deste corte no material escolhido.',
+          mensagem: 'Soleira muito estreita — verifique disponibilidade deste corte.',
         });
       }
 
-      // Cuba esculpida profundidade > espessura pedra (we don't know thickness, warn > 5cm)
       if (p.tipoCuba === 'Cuba esculpida') {
         const prof = cm(p.cubaEsculpida.profundidade);
         const esp = cm(p.cubaEsculpida.espessuraParede);
         if (prof > 0 && prof > 15) {
           alertas.push({
             tipo: 'danger', pecaId: p.id,
-            mensagem: `Profundidade da cuba (${prof}cm) muito grande — verifique se a espessura da pedra é suficiente.`,
+            mensagem: `Profundidade da cuba (${prof}cm) muito grande.`,
           });
         }
         if (esp > 0 && esp < 1.5) {
           alertas.push({
             tipo: 'danger', pecaId: p.id,
-            mensagem: `Espessura da parede da cuba (${esp}cm) muito fina — risco de quebra. Recomendamos mínimo de 1,5cm.`,
+            mensagem: `Espessura da parede da cuba (${esp}cm) muito fina — risco de quebra.`,
           });
         }
       }
 
-      // Peça estreita < 10cm
       if (w > 0 && w < 10 && !['Rodapé/Filete', 'Soleira'].includes(p.tipo)) {
         alertas.push({
           tipo: 'info', pecaId: p.id,
-          mensagem: `Peça estreita (${w}cm) — pode ser necessário comprar uma chapa inteira dependendo do material.`,
+          mensagem: `Peça estreita (${w}cm) — pode precisar chapa inteira.`,
         });
       }
     });
   });
 
-  // Área total > 50m²
   if (areaTotal > 50) {
     alertas.push({
       tipo: 'info',
-      mensagem: `Projeto de grande porte (${fmt(areaTotal)} m²) — recomendamos visita técnica antes de fechar o orçamento.`,
+      mensagem: `Projeto grande (${fmt(areaTotal)} m²) — recomendamos visita técnica.`,
     });
   }
 
   return alertas;
 };
 
-/* ─── Material Summary (internal) ─── */
+/* ─── Material Summary ─── */
 
 export interface ResumoMaterial {
   stoneName: string;

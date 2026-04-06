@@ -71,8 +71,8 @@ const MaoDeObraSection = ({ maoDeObra, instalacao, onChangeMO, onChangeInst }: P
         </div>
       </div>
 
-      {/* Corte 45° */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      {/* Corte 45° e Chanfrado 45° */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div>
           <Label className="text-[10px]">Corte 45° (R$)</Label>
           <div className="flex gap-1">
@@ -91,6 +91,17 @@ const MaoDeObraSection = ({ maoDeObra, instalacao, onChangeMO, onChangeInst }: P
               className="h-7 text-xs" placeholder="0,00" />
           </div>
         )}
+        <div>
+          <Label className="text-[10px]">Chanfrado 45° (R$/ml)</Label>
+          <div className="flex gap-1">
+            <Input type="number" step="0.01" value={maoDeObra.polimentoChanfradoML || ''} onChange={e => onChangeMO('polimentoChanfradoML', e.target.value)} className="h-7 text-xs" />
+            <select value={maoDeObra.polimentoChanfradoTipo || 'ml'} onChange={e => onChangeMO('polimentoChanfradoTipo', e.target.value)}
+              className="h-7 rounded-md border border-input bg-background px-1 text-[10px] w-14">
+              <option value="fixo">fixo</option>
+              <option value="ml">/ml</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Serviços customizados */}
