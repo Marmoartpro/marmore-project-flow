@@ -312,6 +312,9 @@ const Dashboard = () => {
             ))}
           </TabsContent>
         </Tabs>
+
+        {/* Contract Settings */}
+        <ContractSettingsSection />
       </div>
 
       {/* Delete project confirmation */}
