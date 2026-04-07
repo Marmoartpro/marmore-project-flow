@@ -234,7 +234,11 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
         data: { ambientes: d.ambientes },
       };
 
-      await supabase.from('contracts').insert(contractPayload as any);
+      if (existingContract?.id) {
+        await supabase.from('contracts').update(contractPayload as any).eq('id', existingContract.id);
+      } else {
+        await supabase.from('contracts').insert(contractPayload as any);
+      }
 
       const hash = await generateContratoEmpreitadaPdf({
         clientName: budgetQuote.client_name,
