@@ -68,7 +68,14 @@ const Clientes = () => {
 
   const startEdit = (c: any) => {
     if (c.source !== 'manual') { toast.error('Só é possível editar clientes cadastrados manualmente.'); return; }
-    setForm({ name: c.name || '', whatsapp: c.whatsapp || '', email: c.email || '', city: c.city || '', service_type: c.service_type || '', observations: c.observations || '' });
+    setForm({
+      name: c.name || '', whatsapp: c.whatsapp || '', email: c.email || '', city: c.city || '',
+      service_type: c.service_type || '', observations: c.observations || '',
+      cpf: c.cpf || '', rg: c.rg || '',
+      address_street: c.address_street || '', address_number: c.address_number || '',
+      address_neighborhood: c.address_neighborhood || '', address_state: c.address_state || '',
+      address_cep: c.address_cep || '',
+    });
     setEditingId(c.id);
     setShowForm(true);
   };
