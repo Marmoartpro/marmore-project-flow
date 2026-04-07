@@ -18,6 +18,7 @@ import Fornecedores from "./pages/Fornecedores";
 import CalculadoraOrcamento from "./pages/CalculadoraOrcamento";
 import Portfolio from "./pages/Portfolio";
 import Relatorios from "./pages/Relatorios";
+import Contratos from "./pages/Contratos";
 import AssinaturaPublica from "./pages/AssinaturaPublica";
 import NotFound from "./pages/NotFound";
 
