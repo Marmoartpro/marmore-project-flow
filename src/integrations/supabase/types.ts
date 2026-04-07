@@ -142,7 +142,14 @@ export type Database = {
       }
       clients: {
         Row: {
+          address_cep: string | null
+          address_city: string | null
+          address_neighborhood: string | null
+          address_number: string | null
+          address_state: string | null
+          address_street: string | null
           city: string | null
+          cpf: string | null
           created_at: string
           email: string | null
           id: string
@@ -151,11 +158,19 @@ export type Database = {
           owner_id: string
           project_id: string | null
           quote_id: string | null
+          rg: string | null
           service_type: string | null
           whatsapp: string | null
         }
         Insert: {
+          address_cep?: string | null
+          address_city?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
           city?: string | null
+          cpf?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -164,11 +179,19 @@ export type Database = {
           owner_id: string
           project_id?: string | null
           quote_id?: string | null
+          rg?: string | null
           service_type?: string | null
           whatsapp?: string | null
         }
         Update: {
+          address_cep?: string | null
+          address_city?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
           city?: string | null
+          cpf?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -177,6 +200,7 @@ export type Database = {
           owner_id?: string
           project_id?: string | null
           quote_id?: string | null
+          rg?: string | null
           service_type?: string | null
           whatsapp?: string | null
         }
@@ -196,6 +220,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      contract_settings: {
+        Row: {
+          clausula_penal_rescisao: number | null
+          clausulas_adicionais: string | null
+          comarca: string | null
+          contractor_address: string | null
+          contractor_cpf: string | null
+          contractor_name: string | null
+          created_at: string
+          honorarios_advocaticios: number | null
+          id: string
+          juros_mora: number | null
+          multa_inadimplemento: number | null
+          owner_id: string
+          testemunha1_cpf: string | null
+          testemunha1_nome: string | null
+          testemunha2_cpf: string | null
+          testemunha2_nome: string | null
+          updated_at: string
+        }
+        Insert: {
+          clausula_penal_rescisao?: number | null
+          clausulas_adicionais?: string | null
+          comarca?: string | null
+          contractor_address?: string | null
+          contractor_cpf?: string | null
+          contractor_name?: string | null
+          created_at?: string
+          honorarios_advocaticios?: number | null
+          id?: string
+          juros_mora?: number | null
+          multa_inadimplemento?: number | null
+          owner_id: string
+          testemunha1_cpf?: string | null
+          testemunha1_nome?: string | null
+          testemunha2_cpf?: string | null
+          testemunha2_nome?: string | null
+          updated_at?: string
+        }
+        Update: {
+          clausula_penal_rescisao?: number | null
+          clausulas_adicionais?: string | null
+          comarca?: string | null
+          contractor_address?: string | null
+          contractor_cpf?: string | null
+          contractor_name?: string | null
+          created_at?: string
+          honorarios_advocaticios?: number | null
+          id?: string
+          juros_mora?: number | null
+          multa_inadimplemento?: number | null
+          owner_id?: string
+          testemunha1_cpf?: string | null
+          testemunha1_nome?: string | null
+          testemunha2_cpf?: string | null
+          testemunha2_nome?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       contracts: {
         Row: {
