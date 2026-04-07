@@ -18,6 +18,7 @@ import Fornecedores from "./pages/Fornecedores";
 import CalculadoraOrcamento from "./pages/CalculadoraOrcamento";
 import Portfolio from "./pages/Portfolio";
 import Relatorios from "./pages/Relatorios";
+import Contratos from "./pages/Contratos";
 import AssinaturaPublica from "./pages/AssinaturaPublica";
 import NotFound from "./pages/NotFound";
 
@@ -54,6 +55,7 @@ const AppRoutes = () => (
     <Route path="/calculadora" element={<ProtectedRoute><CalculadoraOrcamento /></ProtectedRoute>} />
     <Route path="/calculadora/:quoteId" element={<ProtectedRoute><CalculadoraOrcamento /></ProtectedRoute>} />
     <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
+    <Route path="/contratos" element={<ProtectedRoute><Contratos /></ProtectedRoute>} />
     <Route path="/projeto/novo" element={<ProtectedRoute><NewProject /></ProtectedRoute>} />
     <Route path="/projeto/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
     <Route path="/assinar/:token" element={<AssinaturaPublica />} />

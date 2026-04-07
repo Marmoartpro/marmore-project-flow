@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
   Home, DollarSign, FileText, Users, LogOut, Plus, Menu, X, Bell,
-  Package, Truck, Calculator, CheckCheck, Search, BarChart3,
+  Package, Truck, Calculator, CheckCheck, Search, BarChart3, FileSignature,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import GlobalSearch from './GlobalSearch';
@@ -22,6 +22,7 @@ const marmoristNavItems = [
   { path: '/clientes', label: 'Clientes', icon: Users },
   { path: '/mostruario', label: 'Mostruário', icon: Package },
   { path: '/fornecedores', label: 'Fornecedores', icon: Truck },
+  { path: '/contratos', label: 'Contratos', icon: FileSignature },
   { path: '/calculadora', label: 'Orçamento', icon: Calculator },
   { path: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ];

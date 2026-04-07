@@ -17,9 +17,10 @@ interface Props {
   open: boolean;
   onClose: () => void;
   budgetQuote: any;
+  existingContract?: any;
 }
 
-const ContratoDialog = ({ open, onClose, budgetQuote }: Props) => {
+const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props) => {
   const { user, profile } = useAuth();
   const d = budgetQuote?.data as any || {};
   const [tab, setTab] = useState('cliente');
@@ -52,12 +53,35 @@ const ContratoDialog = ({ open, onClose, budgetQuote }: Props) => {
   const [test2Cpf, setTest2Cpf] = useState('');
   const [clausulasAdicionais, setClausulasAdicionais] = useState('');
 
-  // Load client data + contract settings
+  // Load client data + contract settings + existing contract
   useEffect(() => {
     if (!open || !user || !budgetQuote) return;
-    loadClientData();
+    if (existingContract) {
+      loadExistingContract();
+    } else {
+      loadClientData();
+    }
     loadContractSettings();
   }, [open, user, budgetQuote]);
+
+  const loadExistingContract = () => {
+    const ec = existingContract;
+    setClientCpf(ec.client_cpf_cnpj || '');
+    setClientRg('');
+    // Parse address back from full string
+    setClientAddressStreet(ec.client_address || '');
+    setClientAddressNumber('');
+    setClientAddressNeighborhood('');
+    setClientAddressCity('');
+    setClientAddressState('');
+    setClientAddressCep('');
+    setContractorName(ec.company_name || '');
+    setContractorCpf(ec.company_cnpj || '');
+    setContractorAddress(ec.company_address || '');
+    setClausulasAdicionais(ec.additional_clauses || '');
+    // Also load from client DB for structured address
+    loadClientData();
+  };
 
   const loadClientData = async () => {
     if (!budgetQuote?.client_name) return;
@@ -210,7 +234,11 @@ const ContratoDialog = ({ open, onClose, budgetQuote }: Props) => {
         data: { ambientes: d.ambientes },
       };
 
-      await supabase.from('contracts').insert(contractPayload as any);
+      if (existingContract?.id) {
+        await supabase.from('contracts').update(contractPayload as any).eq('id', existingContract.id);
+      } else {
+        await supabase.from('contracts').insert(contractPayload as any);
+      }
 
       const hash = await generateContratoEmpreitadaPdf({
         clientName: budgetQuote.client_name,
@@ -312,7 +340,7 @@ const ContratoDialog = ({ open, onClose, budgetQuote }: Props) => {
       <DialogContent className="max-w-2xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-primary" /> Gerar Contrato de Empreitada — {contractNumber}
+            <FileText className="w-5 h-5 text-primary" /> {existingContract ? 'Editar' : 'Gerar'} Contrato de Empreitada — {contractNumber}
           </DialogTitle>
         </DialogHeader>
 
@@ -388,7 +416,7 @@ const ContratoDialog = ({ open, onClose, budgetQuote }: Props) => {
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={handleSaveAndGenerate} disabled={saving || missingClientData}>
-            <Save className="w-4 h-4 mr-1" /> {saving ? 'Gerando...' : 'Gerar Contrato PDF'}
+            <Save className="w-4 h-4 mr-1" /> {saving ? 'Salvando...' : existingContract ? 'Salvar e Gerar PDF' : 'Gerar Contrato PDF'}
           </Button>
         </DialogFooter>
       </DialogContent>
