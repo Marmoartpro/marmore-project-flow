@@ -14,7 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Plus, Search, ExternalLink, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const emptyForm = { name: '', whatsapp: '', email: '', city: '', service_type: '', observations: '' };
+const emptyForm = { name: '', whatsapp: '', email: '', city: '', service_type: '', observations: '', cpf: '', rg: '', address_street: '', address_number: '', address_neighborhood: '', address_state: '', address_cep: '' };
 
 const Clientes = () => {
   const { user } = useAuth();
