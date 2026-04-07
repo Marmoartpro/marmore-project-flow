@@ -14,7 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Plus, Search, ExternalLink, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const emptyForm = { name: '', whatsapp: '', email: '', city: '', service_type: '', observations: '' };
+const emptyForm = { name: '', whatsapp: '', email: '', city: '', service_type: '', observations: '', cpf: '', rg: '', address_street: '', address_number: '', address_neighborhood: '', address_state: '', address_cep: '' };
 
 const Clientes = () => {
   const { user } = useAuth();
@@ -68,7 +68,14 @@ const Clientes = () => {
 
   const startEdit = (c: any) => {
     if (c.source !== 'manual') { toast.error('Só é possível editar clientes cadastrados manualmente.'); return; }
-    setForm({ name: c.name || '', whatsapp: c.whatsapp || '', email: c.email || '', city: c.city || '', service_type: c.service_type || '', observations: c.observations || '' });
+    setForm({
+      name: c.name || '', whatsapp: c.whatsapp || '', email: c.email || '', city: c.city || '',
+      service_type: c.service_type || '', observations: c.observations || '',
+      cpf: c.cpf || '', rg: c.rg || '',
+      address_street: c.address_street || '', address_number: c.address_number || '',
+      address_neighborhood: c.address_neighborhood || '', address_state: c.address_state || '',
+      address_cep: c.address_cep || '',
+    });
     setEditingId(c.id);
     setShowForm(true);
   };
@@ -123,7 +130,18 @@ const Clientes = () => {
                 <div><Label className="text-xs">Cidade</Label><Input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} className="h-8 text-sm" /></div>
               </div>
               <div><Label className="text-xs">Tipo de serviço</Label><Input value={form.service_type} onChange={e => setForm(f => ({ ...f, service_type: e.target.value }))} className="h-8 text-sm" /></div>
-              <div><Label className="text-xs">Observações</Label><Textarea value={form.observations} onChange={e => setForm(f => ({ ...f, observations: e.target.value }))} rows={2} className="text-sm" /></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div><Label className="text-xs">CPF</Label><Input value={form.cpf} onChange={e => setForm(f => ({ ...f, cpf: e.target.value }))} className="h-8 text-sm" placeholder="000.000.000-00" /></div>
+                <div><Label className="text-xs">RG</Label><Input value={form.rg} onChange={e => setForm(f => ({ ...f, rg: e.target.value }))} className="h-8 text-sm" /></div>
+              </div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase mt-2">Endereço</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div><Label className="text-xs">Rua/Avenida</Label><Input value={form.address_street} onChange={e => setForm(f => ({ ...f, address_street: e.target.value }))} className="h-8 text-sm" /></div>
+                <div><Label className="text-xs">Número</Label><Input value={form.address_number} onChange={e => setForm(f => ({ ...f, address_number: e.target.value }))} className="h-8 text-sm" /></div>
+                <div><Label className="text-xs">Bairro</Label><Input value={form.address_neighborhood} onChange={e => setForm(f => ({ ...f, address_neighborhood: e.target.value }))} className="h-8 text-sm" /></div>
+                <div><Label className="text-xs">Estado</Label><Input value={form.address_state} onChange={e => setForm(f => ({ ...f, address_state: e.target.value }))} className="h-8 text-sm" placeholder="SP" /></div>
+                <div><Label className="text-xs">CEP</Label><Input value={form.address_cep} onChange={e => setForm(f => ({ ...f, address_cep: e.target.value }))} className="h-8 text-sm" placeholder="00000-000" /></div>
+              </div>
               <div className="flex gap-2">
                 <Button size="sm" onClick={saveClient} disabled={!form.name}>{editingId ? 'Salvar alterações' : 'Salvar'}</Button>
                 <Button size="sm" variant="ghost" onClick={() => { setShowForm(false); setEditingId(null); }}>Cancelar</Button>

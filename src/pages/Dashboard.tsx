@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DollarSign, AlertTriangle, FileText, TrendingUp, Copy, RefreshCw, MoreVertical, Edit, Trash2, Archive } from 'lucide-react';
 import { toast } from 'sonner';
+import ContractSettingsSection from '@/components/contrato/ContractSettingsSection';
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -311,6 +312,9 @@ const Dashboard = () => {
             ))}
           </TabsContent>
         </Tabs>
+
+        {/* Contract Settings */}
+        <ContractSettingsSection />
       </div>
 
       {/* Delete project confirmation */}
