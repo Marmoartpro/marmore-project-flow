@@ -126,7 +126,7 @@ const ContratoDialog = ({ open, onClose, budgetQuote }: Props) => {
     if (!d.ambientes) return '';
     const materials = new Set<string>();
     (d.ambientes as Ambiente[]).forEach(amb => {
-      amb.pecas.forEach(p => { if (p.material) materials.add(p.material); });
+      amb.materialOptions?.forEach(m => { if (m.stoneName) materials.add(m.stoneName); });
     });
     return Array.from(materials).join('\n');
   };
