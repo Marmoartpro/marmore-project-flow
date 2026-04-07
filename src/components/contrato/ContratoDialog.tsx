@@ -416,7 +416,7 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={handleSaveAndGenerate} disabled={saving || missingClientData}>
-            <Save className="w-4 h-4 mr-1" /> {saving ? 'Gerando...' : 'Gerar Contrato PDF'}
+            <Save className="w-4 h-4 mr-1" /> {saving ? 'Salvando...' : existingContract ? 'Salvar e Gerar PDF' : 'Gerar Contrato PDF'}
           </Button>
         </DialogFooter>
       </DialogContent>
