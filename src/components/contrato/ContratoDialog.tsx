@@ -340,7 +340,7 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
       <DialogContent className="max-w-2xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-primary" /> Gerar Contrato de Empreitada — {contractNumber}
+            <FileText className="w-5 h-5 text-primary" /> {existingContract ? 'Editar' : 'Gerar'} Contrato de Empreitada — {contractNumber}
           </DialogTitle>
         </DialogHeader>
 
