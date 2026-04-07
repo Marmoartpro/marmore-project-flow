@@ -112,11 +112,11 @@ const ContratoDialog = ({ open, onClose, budgetQuote }: Props) => {
     return (d.ambientes as Ambiente[]).map(amb => {
       const name = amb.tipo === 'Ambiente Personalizado' && amb.nomeCustom ? amb.nomeCustom : amb.tipo;
       const area = calcAmbienteArea(amb);
+      const matNames = amb.materialOptions?.map(m => m.nome).filter(Boolean).join(', ') || '';
       const pecas = amb.pecas.map(p => {
         const nome = p.nomePeca || p.tipo;
-        const mat = p.material || '';
         const acab = p.acabamentoBorda || '';
-        return `${nome} (${p.comprimento}×${p.largura} cm)${mat ? ` — ${mat}` : ''}${acab ? ` — ${acab}` : ''}`;
+        return `${nome} (${p.comprimento}×${p.largura} cm)${acab ? ` — ${acab}` : ''}`;
       }).join('; ');
       return `${name}: ${pecas}. Área total: ${fmt(area)} m².`;
     }).join('\n');
