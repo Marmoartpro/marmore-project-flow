@@ -112,7 +112,7 @@ const ContratoDialog = ({ open, onClose, budgetQuote }: Props) => {
     return (d.ambientes as Ambiente[]).map(amb => {
       const name = amb.tipo === 'Ambiente Personalizado' && amb.nomeCustom ? amb.nomeCustom : amb.tipo;
       const area = calcAmbienteArea(amb);
-      const matNames = amb.materialOptions?.map(m => m.nome).filter(Boolean).join(', ') || '';
+      const matNames = amb.materialOptions?.map(m => m.stoneName).filter(Boolean).join(', ') || '';
       const pecas = amb.pecas.map(p => {
         const nome = p.nomePeca || p.tipo;
         const acab = p.acabamentoBorda || '';
