@@ -17,9 +17,10 @@ interface Props {
   open: boolean;
   onClose: () => void;
   budgetQuote: any;
+  existingContract?: any;
 }
 
-const ContratoDialog = ({ open, onClose, budgetQuote }: Props) => {
+const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props) => {
   const { user, profile } = useAuth();
   const d = budgetQuote?.data as any || {};
   const [tab, setTab] = useState('cliente');
