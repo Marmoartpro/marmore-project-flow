@@ -53,12 +53,35 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
   const [test2Cpf, setTest2Cpf] = useState('');
   const [clausulasAdicionais, setClausulasAdicionais] = useState('');
 
-  // Load client data + contract settings
+  // Load client data + contract settings + existing contract
   useEffect(() => {
     if (!open || !user || !budgetQuote) return;
-    loadClientData();
+    if (existingContract) {
+      loadExistingContract();
+    } else {
+      loadClientData();
+    }
     loadContractSettings();
   }, [open, user, budgetQuote]);
+
+  const loadExistingContract = () => {
+    const ec = existingContract;
+    setClientCpf(ec.client_cpf_cnpj || '');
+    setClientRg('');
+    // Parse address back from full string
+    setClientAddressStreet(ec.client_address || '');
+    setClientAddressNumber('');
+    setClientAddressNeighborhood('');
+    setClientAddressCity('');
+    setClientAddressState('');
+    setClientAddressCep('');
+    setContractorName(ec.company_name || '');
+    setContractorCpf(ec.company_cnpj || '');
+    setContractorAddress(ec.company_address || '');
+    setClausulasAdicionais(ec.additional_clauses || '');
+    // Also load from client DB for structured address
+    loadClientData();
+  };
 
   const loadClientData = async () => {
     if (!budgetQuote?.client_name) return;
