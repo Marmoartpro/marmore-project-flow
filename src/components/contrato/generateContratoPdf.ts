@@ -178,12 +178,13 @@ export const generateContratoEmpreitadaPdf = async (params: ContratoEmpreitadaPa
   y += 8;
 
   // ===== PARTIES =====
+  const isPJ = params.clientTipo === 'pj';
   addParagraphBold('CONTRATANTE:');
   addParagraph(
     `${params.clientName}` +
-    (params.clientCpf ? `, CPF nº ${params.clientCpf}` : '') +
-    (params.clientRg ? `, RG nº ${params.clientRg}` : '') +
-    (params.clientAddress ? `, residente em ${params.clientAddress}` : '') +
+    (params.clientCpf ? `, ${isPJ ? 'CNPJ' : 'CPF'} nº ${params.clientCpf}` : '') +
+    (params.clientRg ? `, ${isPJ ? 'Inscrição Estadual' : 'RG'} nº ${params.clientRg}` : '') +
+    (params.clientAddress ? `, ${isPJ ? 'com sede em' : 'residente em'} ${params.clientAddress}` : '') +
     '.'
   );
 
