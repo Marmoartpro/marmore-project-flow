@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Save, AlertTriangle, Download, PenTool, Send } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FileText, Save, AlertTriangle, Download, Send, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { generateContratoEmpreitadaPdf } from './generateContratoPdf';
@@ -28,8 +29,10 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
   const [showPostActions, setShowPostActions] = useState(false);
   const [generatedHash, setGeneratedHash] = useState('');
 
-  // Client fields
-  const [clientCpf, setClientCpf] = useState('');
+  // Editable contract fields
+  const [clientName, setClientName] = useState('');
+  const [clientTipo, setClientTipo] = useState<'pf' | 'pj'>('pf');
+  const [clientCpfCnpj, setClientCpfCnpj] = useState('');
   const [clientRg, setClientRg] = useState('');
   const [clientAddressStreet, setClientAddressStreet] = useState('');
   const [clientAddressNumber, setClientAddressNumber] = useState('');
@@ -37,6 +40,10 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
   const [clientAddressCity, setClientAddressCity] = useState('');
   const [clientAddressState, setClientAddressState] = useState('');
   const [clientAddressCep, setClientAddressCep] = useState('');
+
+  // Editable value & payment
+  const [totalValue, setTotalValue] = useState(0);
+  const [paymentConditions, setPaymentConditions] = useState('');
 
   // Contract settings (loaded from DB)
   const [contractorName, setContractorName] = useState('');
@@ -53,9 +60,16 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
   const [test2Cpf, setTest2Cpf] = useState('');
   const [clausulasAdicionais, setClausulasAdicionais] = useState('');
 
-  // Load client data + contract settings + existing contract
+  // AI review
+  const [aiReviewing, setAiReviewing] = useState(false);
+  const [aiReview, setAiReview] = useState('');
+
   useEffect(() => {
     if (!open || !user || !budgetQuote) return;
+    setClientName(existingContract?.client_name || budgetQuote?.client_name || '');
+    setTotalValue(Number(existingContract?.total_value || budgetQuote?.total || 0));
+    setPaymentConditions(existingContract?.payment_conditions || budgetQuote?.payment_conditions || '');
+    setAiReview('');
     if (existingContract) {
       loadExistingContract();
     } else {
@@ -66,9 +80,11 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
 
   const loadExistingContract = () => {
     const ec = existingContract;
-    setClientCpf(ec.client_cpf_cnpj || '');
+    const cpfCnpj = ec.client_cpf_cnpj || '';
+    // Detect PJ by CNPJ length (14 digits) or presence of /
+    setClientTipo(cpfCnpj.replace(/\D/g, '').length > 11 ? 'pj' : 'pf');
+    setClientCpfCnpj(cpfCnpj);
     setClientRg('');
-    // Parse address back from full string
     setClientAddressStreet(ec.client_address || '');
     setClientAddressNumber('');
     setClientAddressNeighborhood('');
@@ -79,7 +95,6 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
     setContractorCpf(ec.company_cnpj || '');
     setContractorAddress(ec.company_address || '');
     setClausulasAdicionais(ec.additional_clauses || '');
-    // Also load from client DB for structured address
     loadClientData();
   };
 
@@ -92,7 +107,11 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
       .ilike('name', budgetQuote.client_name)
       .maybeSingle();
     if (client) {
-      setClientCpf((client as any).cpf || '');
+      const cpf = (client as any).cpf || '';
+      if (!existingContract) {
+        setClientTipo(cpf.replace(/\D/g, '').length > 11 ? 'pj' : 'pf');
+        setClientCpfCnpj(cpf);
+      }
       setClientRg((client as any).rg || '');
       setClientAddressStreet((client as any).address_street || '');
       setClientAddressNumber((client as any).address_number || '');
@@ -110,9 +129,11 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
       .eq('owner_id', user!.id)
       .maybeSingle();
     if (data) {
-      setContractorName((data as any).contractor_name || '');
-      setContractorCpf((data as any).contractor_cpf || '');
-      setContractorAddress((data as any).contractor_address || '');
+      if (!existingContract || !existingContract.company_name) {
+        setContractorName((data as any).contractor_name || '');
+        setContractorCpf((data as any).contractor_cpf || '');
+        setContractorAddress((data as any).contractor_address || '');
+      }
       setComarca((data as any).comarca || 'Sertãozinho/SP');
       setMultaInadimpl(Number((data as any).multa_inadimplemento) || 2);
       setJurosMora(Number((data as any).juros_mora) || 1);
@@ -122,21 +143,19 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
       setTest1Cpf((data as any).testemunha1_cpf || '');
       setTest2Nome((data as any).testemunha2_nome || '');
       setTest2Cpf((data as any).testemunha2_cpf || '');
-      setClausulasAdicionais((data as any).clausulas_adicionais || '');
+      if (!existingContract) setClausulasAdicionais((data as any).clausulas_adicionais || '');
     } else {
-      // Use profile data as fallback
       setContractorName((profile as any)?.full_name || '');
     }
   };
 
-  const missingClientData = !clientCpf || !clientAddressStreet || !clientAddressCity;
+  const missingClientData = !clientCpfCnpj || !clientAddressStreet || !clientAddressCity;
 
   const buildScope = (): string => {
     if (!d.ambientes) return '';
     return (d.ambientes as Ambiente[]).map(amb => {
       const name = amb.tipo === 'Ambiente Personalizado' && amb.nomeCustom ? amb.nomeCustom : amb.tipo;
       const area = calcAmbienteArea(amb);
-      const matNames = amb.materialOptions?.map(m => m.stoneName).filter(Boolean).join(', ') || '';
       const pecas = amb.pecas.map(p => {
         const nome = p.nomePeca || p.tipo;
         const acab = p.acabamentoBorda || '';
@@ -155,17 +174,8 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
     return Array.from(materials).join('\n');
   };
 
-  const getServiceType = (): string => {
-    const envType = d.ambientes?.[0]?.tipo || budgetQuote?.environment_type || 'Bancada';
-    return envType;
-  };
-
-  const getMaterialName = (): string => {
-    if (!d.ambientes) return 'Pedra Natural';
-    const mat = d.ambientes[0]?.pecas?.[0]?.material;
-    return mat || 'Pedra Natural';
-  };
-
+  const getServiceType = (): string => d.ambientes?.[0]?.tipo || budgetQuote?.environment_type || 'Bancada';
+  const getMaterialName = (): string => d.ambientes?.[0]?.pecas?.[0]?.material || 'Pedra Natural';
   const hasInstallation = (): boolean => {
     if (!d.ambientes) return false;
     return (d.ambientes as Ambiente[]).some(amb => parseFloat(String(amb.maoDeObra?.instalacao || '0')) > 0);
@@ -182,6 +192,54 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
 
   const contractNumber = `CTR-${budgetQuote?.quote_number || 'NOVO'}`;
 
+  const handleAIReview = async () => {
+    setAiReviewing(true);
+    setAiReview('');
+    try {
+      const scope = buildScope();
+      const prompt = `Você é um advogado especialista em contratos de empreitada para marmorarias. Revise o seguinte contrato e aponte problemas, sugestões de melhoria e inconsistências. Seja direto e prático.
+
+DADOS DO CONTRATO:
+- Contratante: ${clientName} (${clientTipo === 'pf' ? 'Pessoa Física' : 'Pessoa Jurídica'})
+- ${clientTipo === 'pf' ? 'CPF' : 'CNPJ'}: ${clientCpfCnpj}
+- Endereço: ${clientFullAddress}
+- Contratada: ${contractorName}, CPF: ${contractorCpf}
+- Endereço Contratada: ${contractorAddress}
+- Valor Total: R$ ${fmt(totalValue)}
+- Condições de Pagamento: ${paymentConditions || 'Não informado'}
+- Multa: ${multaInadimpl}%, Juros: ${jurosMora}%/mês, Honorários: ${honorarios}%
+- Comarca: ${comarca}
+
+ESCOPO:
+${scope}
+
+MATERIAIS:
+${buildMaterialsList()}
+
+CLÁUSULAS ADICIONAIS:
+${clausulasAdicionais || 'Nenhuma'}
+
+Responda em formato de lista com ✅ para itens OK e ⚠️ para pontos de atenção.`;
+
+      const response = await supabase.functions.invoke('generate-budget-gemini', {
+        body: {
+          mode: 'chat',
+          chat_history: [{ role: 'user', content: prompt }],
+          budget_data: {},
+        },
+      });
+
+      if (response.error) throw response.error;
+      const text = response.data?.reply || response.data?.message || 'Sem resposta da IA.';
+      setAiReview(text);
+    } catch (err: any) {
+      toast.error('Erro na revisão da IA');
+      setAiReview('Erro ao revisar. Tente novamente.');
+    } finally {
+      setAiReviewing(false);
+    }
+  };
+
   const handleSaveAndGenerate = async () => {
     if (!user) return;
     setSaving(true);
@@ -195,7 +253,7 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
         .maybeSingle();
 
       const clientUpdate = {
-        cpf: clientCpf, rg: clientRg,
+        cpf: clientCpfCnpj, rg: clientRg,
         address_street: clientAddressStreet, address_number: clientAddressNumber,
         address_neighborhood: clientAddressNeighborhood, address_city: clientAddressCity,
         address_state: clientAddressState, address_cep: clientAddressCep,
@@ -205,7 +263,7 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
         await supabase.from('clients').update(clientUpdate as any).eq('id', existingClient.id);
       } else {
         await supabase.from('clients').insert({
-          owner_id: user.id, name: budgetQuote.client_name, ...clientUpdate,
+          owner_id: user.id, name: clientName, ...clientUpdate,
         } as any);
       }
 
@@ -213,8 +271,8 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
       const contractPayload = {
         owner_id: user.id,
         budget_quote_id: budgetQuote.id,
-        client_name: budgetQuote.client_name,
-        client_cpf_cnpj: clientCpf,
+        client_name: clientName,
+        client_cpf_cnpj: clientCpfCnpj,
         client_address: clientFullAddress,
         client_phone: '',
         company_name: contractorName,
@@ -224,8 +282,8 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
         company_phone: '',
         contract_number: contractNumber,
         contract_date: new Date().toISOString().split('T')[0],
-        total_value: budgetQuote.total,
-        payment_conditions: budgetQuote.payment_conditions || '',
+        total_value: totalValue,
+        payment_conditions: paymentConditions,
         scope_description: scope,
         exclusions: '',
         cancellation_policy: `Cláusula penal de ${clausulaPenal}%`,
@@ -241,8 +299,8 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
       }
 
       const hash = await generateContratoEmpreitadaPdf({
-        clientName: budgetQuote.client_name,
-        clientCpf,
+        clientName,
+        clientCpf: clientCpfCnpj,
         clientRg,
         clientAddress: clientFullAddress,
         contractorName,
@@ -255,8 +313,8 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
         scopeDescription: scope,
         includesInstallation: hasInstallation(),
         materialsList: buildMaterialsList(),
-        totalValue: budgetQuote.total,
-        paymentConditions: budgetQuote.payment_conditions || '',
+        totalValue,
+        paymentConditions,
         multaInadimplemento: multaInadimpl,
         jurosMora,
         honorariosAdvocaticios: honorarios,
@@ -268,6 +326,7 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
         testemunha2Cpf: test2Cpf,
         clausulasAdicionais,
         logoUrl: (profile as any)?.company_logo_url || null,
+        clientTipo,
       });
 
       setGeneratedHash(hash);
@@ -339,8 +398,8 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
     <Dialog open={open} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-primary" /> {existingContract ? 'Editar' : 'Gerar'} Contrato de Empreitada — {contractNumber}
+          <DialogTitle className="flex items-center gap-2 text-sm">
+            <FileText className="w-5 h-5 text-primary" /> {existingContract ? 'Editar' : 'Gerar'} Contrato — {contractNumber}
           </DialogTitle>
         </DialogHeader>
 
@@ -352,18 +411,53 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
         )}
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-3 h-8">
+          <TabsList className="grid w-full grid-cols-4 h-8">
             <TabsTrigger value="cliente" className="text-[11px]">Cliente</TabsTrigger>
             <TabsTrigger value="contratada" className="text-[11px]">Contratada</TabsTrigger>
+            <TabsTrigger value="valores" className="text-[11px]">Valores</TabsTrigger>
             <TabsTrigger value="clausulas" className="text-[11px]">Cláusulas</TabsTrigger>
           </TabsList>
 
           <ScrollArea className="max-h-[55vh] pr-4 mt-3">
             <TabsContent value="cliente" className="space-y-3 mt-0">
               <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2"><Label className="text-xs">Nome</Label><Input value={budgetQuote?.client_name || ''} disabled className="h-8 text-sm bg-muted" /></div>
-                <div><Label className="text-xs">CPF *</Label><Input value={clientCpf} onChange={e => setClientCpf(e.target.value)} className="h-8 text-sm" placeholder="000.000.000-00" /></div>
-                <div><Label className="text-xs">RG</Label><Input value={clientRg} onChange={e => setClientRg(e.target.value)} className="h-8 text-sm" /></div>
+                <div className="col-span-2">
+                  <Label className="text-xs">Nome completo do contratante</Label>
+                  <Input value={clientName} onChange={e => setClientName(e.target.value)} className="h-8 text-sm" placeholder="Nome completo para o contrato" />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs">Tipo de pessoa</Label>
+                  <Select value={clientTipo} onValueChange={(v: 'pf' | 'pj') => { setClientTipo(v); setClientCpfCnpj(''); }}>
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pf">Pessoa Física (CPF)</SelectItem>
+                      <SelectItem value="pj">Pessoa Jurídica (CNPJ)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">{clientTipo === 'pf' ? 'CPF' : 'CNPJ'} *</Label>
+                  <Input
+                    value={clientCpfCnpj}
+                    onChange={e => setClientCpfCnpj(e.target.value)}
+                    className="h-8 text-sm"
+                    placeholder={clientTipo === 'pf' ? '000.000.000-00' : '00.000.000/0000-00'}
+                  />
+                </div>
+                {clientTipo === 'pf' && (
+                  <div>
+                    <Label className="text-xs">RG</Label>
+                    <Input value={clientRg} onChange={e => setClientRg(e.target.value)} className="h-8 text-sm" />
+                  </div>
+                )}
+                {clientTipo === 'pj' && (
+                  <div>
+                    <Label className="text-xs">Inscrição Estadual</Label>
+                    <Input value={clientRg} onChange={e => setClientRg(e.target.value)} className="h-8 text-sm" placeholder="Opcional" />
+                  </div>
+                )}
                 <div className="col-span-2"><Label className="text-xs">Rua / Avenida *</Label><Input value={clientAddressStreet} onChange={e => setClientAddressStreet(e.target.value)} className="h-8 text-sm" /></div>
                 <div><Label className="text-xs">Número</Label><Input value={clientAddressNumber} onChange={e => setClientAddressNumber(e.target.value)} className="h-8 text-sm" /></div>
                 <div><Label className="text-xs">Bairro</Label><Input value={clientAddressNeighborhood} onChange={e => setClientAddressNeighborhood(e.target.value)} className="h-8 text-sm" /></div>
@@ -377,7 +471,7 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
               <p className="text-xs text-muted-foreground">Dados carregados das configurações. Edite aqui para este contrato.</p>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label className="text-xs">Nome completo</Label><Input value={contractorName} onChange={e => setContractorName(e.target.value)} className="h-8 text-sm" /></div>
-                <div><Label className="text-xs">CPF</Label><Input value={contractorCpf} onChange={e => setContractorCpf(e.target.value)} className="h-8 text-sm" /></div>
+                <div><Label className="text-xs">CPF / CNPJ</Label><Input value={contractorCpf} onChange={e => setContractorCpf(e.target.value)} className="h-8 text-sm" /></div>
                 <div className="col-span-2"><Label className="text-xs">Endereço completo</Label><Input value={contractorAddress} onChange={e => setContractorAddress(e.target.value)} className="h-8 text-sm" /></div>
                 <div><Label className="text-xs">Comarca do Foro</Label><Input value={comarca} onChange={e => setComarca(e.target.value)} className="h-8 text-sm" /></div>
               </div>
@@ -387,6 +481,37 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
                 <div><Label className="text-xs">Testemunha 1 — CPF</Label><Input value={test1Cpf} onChange={e => setTest1Cpf(e.target.value)} className="h-8 text-sm" /></div>
                 <div><Label className="text-xs">Testemunha 2 — Nome</Label><Input value={test2Nome} onChange={e => setTest2Nome(e.target.value)} className="h-8 text-sm" /></div>
                 <div><Label className="text-xs">Testemunha 2 — CPF</Label><Input value={test2Cpf} onChange={e => setTest2Cpf(e.target.value)} className="h-8 text-sm" /></div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="valores" className="space-y-3 mt-0">
+              <p className="text-xs text-muted-foreground">Altere o valor final e as condições de pagamento caso tenha havido negociação.</p>
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <Label className="text-xs">Valor total do contrato (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={totalValue}
+                    onChange={e => setTotalValue(parseFloat(e.target.value) || 0)}
+                    className="h-9 text-sm font-semibold"
+                  />
+                  {totalValue !== Number(budgetQuote?.total || 0) && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Valor original do orçamento: R$ {fmt(Number(budgetQuote?.total || 0))}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-xs">Condições de pagamento</Label>
+                  <Textarea
+                    value={paymentConditions}
+                    onChange={e => setPaymentConditions(e.target.value)}
+                    rows={3}
+                    className="text-sm"
+                    placeholder="Ex: 50% na aprovação e 50% na entrega..."
+                  />
+                </div>
               </div>
             </TabsContent>
 
@@ -403,10 +528,22 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
                 <Textarea value={clausulasAdicionais} onChange={e => setClausulasAdicionais(e.target.value)} rows={3} className="text-sm" placeholder="Texto livre para cláusulas extras..." />
               </div>
 
-              <div className="bg-muted/50 rounded-md p-3 mt-4">
-                <p className="text-xs font-semibold">Valor total: <span className="text-primary">R$ {fmt(Number(budgetQuote?.total || 0))}</span></p>
-                {budgetQuote?.payment_conditions && (
-                  <p className="text-xs text-muted-foreground mt-1">Pagamento: {budgetQuote.payment_conditions}</p>
+              {/* AI Review */}
+              <div className="border border-border rounded-md p-3 space-y-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAIReview}
+                  disabled={aiReviewing}
+                  className="w-full"
+                >
+                  {aiReviewing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Sparkles className="w-4 h-4 mr-1" />}
+                  {aiReviewing ? 'Revisando...' : 'Revisão IA do contrato'}
+                </Button>
+                {aiReview && (
+                  <div className="bg-muted/50 rounded-md p-3 text-xs whitespace-pre-wrap max-h-48 overflow-y-auto">
+                    {aiReview}
+                  </div>
                 )}
               </div>
             </TabsContent>
