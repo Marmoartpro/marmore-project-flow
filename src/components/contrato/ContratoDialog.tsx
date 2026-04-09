@@ -81,7 +81,6 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
   const loadExistingContract = () => {
     const ec = existingContract;
     const cpfCnpj = ec.client_cpf_cnpj || '';
-    // Detect PJ by CNPJ length (14 digits) or presence of /
     setClientTipo(cpfCnpj.replace(/\D/g, '').length > 11 ? 'pj' : 'pf');
     setClientCpfCnpj(cpfCnpj);
     setClientRg('');
@@ -91,9 +90,6 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
     setClientAddressCity('');
     setClientAddressState('');
     setClientAddressCep('');
-    setContractorName(ec.company_name || '');
-    setContractorCpf(ec.company_cnpj || '');
-    setContractorAddress(ec.company_address || '');
     setClausulasAdicionais(ec.additional_clauses || '');
     loadClientData();
   };
@@ -129,11 +125,10 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
       .eq('owner_id', user!.id)
       .maybeSingle();
     if (data) {
-      if (!existingContract || !existingContract.company_name) {
-        setContractorName((data as any).contractor_name || '');
-        setContractorCpf((data as any).contractor_cpf || '');
-        setContractorAddress((data as any).contractor_address || '');
-      }
+      // Always load contractor data from settings (user's saved defaults)
+      setContractorName((data as any).contractor_name || '');
+      setContractorCpf((data as any).contractor_cpf || '');
+      setContractorAddress((data as any).contractor_address || '');
       setComarca((data as any).comarca || 'Sertãozinho/SP');
       setMultaInadimpl(Number((data as any).multa_inadimplemento) || 2);
       setJurosMora(Number((data as any).juros_mora) || 1);
