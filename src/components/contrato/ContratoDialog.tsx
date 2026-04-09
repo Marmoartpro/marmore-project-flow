@@ -127,6 +127,7 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
       .maybeSingle();
     if (data) {
       // Always load contractor data from settings (user's saved defaults)
+      setContractorTipo((data as any).contractor_tipo || 'pf');
       setContractorName((data as any).contractor_name || '');
       setContractorCpf((data as any).contractor_cpf || '');
       setContractorAddress((data as any).contractor_address || '');
