@@ -36,6 +36,7 @@ export interface ContratoEmpreitadaParams {
   clausulasAdicionais: string;
   logoUrl: string | null;
   clientTipo?: 'pf' | 'pj';
+  contractorTipo?: 'pf' | 'pj';
 }
 
 const loadImage = (url: string): Promise<string | null> => {
