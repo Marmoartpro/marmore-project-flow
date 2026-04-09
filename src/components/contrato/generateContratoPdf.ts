@@ -319,7 +319,7 @@ export const generateContratoEmpreitadaPdf = async (params: ContratoEmpreitadaPa
   doc.text('CONTRATADA', mL, y + 5);
   doc.setFont('times', 'normal');
   doc.text(params.contractorName, mL, y + 10);
-  if (params.contractorCpf) doc.text(`CPF: ${params.contractorCpf}`, mL, y + 14);
+  if (params.contractorCpf) doc.text(`${isContractorPJ ? 'CNPJ' : 'CPF'}: ${params.contractorCpf}`, mL, y + 14);
 
   // Contratante
   const rX = mL + colW + 20;
