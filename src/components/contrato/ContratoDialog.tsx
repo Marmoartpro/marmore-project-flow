@@ -324,6 +324,7 @@ Responda em formato de lista com ✅ para itens OK e ⚠️ para pontos de aten�
         clausulasAdicionais,
         logoUrl: (profile as any)?.company_logo_url || null,
         clientTipo,
+        contractorTipo,
       });
 
       setGeneratedHash(hash);
