@@ -190,10 +190,11 @@ export const generateContratoEmpreitadaPdf = async (params: ContratoEmpreitadaPa
   );
 
   addParagraphBold('CONTRATADA:');
+  const isContractorPJ = params.contractorTipo === 'pj';
   addParagraph(
     `${params.contractorName}` +
-    (params.contractorCpf ? `, pessoa física, CPF nº ${params.contractorCpf}` : '') +
-    (params.contractorAddress ? `, residente em ${params.contractorAddress}` : '') +
+    (params.contractorCpf ? `, ${isContractorPJ ? 'pessoa jurídica, CNPJ nº' : 'pessoa física, CPF nº'} ${params.contractorCpf}` : '') +
+    (params.contractorAddress ? `, ${isContractorPJ ? 'com sede em' : 'residente em'} ${params.contractorAddress}` : '') +
     '.'
   );
 
