@@ -6,10 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Save, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 const defaultSettings = {
+  contractor_tipo: 'pf' as 'pf' | 'pj',
   contractor_name: '',
   contractor_cpf: '',
   contractor_address: '',
@@ -36,6 +38,7 @@ const ContractSettingsSection = () => {
     supabase.from('contract_settings').select('*').eq('owner_id', user.id).maybeSingle().then(({ data }) => {
       if (data) {
         setSettings({
+          contractor_tipo: (data as any).contractor_tipo || 'pf',
           contractor_name: data.contractor_name || '',
           contractor_cpf: data.contractor_cpf || '',
           contractor_address: data.contractor_address || '',
@@ -75,6 +78,7 @@ const ContractSettingsSection = () => {
   };
 
   const upd = (key: string, val: any) => setSettings(s => ({ ...s, [key]: val }));
+  const isPJ = settings.contractor_tipo === 'pj';
 
   if (!loaded) return null;
 
@@ -91,10 +95,20 @@ const ContractSettingsSection = () => {
         <div className="space-y-1">
           <p className="text-xs font-semibold text-muted-foreground uppercase">Dados do Contratado</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div><Label className="text-xs">Nome completo</Label><Input value={settings.contractor_name} onChange={e => upd('contractor_name', e.target.value)} className="h-8 text-sm" /></div>
-            <div><Label className="text-xs">CPF</Label><Input value={settings.contractor_cpf} onChange={e => upd('contractor_cpf', e.target.value)} className="h-8 text-sm" placeholder="000.000.000-00" /></div>
+            <div>
+              <Label className="text-xs">Tipo de pessoa</Label>
+              <Select value={settings.contractor_tipo} onValueChange={(v: 'pf' | 'pj') => { upd('contractor_tipo', v); upd('contractor_cpf', ''); }}>
+                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pf">Pessoa Física (CPF)</SelectItem>
+                  <SelectItem value="pj">Pessoa Jurídica (CNPJ)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label className="text-xs">{isPJ ? 'Razão Social' : 'Nome completo'}</Label><Input value={settings.contractor_name} onChange={e => upd('contractor_name', e.target.value)} className="h-8 text-sm" /></div>
+            <div><Label className="text-xs">{isPJ ? 'CNPJ' : 'CPF'}</Label><Input value={settings.contractor_cpf} onChange={e => upd('contractor_cpf', e.target.value)} className="h-8 text-sm" placeholder={isPJ ? '00.000.000/0000-00' : '000.000.000-00'} /></div>
           </div>
-          <div><Label className="text-xs">Endereço completo</Label><Input value={settings.contractor_address} onChange={e => upd('contractor_address', e.target.value)} className="h-8 text-sm" placeholder="Rua, nº, CEP, Bairro, Cidade-UF" /></div>
+          <div><Label className="text-xs">{isPJ ? 'Endereço da sede' : 'Endereço completo'}</Label><Input value={settings.contractor_address} onChange={e => upd('contractor_address', e.target.value)} className="h-8 text-sm" placeholder="Rua, nº, CEP, Bairro, Cidade-UF" /></div>
           <div><Label className="text-xs">Comarca do Foro</Label><Input value={settings.comarca} onChange={e => upd('comarca', e.target.value)} className="h-8 text-sm" /></div>
         </div>
 

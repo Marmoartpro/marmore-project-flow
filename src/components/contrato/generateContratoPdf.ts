@@ -36,6 +36,7 @@ export interface ContratoEmpreitadaParams {
   clausulasAdicionais: string;
   logoUrl: string | null;
   clientTipo?: 'pf' | 'pj';
+  contractorTipo?: 'pf' | 'pj';
 }
 
 const loadImage = (url: string): Promise<string | null> => {
@@ -189,10 +190,11 @@ export const generateContratoEmpreitadaPdf = async (params: ContratoEmpreitadaPa
   );
 
   addParagraphBold('CONTRATADA:');
+  const isContractorPJ = params.contractorTipo === 'pj';
   addParagraph(
     `${params.contractorName}` +
-    (params.contractorCpf ? `, pessoa física, CPF nº ${params.contractorCpf}` : '') +
-    (params.contractorAddress ? `, residente em ${params.contractorAddress}` : '') +
+    (params.contractorCpf ? `, ${isContractorPJ ? 'pessoa jurídica, CNPJ nº' : 'pessoa física, CPF nº'} ${params.contractorCpf}` : '') +
+    (params.contractorAddress ? `, ${isContractorPJ ? 'com sede em' : 'residente em'} ${params.contractorAddress}` : '') +
     '.'
   );
 
@@ -317,7 +319,7 @@ export const generateContratoEmpreitadaPdf = async (params: ContratoEmpreitadaPa
   doc.text('CONTRATADA', mL, y + 5);
   doc.setFont('times', 'normal');
   doc.text(params.contractorName, mL, y + 10);
-  if (params.contractorCpf) doc.text(`CPF: ${params.contractorCpf}`, mL, y + 14);
+  if (params.contractorCpf) doc.text(`${isContractorPJ ? 'CNPJ' : 'CPF'}: ${params.contractorCpf}`, mL, y + 14);
 
   // Contratante
   const rX = mL + colW + 20;

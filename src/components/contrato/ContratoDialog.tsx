@@ -46,6 +46,7 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
   const [paymentConditions, setPaymentConditions] = useState('');
 
   // Contract settings (loaded from DB)
+  const [contractorTipo, setContractorTipo] = useState<'pf' | 'pj'>('pf');
   const [contractorName, setContractorName] = useState('');
   const [contractorCpf, setContractorCpf] = useState('');
   const [contractorAddress, setContractorAddress] = useState('');
@@ -126,6 +127,7 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
       .maybeSingle();
     if (data) {
       // Always load contractor data from settings (user's saved defaults)
+      setContractorTipo((data as any).contractor_tipo || 'pf');
       setContractorName((data as any).contractor_name || '');
       setContractorCpf((data as any).contractor_cpf || '');
       setContractorAddress((data as any).contractor_address || '');
@@ -322,6 +324,7 @@ Responda em formato de lista com ✅ para itens OK e ⚠️ para pontos de aten�
         clausulasAdicionais,
         logoUrl: (profile as any)?.company_logo_url || null,
         clientTipo,
+        contractorTipo,
       });
 
       setGeneratedHash(hash);
@@ -465,9 +468,19 @@ Responda em formato de lista com ✅ para itens OK e ⚠️ para pontos de aten�
             <TabsContent value="contratada" className="space-y-3 mt-0">
               <p className="text-xs text-muted-foreground">Dados carregados das configurações. Edite aqui para este contrato.</p>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Nome completo</Label><Input value={contractorName} onChange={e => setContractorName(e.target.value)} className="h-8 text-sm" /></div>
-                <div><Label className="text-xs">CPF / CNPJ</Label><Input value={contractorCpf} onChange={e => setContractorCpf(e.target.value)} className="h-8 text-sm" /></div>
-                <div className="col-span-2"><Label className="text-xs">Endereço completo</Label><Input value={contractorAddress} onChange={e => setContractorAddress(e.target.value)} className="h-8 text-sm" /></div>
+                <div>
+                  <Label className="text-xs">Tipo de pessoa</Label>
+                  <Select value={contractorTipo} onValueChange={(v: 'pf' | 'pj') => { setContractorTipo(v); setContractorCpf(''); }}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pf">Pessoa Física (CPF)</SelectItem>
+                      <SelectItem value="pj">Pessoa Jurídica (CNPJ)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label className="text-xs">{contractorTipo === 'pj' ? 'Razão Social' : 'Nome completo'}</Label><Input value={contractorName} onChange={e => setContractorName(e.target.value)} className="h-8 text-sm" /></div>
+                <div><Label className="text-xs">{contractorTipo === 'pj' ? 'CNPJ' : 'CPF'}</Label><Input value={contractorCpf} onChange={e => setContractorCpf(e.target.value)} className="h-8 text-sm" placeholder={contractorTipo === 'pj' ? '00.000.000/0000-00' : '000.000.000-00'} /></div>
+                <div className="col-span-2"><Label className="text-xs">{contractorTipo === 'pj' ? 'Endereço da sede' : 'Endereço completo'}</Label><Input value={contractorAddress} onChange={e => setContractorAddress(e.target.value)} className="h-8 text-sm" /></div>
                 <div><Label className="text-xs">Comarca do Foro</Label><Input value={comarca} onChange={e => setComarca(e.target.value)} className="h-8 text-sm" /></div>
               </div>
               <p className="text-xs font-semibold text-muted-foreground uppercase mt-4">Testemunhas</p>
