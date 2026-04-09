@@ -46,6 +46,7 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
   const [paymentConditions, setPaymentConditions] = useState('');
 
   // Contract settings (loaded from DB)
+  const [contractorTipo, setContractorTipo] = useState<'pf' | 'pj'>('pf');
   const [contractorName, setContractorName] = useState('');
   const [contractorCpf, setContractorCpf] = useState('');
   const [contractorAddress, setContractorAddress] = useState('');
