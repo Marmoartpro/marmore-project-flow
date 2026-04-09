@@ -1,0 +1,1 @@
+ALTER TABLE public.contract_settings ADD COLUMN contractor_tipo text NOT NULL DEFAULT 'pf';

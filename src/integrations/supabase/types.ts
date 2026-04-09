@@ -229,6 +229,7 @@ export type Database = {
           contractor_address: string | null
           contractor_cpf: string | null
           contractor_name: string | null
+          contractor_tipo: string
           created_at: string
           honorarios_advocaticios: number | null
           id: string
@@ -248,6 +249,7 @@ export type Database = {
           contractor_address?: string | null
           contractor_cpf?: string | null
           contractor_name?: string | null
+          contractor_tipo?: string
           created_at?: string
           honorarios_advocaticios?: number | null
           id?: string
@@ -267,6 +269,7 @@ export type Database = {
           contractor_address?: string | null
           contractor_cpf?: string | null
           contractor_name?: string | null
+          contractor_tipo?: string
           created_at?: string
           honorarios_advocaticios?: number | null
           id?: string
