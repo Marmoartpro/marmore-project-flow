@@ -14,8 +14,8 @@ import TotaisSection from '@/components/orcamento/TotaisSection';
 import LogoUpload from '@/components/orcamento/LogoUpload';
 import ResumoConsumo from '@/components/orcamento/ResumoConsumo';
 import {
-  OrcamentoData, Ambiente, AcessorioItem,
-  AMBIENTE_TIPOS, newAmbiente, newAcessorio,
+  OrcamentoData, Ambiente, AcessorioItem, PecaItem,
+  AMBIENTE_TIPOS, newAmbiente, newAcessorio, newPeca,
   calcAmbienteMaterialCost, calcAmbienteLaborCost, calcAmbienteInstallCost, gerarAlertas, fmt,
 } from '@/components/orcamento/types';
 import AlertasOrcamento from '@/components/orcamento/AlertasOrcamento';
@@ -33,6 +33,7 @@ const CalculadoraOrcamento = () => {
   const openAI = searchParams.get('ai') === 'true';
 
   const [showAIGenerator, setShowAIGenerator] = useState(openAI);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   const [stones, setStones] = useState<any[]>([]);
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
