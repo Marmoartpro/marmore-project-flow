@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Maximize2, X, Edit, Upload, Trash2, Image } from 'lucide-react';
+import { Plus, Maximize2, X, Edit, Upload, Trash2, Image, Share2 } from 'lucide-react';
+import ShareStoneModal from '@/components/mostruario/ShareStoneModal';
 import { toast } from 'sonner';
 import StoneFilters, { COLOR_TONES, CATEGORIES } from '@/components/mostruario/StoneFilters';
 import StoneCard from '@/components/mostruario/StoneCard';
@@ -29,6 +30,7 @@ const Mostruario = () => {
   const [uploading, setUploading] = useState(false);
   const [galleryPhotos, setGalleryPhotos] = useState<any[]>([]);
   const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [shareStone, setShareStone] = useState<any>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
@@ -296,9 +298,11 @@ const Mostruario = () => {
                   {selected.pros && <div><p className="text-muted-foreground font-medium mb-1">Prós</p><p className="text-green-400">{selected.pros}</p></div>}
                   {selected.cons && <div><p className="text-muted-foreground font-medium mb-1">Contras</p><p className="text-red-400">{selected.cons}</p></div>}
                   {selected.observations && <div><span className="text-muted-foreground">Observações:</span> {selected.observations}</div>}
-                  <Button size="sm" variant="outline" className="w-full" onClick={() => shareStone(selected)}>
-                    Compartilhar link da pedra
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => setShareStone(selected)}>
+                      <Share2 className="w-3.5 h-3.5" /> Compartilhar
+                    </Button>
+                  </div>
                 </div>
               </>
             )}
