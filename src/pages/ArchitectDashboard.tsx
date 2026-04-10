@@ -6,7 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, LogOut, Package, Bell } from 'lucide-react';
+import { MessageSquare, LogOut, Package, Bell, Camera, Filter as FilterIcon } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 const stageIcons = ['🪨', '📐', '✂️', '🔧', '✨'];
@@ -21,6 +22,9 @@ const ArchitectDashboard = () => {
   const [lastMessage, setLastMessage] = useState<any>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [galleryFilter, setGalleryFilter] = useState('all');
+  const [showAllPhotos, setShowAllPhotos] = useState(false);
+  const [fullPhoto, setFullPhoto] = useState<any>(null);
 
   useEffect(() => { if (user) fetchAll(); }, [user]);
 
@@ -212,6 +216,57 @@ const ArchitectDashboard = () => {
             );
           })}
         </div>
+
+        {/* Gallery */}
+        {photos.length > 0 && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-muted-foreground flex items-center gap-1"><Camera className="w-3.5 h-3.5" /> Galeria da obra</p>
+                <div className="flex gap-2">
+                  <Select value={galleryFilter} onValueChange={setGalleryFilter}>
+                    <SelectTrigger className="h-7 w-28 text-[10px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      {projectStages.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {(galleryFilter === 'all' ? photos : photos.filter(p => p.stage_id === galleryFilter))
+                  .slice(0, showAllPhotos ? undefined : 6)
+                  .map(p => {
+                    const stage = projectStages.find(s => s.id === p.stage_id);
+                    return (
+                      <div key={p.id} className="relative cursor-pointer group" onClick={() => setFullPhoto(p)}>
+                        <img src={p.photo_url} alt="" className="w-full aspect-square object-cover rounded-md" />
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5 rounded-b-md opacity-0 group-hover:opacity-100 transition-opacity">
+                          {stage?.name} • {new Date(p.created_at).toLocaleDateString('pt-BR')}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+              {photos.length > 6 && !showAllPhotos && (
+                <Button size="sm" variant="ghost" className="w-full text-xs mt-2" onClick={() => setShowAllPhotos(true)}>
+                  Ver todas as fotos ({photos.length})
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Fullscreen photo */}
+        {fullPhoto && (
+          <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center" onClick={() => setFullPhoto(null)}>
+            <img src={fullPhoto.photo_url} alt="" className="max-w-full max-h-[80vh] object-contain" />
+            <div className="text-white text-center mt-3">
+              <p className="text-sm font-medium">{projectStages.find(s => s.id === fullPhoto.stage_id)?.name}</p>
+              <p className="text-xs text-white/60">{new Date(fullPhoto.created_at).toLocaleDateString('pt-BR')}</p>
+            </div>
+          </div>
+        )}
 
         {/* Quick message */}
         <Card className="cursor-pointer hover:border-primary/40 transition-colors" onClick={() => navigate(`/projeto/${project.id}`)}>

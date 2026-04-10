@@ -255,6 +255,64 @@ const Fornecedores = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Compare modal */}
+        <Dialog open={showCompare} onOpenChange={() => setShowCompare(false)}>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-display">Comparar fornecedores</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">Material para comparar</Label>
+                <Input value={compareMaterial} onChange={e => setCompareMaterial(e.target.value)} placeholder="Ex: Granito Preto São Gabriel" />
+              </div>
+              {compareMaterial && (() => {
+                const term = compareMaterial.toLowerCase();
+                const matched = suppliers.filter(s => s.materials_supplied?.toLowerCase().includes(term));
+                const results = matched.map(s => {
+                  const sPurchases = purchases.filter(p => p.supplier_id === s.id && p.material?.toLowerCase().includes(term));
+                  const avgPrice = sPurchases.length > 0 ? sPurchases.reduce((sum, p) => sum + Number(p.amount || 0), 0) / sPurchases.length : 0;
+                  const lastPrice = sPurchases.length > 0 ? Number(sPurchases[0]?.amount || 0) : 0;
+                  const score = (s.rating || 0) * 20 - (s.avg_delivery_days || 30) - (avgPrice / 100);
+                  return { ...s, avgPrice, lastPrice, purchaseCount: sPurchases.length, score, history: sPurchases };
+                }).sort((a, b) => b.score - a.score);
+
+                return results.length > 0 ? (
+                  <div className="space-y-2">
+                    {results.map(r => (
+                      <Card key={r.id}>
+                        <CardContent className="p-3">
+                          <div className="flex justify-between items-center mb-1">
+                            <p className="font-medium text-sm">{r.company_name}</p>
+                            <div className="flex gap-0.5">{[1,2,3,4,5].map(i => <Star key={i} className={`w-3 h-3 ${i <= r.rating ? 'text-warning fill-warning' : 'text-muted'}`} />)}</div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                            <span>Último: R$ {fmt(r.lastPrice)}</span>
+                            <span>Médio: R$ {fmt(r.avgPrice)}</span>
+                            <span>Prazo: {r.avg_delivery_days || '—'} dias</span>
+                          </div>
+                          {r.history.length > 1 && (
+                            <div className="h-20 mt-2">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={r.history.slice(0, 6).reverse().map(p => ({ date: p.purchase_date?.slice(5) || '', valor: Number(p.amount || 0) }))}>
+                                  <XAxis dataKey="date" tick={{ fontSize: 9 }} />
+                                  <YAxis tick={{ fontSize: 9 }} />
+                                  <Tooltip />
+                                  <Bar dataKey="valor" fill="hsl(205 59% 45%)" radius={[2, 2, 0, 0]} />
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : <p className="text-xs text-muted-foreground">Nenhum fornecedor encontrado para "{compareMaterial}".</p>;
+              })()}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );

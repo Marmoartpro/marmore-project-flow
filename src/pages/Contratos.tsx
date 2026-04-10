@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Edit, Trash2, Download, Send, FileSignature, PenTool } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, Download, Send, FileSignature, PenTool, FilePlus } from 'lucide-react';
+import AditivoDialog from '@/components/contrato/AditivoDialog';
 import { toast } from 'sonner';
 import ContratoDialog from '@/components/contrato/ContratoDialog';
 import { generateContratoEmpreitadaPdf } from '@/components/contrato/generateContratoPdf';
@@ -28,6 +29,7 @@ const Contratos = () => {
   const [contracts, setContracts] = useState<any[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingContract, setEditingContract] = useState<any>(null);
+  const [aditivoContract, setAditivoContract] = useState<any>(null);
 
   useEffect(() => { if (user) fetchContracts(); }, [user]);
 
@@ -195,6 +197,11 @@ const Contratos = () => {
                           <DropdownMenuItem onClick={() => requestSignature(c)}>
                             <PenTool className="w-3.5 h-3.5 mr-2" /> Enviar para assinar
                           </DropdownMenuItem>
+                          {c.status === 'assinado' && (
+                            <DropdownMenuItem onClick={() => setAditivoContract(c)}>
+                              <FilePlus className="w-3.5 h-3.5 mr-2" /> Gerar aditivo
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem onClick={() => setDeleteId(c.id)} className="text-destructive">
                             <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
                           </DropdownMenuItem>
@@ -241,6 +248,14 @@ const Contratos = () => {
           onClose={() => { setEditingContract(null); fetchContracts(); }}
           budgetQuote={editingContract._budgetQuote}
           existingContract={editingContract}
+        />
+      )}
+
+      {aditivoContract && (
+        <AditivoDialog
+          open={!!aditivoContract}
+          onClose={() => { setAditivoContract(null); fetchContracts(); }}
+          contract={aditivoContract}
         />
       )}
     </AppLayout>
