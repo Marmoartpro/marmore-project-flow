@@ -11,8 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, Search, ExternalLink, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, ExternalLink, MoreVertical, Edit, Trash2, User } from 'lucide-react';
 import { toast } from 'sonner';
+import ClientProfileModal from '@/components/clientes/ClientProfileModal';
 
 const emptyForm = { name: '', whatsapp: '', email: '', city: '', service_type: '', observations: '', cpf: '', rg: '', address_street: '', address_number: '', address_neighborhood: '', address_state: '', address_cep: '' };
 
@@ -22,19 +23,22 @@ const Clientes = () => {
   const [clients, setClients] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [quotes, setQuotes] = useState<any[]>([]);
+  const [contracts, setContracts] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteClient, setDeleteClient] = useState<any>(null);
+  const [selectedClient, setSelectedClient] = useState<any>(null);
   const [form, setForm] = useState(emptyForm);
 
   useEffect(() => { if (user) fetchAll(); }, [user]);
 
   const fetchAll = async () => {
-    const [cRes, pRes, qRes] = await Promise.all([
+    const [cRes, pRes, qRes, ctRes] = await Promise.all([
       supabase.from('clients').select('*').order('name'),
-      supabase.from('projects').select('id, name, client_name, status, total_value'),
+      supabase.from('projects').select('id, name, client_name, status, total_value, paid_value, created_at'),
       supabase.from('quotes').select('id, client_name, status, estimated_value'),
+      supabase.from('contracts').select('id, client_name, status, total_value, contract_number, contract_date'),
     ]);
 
     const existingClients = cRes.data || [];
@@ -48,7 +52,8 @@ const Clientes = () => {
     ];
     setClients(all);
     setProjects(pRes.data || []);
-    setQuotes(qRes.data || []);
+    setQuotes([...(qRes.data || [])]);
+    setContracts(ctRes.data || []);
   };
 
   const saveClient = async () => {
@@ -154,9 +159,9 @@ const Clientes = () => {
           {filtered.map(c => {
             const st = getStatusInfo(c);
             return (
-              <Card key={c.id}>
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div>
+              <Card key={c.id} className="cursor-pointer hover:border-primary/40 transition-colors" onClick={() => setSelectedClient(c)}>
+                <CardContent className="p-4 flex items-center justify-between" onClick={e => e.stopPropagation()}>
+                  <div className="cursor-pointer" onClick={() => setSelectedClient(c)}>
                     <p className="font-medium text-sm">{c.name}</p>
                     <div className="text-xs text-muted-foreground space-x-2">
                       {c.whatsapp && <span>{c.whatsapp}</span>}
@@ -215,6 +220,15 @@ const Clientes = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ClientProfileModal
+        open={!!selectedClient}
+        onClose={() => setSelectedClient(null)}
+        client={selectedClient}
+        projects={projects}
+        quotes={quotes}
+        contracts={contracts}
+      />
     </AppLayout>
   );
 };

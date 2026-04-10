@@ -20,6 +20,7 @@ import Portfolio from "./pages/Portfolio";
 import Relatorios from "./pages/Relatorios";
 import Contratos from "./pages/Contratos";
 import AssinaturaPublica from "./pages/AssinaturaPublica";
+import StonePage from "./pages/StonePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,7 @@ const AppRoutes = () => (
     <Route path="/projeto/novo" element={<ProtectedRoute><NewProject /></ProtectedRoute>} />
     <Route path="/projeto/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
     <Route path="/assinar/:token" element={<AssinaturaPublica />} />
+    <Route path="/mostruario/:stoneId" element={<StonePage />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

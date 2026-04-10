@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Star, Search, Truck, Phone, Mail } from 'lucide-react';
+import { Plus, Star, Search, Truck, Phone, Mail, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Fornecedores = () => {
   const { user } = useAuth();
@@ -23,6 +24,8 @@ const Fornecedores = () => {
   const [editSupplier, setEditSupplier] = useState<any>(null);
   const [selected, setSelected] = useState<any>(null);
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
+  const [showCompare, setShowCompare] = useState(false);
+  const [compareMaterial, setCompareMaterial] = useState('');
   const [form, setForm] = useState({
     company_name: '', contact_name: '', whatsapp: '', email: '',
     materials_supplied: '', avg_delivery_days: '', observations: '', rating: 3,
@@ -95,9 +98,14 @@ const Fornecedores = () => {
       <div className="p-4 md:p-6 space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <h2 className="text-xl font-display font-bold">Fornecedores</h2>
-          <Button size="sm" onClick={() => { resetForm(); setShowForm(true); }}>
-            <Plus className="w-4 h-4 mr-1" /> Novo fornecedor
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setShowCompare(true)}>
+              <BarChart3 className="w-4 h-4 mr-1" /> Comparar
+            </Button>
+            <Button size="sm" onClick={() => { resetForm(); setShowForm(true); }}>
+              <Plus className="w-4 h-4 mr-1" /> Novo fornecedor
+            </Button>
+          </div>
         </div>
 
         <div className="flex gap-2">
@@ -244,6 +252,64 @@ const Fornecedores = () => {
                 </div>
               </div>
               <Button className="w-full" onClick={saveSupplier}>{editSupplier ? 'Salvar' : 'Cadastrar'}</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Compare modal */}
+        <Dialog open={showCompare} onOpenChange={() => setShowCompare(false)}>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-display">Comparar fornecedores</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">Material para comparar</Label>
+                <Input value={compareMaterial} onChange={e => setCompareMaterial(e.target.value)} placeholder="Ex: Granito Preto São Gabriel" />
+              </div>
+              {compareMaterial && (() => {
+                const term = compareMaterial.toLowerCase();
+                const matched = suppliers.filter(s => s.materials_supplied?.toLowerCase().includes(term));
+                const results = matched.map(s => {
+                  const sPurchases = purchases.filter(p => p.supplier_id === s.id && p.material?.toLowerCase().includes(term));
+                  const avgPrice = sPurchases.length > 0 ? sPurchases.reduce((sum, p) => sum + Number(p.amount || 0), 0) / sPurchases.length : 0;
+                  const lastPrice = sPurchases.length > 0 ? Number(sPurchases[0]?.amount || 0) : 0;
+                  const score = (s.rating || 0) * 20 - (s.avg_delivery_days || 30) - (avgPrice / 100);
+                  return { ...s, avgPrice, lastPrice, purchaseCount: sPurchases.length, score, history: sPurchases };
+                }).sort((a, b) => b.score - a.score);
+
+                return results.length > 0 ? (
+                  <div className="space-y-2">
+                    {results.map(r => (
+                      <Card key={r.id}>
+                        <CardContent className="p-3">
+                          <div className="flex justify-between items-center mb-1">
+                            <p className="font-medium text-sm">{r.company_name}</p>
+                            <div className="flex gap-0.5">{[1,2,3,4,5].map(i => <Star key={i} className={`w-3 h-3 ${i <= r.rating ? 'text-warning fill-warning' : 'text-muted'}`} />)}</div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                            <span>Último: R$ {fmt(r.lastPrice)}</span>
+                            <span>Médio: R$ {fmt(r.avgPrice)}</span>
+                            <span>Prazo: {r.avg_delivery_days || '—'} dias</span>
+                          </div>
+                          {r.history.length > 1 && (
+                            <div className="h-20 mt-2">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={r.history.slice(0, 6).reverse().map(p => ({ date: p.purchase_date?.slice(5) || '', valor: Number(p.amount || 0) }))}>
+                                  <XAxis dataKey="date" tick={{ fontSize: 9 }} />
+                                  <YAxis tick={{ fontSize: 9 }} />
+                                  <Tooltip />
+                                  <Bar dataKey="valor" fill="hsl(205 59% 45%)" radius={[2, 2, 0, 0]} />
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : <p className="text-xs text-muted-foreground">Nenhum fornecedor encontrado para "{compareMaterial}".</p>;
+              })()}
             </div>
           </DialogContent>
         </Dialog>
