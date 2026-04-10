@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, FileText, Loader2 } from 'lucide-react';
+import { CheckCircle, FileText, Loader2, AlertTriangle, Download } from 'lucide-react';
 import SignatureCanvas from '@/components/assinatura/SignatureCanvas';
 import { fmt } from '@/components/orcamento/types';
+import jsPDF from 'jspdf';
 
 const AssinaturaPublica = () => {
   const { token } = useParams<{ token: string }>();
@@ -22,6 +23,10 @@ const AssinaturaPublica = () => {
   const [signing, setSigning] = useState(false);
   const [signed, setSigned] = useState(false);
   const [error, setError] = useState('');
+  const [contractText, setContractText] = useState('');
+  const [scrolledToEnd, setScrolledToEnd] = useState(false);
+  const [signedPdfUrl, setSignedPdfUrl] = useState('');
+  const contractScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -45,6 +50,7 @@ const AssinaturaPublica = () => {
     if (sig.status === 'assinado') {
       setSigned(true);
       setSignature(sig);
+      setSignedPdfUrl((sig as any).signed_pdf_url || '');
       setLoading(false);
       return;
     }
@@ -61,7 +67,152 @@ const AssinaturaPublica = () => {
     const table = sig.document_type === 'contrato' ? 'contracts' : 'budget_quotes';
     const { data: doc } = await supabase.from(table).select('*').eq('id', sig.document_id).single();
     setDocument(doc);
+
+    // Load contract text if it's a contract
+    if (sig.document_type === 'contrato' && doc) {
+      setContractText((doc as any).contract_text || '');
+    }
+
     setLoading(false);
+  };
+
+  const handleContractScroll = useCallback(() => {
+    const el = contractScrollRef.current;
+    if (!el) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 20) {
+      setScrolledToEnd(true);
+    }
+  }, []);
+
+  const isContract = signature?.document_type === 'contrato';
+  const canAccept = isContract ? scrolledToEnd : true;
+
+  const generateSignedPdf = async (sigName: string, sigImage: string, sigIp: string, sigLocation: string): Promise<string | null> => {
+    try {
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const mL = 20, mR = 20;
+      const cW = pageW - mL - mR;
+      let y = 20;
+
+      // Header
+      doc.setFontSize(14);
+      doc.setFont('times', 'bold');
+      doc.text('CONTRATO ASSINADO DIGITALMENTE', pageW / 2, y, { align: 'center' });
+      y += 10;
+
+      doc.setDrawColor(180);
+      doc.line(mL, y, pageW - mR, y);
+      y += 8;
+
+      // Contract text
+      doc.setFontSize(10);
+      doc.setFont('times', 'normal');
+      const textLines = contractText.split('\n');
+      for (const line of textLines) {
+        if (y > pageH - 25) { doc.addPage(); y = 20; }
+        if (line.startsWith('═══')) {
+          doc.setFont('times', 'bold');
+          doc.setFontSize(11);
+          const clean = line.replace(/═/g, '').trim();
+          doc.text(clean, pageW / 2, y, { align: 'center' });
+          doc.setFont('times', 'normal');
+          doc.setFontSize(10);
+          y += 7;
+        } else {
+          const wrapped = doc.splitTextToSize(line || ' ', cW);
+          for (const wl of wrapped) {
+            if (y > pageH - 25) { doc.addPage(); y = 20; }
+            doc.text(wl, mL, y);
+            y += 4.5;
+          }
+        }
+      }
+
+      // Signature page
+      doc.addPage();
+      y = 30;
+
+      doc.setFontSize(14);
+      doc.setFont('times', 'bold');
+      doc.text('FOLHA DE ASSINATURA DIGITAL', pageW / 2, y, { align: 'center' });
+      y += 15;
+
+      doc.setFontSize(10);
+      doc.setFont('times', 'normal');
+      const now = new Date();
+      const signedAt = now.toLocaleString('pt-BR');
+
+      const infoLines = [
+        `Signatário: ${sigName}`,
+        `Data e hora: ${signedAt}`,
+        `IP registrado: ${sigIp || 'Não capturado'}`,
+        `Localização: ${sigLocation || 'Não capturada'}`,
+        `Token de verificação: ${token}`,
+      ];
+
+      infoLines.forEach(line => {
+        doc.text(line, mL, y);
+        y += 6;
+      });
+
+      y += 10;
+
+      // Add signature image
+      if (sigImage) {
+        doc.text('Assinatura:', mL, y);
+        y += 5;
+        try {
+          doc.addImage(sigImage, 'PNG', mL, y, 80, 30);
+          y += 35;
+        } catch {
+          doc.text('[Assinatura digital registrada]', mL, y);
+          y += 8;
+        }
+      }
+
+      y += 10;
+      doc.setDrawColor(180);
+      doc.line(mL, y, pageW - mR, y);
+      y += 5;
+      doc.setFontSize(8);
+      doc.setTextColor(120);
+      doc.text('Este documento foi assinado digitalmente. A assinatura, data, hora e IP foram registrados eletronicamente.', mL, y);
+
+      // Add footers
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setTextColor(150);
+        doc.text(`${i}/${totalPages}`, pageW - mR, pageH - 6, { align: 'right' });
+        doc.text('Documento assinado digitalmente', mL, pageH - 6);
+      }
+
+      // Convert to blob and upload
+      const pdfBlob = doc.output('blob');
+      const fileName = `assinado-${token}.pdf`;
+      const filePath = `contracts/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('project-files')
+        .upload(filePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        return null;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('project-files')
+        .getPublicUrl(filePath);
+
+      return urlData?.publicUrl || null;
+    } catch (err) {
+      console.error('Error generating signed PDF:', err);
+      return null;
+    }
   };
 
   const handleSign = async () => {
@@ -88,6 +239,13 @@ const AssinaturaPublica = () => {
         }
       } catch {}
 
+      // Generate signed PDF if contract
+      let pdfUrl = '';
+      if (isContract && contractText) {
+        const url = await generateSignedPdf(signerName, signatureImage, ip, location);
+        if (url) pdfUrl = url;
+      }
+
       await supabase
         .from('digital_signatures')
         .update({
@@ -97,16 +255,20 @@ const AssinaturaPublica = () => {
           signature_image: signatureImage,
           signed_at: new Date().toISOString(),
           status: 'assinado',
+          ...(pdfUrl ? { signed_pdf_url: pdfUrl } : {}),
         } as any)
         .eq('sign_token', token);
 
       // Update document status
-      if (signature.document_type === 'contrato') {
-        await supabase.from('contracts').update({ status: 'assinado' } as any).eq('id', signature.document_id);
+      if (isContract) {
+        const updatePayload: any = { status: 'assinado' };
+        if (pdfUrl) updatePayload.signed_pdf_url = pdfUrl;
+        await supabase.from('contracts').update(updatePayload).eq('id', signature.document_id);
       } else {
         await supabase.from('budget_quotes').update({ status: 'aceito' }).eq('id', signature.document_id);
       }
 
+      setSignedPdfUrl(pdfUrl);
       setSigned(true);
     } catch (err: any) {
       setError(err.message || 'Erro ao assinar');
@@ -148,6 +310,15 @@ const AssinaturaPublica = () => {
               {signature?.signed_at ? new Date(signature.signed_at).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR')}
             </p>
             <Badge className="bg-primary/20 text-primary">Assinado digitalmente</Badge>
+            {(signedPdfUrl || (signature as any)?.signed_pdf_url) && (
+              <Button
+                className="w-full mt-3"
+                variant="outline"
+                onClick={() => window.open(signedPdfUrl || (signature as any)?.signed_pdf_url, '_blank')}
+              >
+                <Download className="w-4 h-4 mr-2" /> Baixar contrato assinado
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -163,21 +334,44 @@ const AssinaturaPublica = () => {
               <FileText className="w-10 h-10 text-primary mx-auto" />
               <h2 className="text-lg font-bold">Assinatura Digital</h2>
               <p className="text-xs text-muted-foreground">
-                {signature?.document_type === 'contrato' ? 'Contrato' : 'Orçamento'} — {document?.client_name}
+                {isContract ? 'Contrato' : 'Orçamento'} — {document?.client_name}
               </p>
             </div>
 
-            {/* Document summary */}
-            {document && (
-              <div className="bg-muted/50 rounded-md p-3 space-y-2 text-sm">
-                <p><strong>Cliente:</strong> {document.client_name}</p>
-                <p><strong>Valor total:</strong> R$ {fmt(Number(document.total || document.total_value || 0))}</p>
-                {document.payment_conditions && (
-                  <p><strong>Pagamento:</strong> {document.payment_conditions}</p>
+            {/* Contract full text with scroll requirement */}
+            {isContract && contractText ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 bg-warning/10 text-warning-foreground border border-warning/30 rounded-md p-2 text-xs">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>Leia o contrato completo antes de assinar. Role até o final para habilitar a assinatura.</span>
+                </div>
+                <div
+                  ref={contractScrollRef}
+                  onScroll={handleContractScroll}
+                  className="bg-muted/30 border border-border rounded-md p-4 text-xs whitespace-pre-wrap overflow-y-auto font-mono leading-relaxed"
+                  style={{ maxHeight: '55vh' }}
+                >
+                  {contractText}
+                </div>
+                {!scrolledToEnd && (
+                  <p className="text-[10px] text-muted-foreground text-center animate-pulse">
+                    ↓ Role até o final do contrato para continuar ↓
+                  </p>
                 )}
-                {document.quote_number && <p><strong>Nº:</strong> {document.quote_number}</p>}
-                {document.contract_number && <p><strong>Nº:</strong> {document.contract_number}</p>}
               </div>
+            ) : (
+              /* Document summary for budget quotes */
+              document && (
+                <div className="bg-muted/50 rounded-md p-3 space-y-2 text-sm">
+                  <p><strong>Cliente:</strong> {document.client_name}</p>
+                  <p><strong>Valor total:</strong> R$ {fmt(Number(document.total || document.total_value || 0))}</p>
+                  {document.payment_conditions && (
+                    <p><strong>Pagamento:</strong> {document.payment_conditions}</p>
+                  )}
+                  {document.quote_number && <p><strong>Nº:</strong> {document.quote_number}</p>}
+                  {document.contract_number && <p><strong>Nº:</strong> {document.contract_number}</p>}
+                </div>
+              )
             )}
 
             {/* Signer name */}
@@ -198,14 +392,15 @@ const AssinaturaPublica = () => {
             </div>
 
             {/* Accept terms */}
-            <div className="flex items-start gap-2">
+            <div className={`flex items-start gap-2 transition-opacity duration-300 ${canAccept ? 'opacity-100' : 'opacity-40'}`}>
               <Checkbox
                 id="accept"
                 checked={accepted}
                 onCheckedChange={(v) => setAccepted(v === true)}
+                disabled={!canAccept}
               />
-              <label htmlFor="accept" className="text-xs text-muted-foreground cursor-pointer">
-                Declaro que li e aceito os termos deste {signature?.document_type === 'contrato' ? 'contrato' : 'orçamento'}.
+              <label htmlFor="accept" className={`text-xs cursor-pointer ${canAccept ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}>
+                Declaro que li e aceito os termos deste {isContract ? 'contrato' : 'orçamento'}.
               </label>
             </div>
 
