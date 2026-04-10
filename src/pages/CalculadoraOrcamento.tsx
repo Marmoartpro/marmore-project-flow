@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
-import { Calculator, Plus, Save, Trash2, FileText, Clock, Sparkles } from 'lucide-react';
+import { Calculator, Plus, Save, Trash2, FileText, Clock, Sparkles, LayoutTemplate } from 'lucide-react';
 import { generateOrcamentoPdf } from '@/components/orcamento/generatePdf';
 import { toast } from 'sonner';
 import ClienteSection from '@/components/orcamento/ClienteSection';
@@ -14,8 +14,8 @@ import TotaisSection from '@/components/orcamento/TotaisSection';
 import LogoUpload from '@/components/orcamento/LogoUpload';
 import ResumoConsumo from '@/components/orcamento/ResumoConsumo';
 import {
-  OrcamentoData, Ambiente, AcessorioItem,
-  AMBIENTE_TIPOS, newAmbiente, newAcessorio,
+  OrcamentoData, Ambiente, AcessorioItem, PecaItem,
+  AMBIENTE_TIPOS, newAmbiente, newAcessorio, newPeca,
   calcAmbienteMaterialCost, calcAmbienteLaborCost, calcAmbienteInstallCost, gerarAlertas, fmt,
 } from '@/components/orcamento/types';
 import AlertasOrcamento from '@/components/orcamento/AlertasOrcamento';
@@ -33,6 +33,7 @@ const CalculadoraOrcamento = () => {
   const openAI = searchParams.get('ai') === 'true';
 
   const [showAIGenerator, setShowAIGenerator] = useState(openAI);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   const [stones, setStones] = useState<any[]>([]);
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);

@@ -300,6 +300,7 @@ export type Database = {
           company_responsible: string | null
           contract_date: string
           contract_number: string
+          contract_text: string | null
           created_at: string
           data: Json
           end_date: string | null
@@ -308,6 +309,7 @@ export type Database = {
           owner_id: string
           payment_conditions: string | null
           scope_description: string | null
+          signed_pdf_url: string | null
           start_date: string | null
           status: string
           total_value: number
@@ -329,6 +331,7 @@ export type Database = {
           company_responsible?: string | null
           contract_date?: string
           contract_number: string
+          contract_text?: string | null
           created_at?: string
           data?: Json
           end_date?: string | null
@@ -337,6 +340,7 @@ export type Database = {
           owner_id: string
           payment_conditions?: string | null
           scope_description?: string | null
+          signed_pdf_url?: string | null
           start_date?: string | null
           status?: string
           total_value?: number
@@ -358,6 +362,7 @@ export type Database = {
           company_responsible?: string | null
           contract_date?: string
           contract_number?: string
+          contract_text?: string | null
           created_at?: string
           data?: Json
           end_date?: string | null
@@ -366,6 +371,7 @@ export type Database = {
           owner_id?: string
           payment_conditions?: string | null
           scope_description?: string | null
+          signed_pdf_url?: string | null
           start_date?: string | null
           status?: string
           total_value?: number
@@ -393,6 +399,7 @@ export type Database = {
           sign_token: string
           signature_image: string | null
           signed_at: string | null
+          signed_pdf_url: string | null
           signer_ip: string | null
           signer_location: string | null
           signer_name: string | null
@@ -408,6 +415,7 @@ export type Database = {
           sign_token?: string
           signature_image?: string | null
           signed_at?: string | null
+          signed_pdf_url?: string | null
           signer_ip?: string | null
           signer_location?: string | null
           signer_name?: string | null
@@ -423,6 +431,7 @@ export type Database = {
           sign_token?: string
           signature_image?: string | null
           signed_at?: string | null
+          signed_pdf_url?: string | null
           signer_ip?: string | null
           signer_location?: string | null
           signer_name?: string | null

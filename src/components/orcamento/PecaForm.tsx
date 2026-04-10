@@ -506,7 +506,7 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
 
       {/* Prateleira inferior */}
       {peca.prateleira && showPrateleira && (
-        <div className="grid grid-cols-2 gap-2 bg-muted/30 rounded-md p-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
           <div>
             <Label className="text-[10px]">Larg. prateleira (cm)</Label>
             <Input type="number" step="0.1" value={peca.prateleiraLargura}
@@ -516,6 +516,18 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
             <Label className="text-[10px]">Comp. prateleira (cm)</Label>
             <Input type="number" step="0.1" value={peca.prateleiraComprimento}
               onChange={e => onChange('prateleiraComprimento', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div className="col-span-2 sm:col-span-1 flex flex-col gap-1">
+            <label className="flex items-center gap-2 text-[10px]">
+              <input type="checkbox" checked={peca.prateleiraComSaia}
+                onChange={e => onChange('prateleiraComSaia', e.target.checked)} />
+              Saia da prateleira
+            </label>
+            {peca.prateleiraComSaia && (
+              <Input type="number" step="0.1" value={peca.prateleiraAltura}
+                onChange={e => onChange('prateleiraAltura', e.target.value)}
+                className="h-7 text-xs" placeholder="Altura saia (cm)" />
+            )}
           </div>
         </div>
       )}

@@ -66,14 +66,35 @@ const Dashboard = () => {
   const openQuotesValue = openQuotes.reduce((s, q) => s + Number(q.estimated_value || 0), 0);
 
   const projectStageMap: Record<string, string> = {};
-  const activeProjects = projects.filter(p => p.status === 'em_andamento' && !p.archived);
+  const activeProjectsRaw = projects.filter(p => p.status === 'em_andamento' && !p.archived);
   const archivedProjects = projects.filter(p => p.archived);
 
-  activeProjects.forEach(p => {
+  activeProjectsRaw.forEach(p => {
     const pStages = stages.filter(s => s.project_id === p.id).sort((a, b) => a.stage_number - b.stage_number);
     const current = pStages.find(s => s.status !== 'concluida') || pStages[pStages.length - 1];
     projectStageMap[p.id] = current?.name || '';
   });
+
+  // Urgency scoring
+  const getUrgencyScore = (p: any): number => {
+    let score = 0;
+    const deadline = p.deadline;
+    if (deadline) {
+      const daysLeft = Math.floor((new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      if (daysLeft < 0) score += 100; // Prazo vencido
+      else if (daysLeft <= 3) score += 80; // Menos de 3 dias
+      else if (daysLeft <= 7) score += 40; // Menos de 7 dias
+    }
+    // Pagamento em atraso
+    const hasOverduePayment = payments.some(pay => pay.project_id === p.id && !pay.paid && pay.due_date && pay.due_date < today);
+    if (hasOverduePayment) score += 60;
+    // Progresso abaixo de 30%
+    const progress = getProjectProgress(p.id);
+    if (progress < 30) score += 20;
+    return score;
+  };
+
+  const activeProjects = [...activeProjectsRaw].sort((a, b) => getUrgencyScore(b) - getUrgencyScore(a));
 
   const getPaymentStatus = (projectId: string) => {
     const projectPayments = payments.filter(p => p.project_id === projectId);
@@ -172,6 +193,10 @@ const Dashboard = () => {
   const renderProjectCard = (p: any, showActions = true) => {
     const status = getPaymentStatus(p.id);
     const progress = getProjectProgress(p.id);
+    const urgency = getUrgencyScore(p);
+    const urgencyBadge = urgency >= 80 ? { label: 'Urgente', color: 'bg-destructive text-destructive-foreground' }
+      : urgency >= 40 ? { label: 'Atenção', color: 'bg-warning text-warning-foreground' }
+      : null;
     return (
       <Card key={p.id} className="hover:border-primary/40 transition-colors">
         <CardContent className="p-4">
@@ -181,6 +206,7 @@ const Dashboard = () => {
               <p className="text-xs text-muted-foreground">{p.client_name || 'Sem cliente'}</p>
             </div>
             <div className="flex items-center gap-1">
+              {urgencyBadge && <Badge className={urgencyBadge.color + ' text-[10px]'}>{urgencyBadge.label}</Badge>}
               <Badge className={status.color + ' text-[10px]'}>{status.label}</Badge>
               {showActions && (
                 <DropdownMenu>

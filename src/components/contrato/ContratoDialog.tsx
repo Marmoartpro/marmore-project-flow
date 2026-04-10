@@ -237,6 +237,54 @@ Responda em formato de lista com ✅ para itens OK e ⚠️ para pontos de aten�
     }
   };
 
+  const buildContractText = (scope: string): string => {
+    const isPJ = clientTipo === 'pj';
+    const isContractorPJ = contractorTipo === 'pj';
+    const lines: string[] = [];
+    
+    lines.push(`CONTRATO DE EMPREITADA — ${contractNumber}`);
+    lines.push('');
+    lines.push(`CONTRATANTE: ${clientName}${clientCpfCnpj ? `, ${isPJ ? 'CNPJ' : 'CPF'} nº ${clientCpfCnpj}` : ''}${clientFullAddress ? `, ${isPJ ? 'com sede em' : 'residente em'} ${clientFullAddress}` : ''}.`);
+    lines.push('');
+    lines.push(`CONTRATADA: ${contractorName}${contractorCpf ? `, ${isContractorPJ ? 'CNPJ' : 'CPF'} nº ${contractorCpf}` : ''}${contractorAddress ? `, ${isContractorPJ ? 'com sede em' : 'residente em'} ${contractorAddress}` : ''}.`);
+    lines.push('');
+    lines.push('═══ DO OBJETO DO CONTRATO ═══');
+    lines.push(`Cláusula 1ª — O presente contrato tem por objeto a execução de serviços de construção, confecção e ${hasInstallation() ? 'instalação' : 'entrega'} de peças em pedras naturais e/ou industriais.`);
+    lines.push('');
+    lines.push('ESCOPO:');
+    if (scope) scope.split('\n').forEach(l => { if (l.trim()) lines.push(`  ${l.trim()}`); });
+    lines.push('');
+    lines.push('═══ DA EXECUÇÃO DA OBRA ═══');
+    lines.push(`Cláusula 2ª — A CONTRATADA se compromete a fornecer mão de obra de acabamento, confecção e ${hasInstallation() ? 'instalação' : 'entrega'} das peças descritas neste contrato.`);
+    lines.push('');
+    lines.push('Cláusula 3ª — Materiais:');
+    const mats = buildMaterialsList();
+    if (mats) mats.split('\n').forEach(l => { if (l.trim()) lines.push(`  • ${l.trim()}`); });
+    lines.push('');
+    lines.push('Cláusula 4ª — O modelo e estampa do material será comunicado ao Contratante para aprovação antes da fabricação.');
+    lines.push('');
+    lines.push('═══ DO PAGAMENTO ═══');
+    lines.push(`Cláusula 5ª — Valor total: R$ ${fmt(totalValue)}.`);
+    if (paymentConditions) lines.push(`Condições: ${paymentConditions}`);
+    lines.push('');
+    lines.push('═══ DO INADIMPLEMENTO ═══');
+    lines.push(`Cláusula 6ª — Em caso de atraso no pagamento, incidirá multa de ${multaInadimpl}% sobre o valor da parcela em atraso, acrescida de juros de mora de ${jurosMora}% ao mês.`);
+    lines.push(`Em caso de cobrança judicial, honorários advocatícios de ${honorarios}% sobre o valor da dívida.`);
+    lines.push('');
+    lines.push('═══ DA RESCISÃO ═══');
+    lines.push(`Cláusula 7ª — O contrato poderá ser rescindido por qualquer das partes, mediante comunicação por escrito com antecedência mínima de 15 dias. Cláusula penal de ${clausulaPenal}% sobre o valor total.`);
+    lines.push('');
+    if (clausulasAdicionais) {
+      lines.push('═══ CLÁUSULAS ADICIONAIS ═══');
+      lines.push(clausulasAdicionais);
+      lines.push('');
+    }
+    lines.push('═══ DO FORO ═══');
+    lines.push(`Cláusula 8ª — Foro da Comarca de ${comarca}.`);
+    
+    return lines.join('\n');
+  };
+
   const handleSaveAndGenerate = async () => {
     if (!user) return;
     setSaving(true);
@@ -265,6 +313,10 @@ Responda em formato de lista com ✅ para itens OK e ⚠️ para pontos de aten�
       }
 
       const scope = buildScope();
+      
+      // Build contract text for public signing page
+      const contractText = buildContractText(scope);
+      
       const contractPayload = {
         owner_id: user.id,
         budget_quote_id: budgetQuote.id,
@@ -287,6 +339,7 @@ Responda em formato de lista com ✅ para itens OK e ⚠️ para pontos de aten�
         additional_clauses: clausulasAdicionais,
         status: 'gerado',
         data: { ambientes: d.ambientes },
+        contract_text: contractText,
       };
 
       if (existingContract?.id) {

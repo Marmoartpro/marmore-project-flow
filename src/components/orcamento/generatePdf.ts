@@ -116,7 +116,12 @@ const buildAcabamentos = (p: any): string => {
 
   // Saia
   if (p.saiaFrontal && p.saiaFrontalAltura) {
-    lines.push(`Saia frontal decorativa com ${p.saiaFrontalAltura} cm de altura`);
+    lines.push(`Saia decorativa de ${p.saiaFrontalAltura} cm — ${p.saiaOpcao || 'Só frente'}`);
+  }
+
+  // Prateleira inferior
+  if (p.prateleira && (p.prateleiraLargura || p.prateleiraComprimento)) {
+    lines.push(`Prateleira inferior: ${p.prateleiraLargura || '—'} × ${p.prateleiraComprimento || '—'} cm${p.prateleiraComSaia && p.prateleiraAltura ? ` com saia de ${p.prateleiraAltura} cm` : ''}`);
   }
 
   // Cooktop
