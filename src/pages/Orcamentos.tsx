@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, MoreVertical, Edit, Trash2, Calculator, FileText, Eye, Copy, Clock, PenTool, FileSignature, Sparkles } from 'lucide-react';
+import { Plus, MoreVertical, Edit, Trash2, Calculator, FileText, Eye, Copy, Clock, PenTool, FileSignature, Sparkles, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import ContratoDialog from '@/components/contrato/ContratoDialog';
 
@@ -156,6 +156,32 @@ const Orcamentos = () => {
     } catch (err: any) {
       toast.error(err.message || 'Erro ao gerar link');
     }
+  };
+
+  const sendWhatsApp = (bq: any) => {
+    const clientName = bq.client_name || 'Cliente';
+    const quoteNum = bq.quote_number || '';
+    const total = fmt(Number(bq.total || 0));
+    const validDate = new Date(bq.quote_date || Date.now());
+    validDate.setDate(validDate.getDate() + (bq.validity_days || 15));
+    const validStr = validDate.toLocaleDateString('pt-BR');
+    const env = bq.environment_type || 'seu projeto';
+
+    const msg = `Olá ${clientName}! 👋\n\nSegue a proposta comercial da Marmoraria Artesanal para o seu projeto de ${env}.\n\n📋 Proposta Nº ${quoteNum}\n💰 Valor: R$ ${total}\n📅 Válida até ${validStr}\n\nQualquer dúvida estou à disposição! 🪨`;
+
+    // Try to get client whatsapp from data
+    const d = bq.data as any;
+    let phone = '';
+    // prompt user if no phone
+    if (!phone) {
+      const input = window.prompt('Digite o WhatsApp do cliente (com DDD):', '');
+      if (!input) return;
+      phone = input.replace(/\D/g, '');
+    }
+    if (phone.length <= 11) phone = '55' + phone;
+    
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
   };
 
   const BudgetCard = ({ bq }: { bq: any }) => (
