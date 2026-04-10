@@ -265,6 +265,10 @@ Responda em formato de lista com ✅ para itens OK e ⚠️ para pontos de aten�
       }
 
       const scope = buildScope();
+      
+      // Build contract text for public signing page
+      const contractText = buildContractText(scope);
+      
       const contractPayload = {
         owner_id: user.id,
         budget_quote_id: budgetQuote.id,
@@ -287,6 +291,7 @@ Responda em formato de lista com ✅ para itens OK e ⚠️ para pontos de aten�
         additional_clauses: clausulasAdicionais,
         status: 'gerado',
         data: { ambientes: d.ambientes },
+        contract_text: contractText,
       };
 
       if (existingContract?.id) {
