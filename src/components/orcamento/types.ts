@@ -97,6 +97,8 @@ export interface PecaItem {
   prateleira: boolean;
   prateleiraLargura: string;
   prateleiraComprimento: string;
+  prateleiraAltura: string;
+  prateleiraComSaia: boolean;
   // Piscina
   cantosInternos: string;
   valorCantoInterno: string;
@@ -343,7 +345,7 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   rebaixoCooktop: false, rebaixoCooktopLargura: '', rebaixoCooktopComprimento: '',
   valorRecorteCooktop: '',
   ilhargas: false, ilhargasQtd: '2', ilhargasAltura: '', ilhargasLargura: '',
-  prateleira: false, prateleiraLargura: '', prateleiraComprimento: '',
+  prateleira: false, prateleiraLargura: '', prateleiraComprimento: '', prateleiraAltura: '', prateleiraComSaia: false,
   cantosInternos: '0', valorCantoInterno: '',
   cantosExternos: '0', valorCantoExterno: '',
   canaletaEscoamento: false, canaletaMetros: '', valorCanaletaMetro: '',
@@ -533,6 +535,10 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
   // Prateleira inferior (lavatório)
   if (p.prateleira) {
     extraCm2 += cm(p.prateleiraLargura) * cm(p.prateleiraComprimento);
+    // Saia da prateleira
+    if (p.prateleiraComSaia && cm(p.prateleiraAltura) > 0) {
+      extraCm2 += cm(p.prateleiraLargura) * cm(p.prateleiraAltura);
+    }
   }
 
   // Piscina submersa
