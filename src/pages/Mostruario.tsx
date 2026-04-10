@@ -30,7 +30,7 @@ const Mostruario = () => {
   const [uploading, setUploading] = useState(false);
   const [galleryPhotos, setGalleryPhotos] = useState<any[]>([]);
   const [uploadingGallery, setUploadingGallery] = useState(false);
-  const [shareStone, setShareStone] = useState<any>(null);
+  const [shareStoneData, setShareStoneData] = useState<any>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
@@ -299,7 +299,7 @@ const Mostruario = () => {
                   {selected.cons && <div><p className="text-muted-foreground font-medium mb-1">Contras</p><p className="text-red-400">{selected.cons}</p></div>}
                   {selected.observations && <div><span className="text-muted-foreground">Observações:</span> {selected.observations}</div>}
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => setShareStone(selected)}>
+                    <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => setShareStoneData(selected)}>
                       <Share2 className="w-3.5 h-3.5" /> Compartilhar
                     </Button>
                   </div>
