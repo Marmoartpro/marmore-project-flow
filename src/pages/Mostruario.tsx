@@ -422,6 +422,8 @@ const Mostruario = () => {
           </Dialog>
         )}
       </div>
+
+      <ShareStoneModal open={!!shareStoneData} onClose={() => setShareStoneData(null)} stone={shareStoneData} />
     </AppLayout>
   );
 };
