@@ -207,6 +207,16 @@ const Contratos = () => {
                     <span>• {new Date(c.contract_date).toLocaleDateString('pt-BR')}</span>
                     {c.company_name && <span>• {c.company_name}</span>}
                   </div>
+                  {c.status === 'assinado' && (c as any).signed_pdf_url && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-7 mt-2 gap-1"
+                      onClick={() => window.open((c as any).signed_pdf_url, '_blank')}
+                    >
+                      <Download className="w-3 h-3" /> Baixar PDF assinado
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))}
