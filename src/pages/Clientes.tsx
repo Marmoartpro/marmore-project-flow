@@ -37,7 +37,7 @@ const Clientes = () => {
     const [cRes, pRes, qRes, ctRes] = await Promise.all([
       supabase.from('clients').select('*').order('name'),
       supabase.from('projects').select('id, name, client_name, status, total_value, paid_value, created_at'),
-      supabase.from('quotes').select('id, client_name, status, estimated_value, quote_number, total').or('status.eq.aguardando,status.eq.negociando,status.eq.aprovado,status.eq.recusado,status.eq.rascunho,status.eq.gerado,status.eq.enviado'),
+      supabase.from('quotes').select('id, client_name, status, estimated_value'),
       supabase.from('contracts').select('id, client_name, status, total_value, contract_number, contract_date'),
     ]);
 
