@@ -223,6 +223,9 @@ const Orcamentos = () => {
                     <PenTool className="w-3.5 h-3.5 mr-2" /> Solicitar assinatura
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem onClick={() => sendWhatsApp(bq)}>
+                  <MessageCircle className="w-3.5 h-3.5 mr-2" /> Enviar por WhatsApp
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => { setDeleteId(bq.id); setDeleteType('budget'); }} className="text-destructive">
                   <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
                 </DropdownMenuItem>
