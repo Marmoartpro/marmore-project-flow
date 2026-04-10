@@ -193,6 +193,10 @@ const Dashboard = () => {
   const renderProjectCard = (p: any, showActions = true) => {
     const status = getPaymentStatus(p.id);
     const progress = getProjectProgress(p.id);
+    const urgency = getUrgencyScore(p);
+    const urgencyBadge = urgency >= 80 ? { label: 'Urgente', color: 'bg-destructive text-destructive-foreground' }
+      : urgency >= 40 ? { label: 'Atenção', color: 'bg-warning text-warning-foreground' }
+      : null;
     return (
       <Card key={p.id} className="hover:border-primary/40 transition-colors">
         <CardContent className="p-4">
@@ -202,6 +206,7 @@ const Dashboard = () => {
               <p className="text-xs text-muted-foreground">{p.client_name || 'Sem cliente'}</p>
             </div>
             <div className="flex items-center gap-1">
+              {urgencyBadge && <Badge className={urgencyBadge.color + ' text-[10px]'}>{urgencyBadge.label}</Badge>}
               <Badge className={status.color + ' text-[10px]'}>{status.label}</Badge>
               {showActions && (
                 <DropdownMenu>
