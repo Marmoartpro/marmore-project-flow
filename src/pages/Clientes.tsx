@@ -220,6 +220,15 @@ const Clientes = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ClientProfileModal
+        open={!!selectedClient}
+        onClose={() => setSelectedClient(null)}
+        client={selectedClient}
+        projects={projects}
+        quotes={quotes}
+        contracts={contracts}
+      />
     </AppLayout>
   );
 };

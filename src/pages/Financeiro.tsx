@@ -174,10 +174,72 @@ const Financeiro = () => {
     toast.success('Cobrança resolvida!');
   };
 
+  // ── Projeção 30 dias ──
+  const projection = useMemo(() => {
+    const now = new Date();
+    const weeks: { label: string; total: number }[] = [];
+    for (let w = 0; w < 4; w++) {
+      const start = new Date(now);
+      start.setDate(start.getDate() + w * 7);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 6);
+      const startStr = start.toISOString().split('T')[0];
+      const endStr = end.toISOString().split('T')[0];
+      const total = payments
+        .filter(p => !p.paid && p.due_date && p.due_date >= startStr && p.due_date <= endStr)
+        .reduce((s, p) => s + Number(p.amount || 0), 0);
+      const labels = ['Esta semana', 'Próxima semana', 'Em 2 semanas', 'Em 3 semanas'];
+      weeks.push({ label: labels[w], total });
+    }
+    return weeks;
+  }, [payments]);
+
+  const healthPercent = useMemo(() => {
+    if (payments.length === 0) return 100;
+    const total = payments.filter(p => p.due_date).length;
+    if (total === 0) return 100;
+    const onTime = payments.filter(p => p.paid || (p.due_date && p.due_date >= today)).length;
+    return Math.round((onTime / total) * 100);
+  }, [payments, today]);
+
+  const healthColor = healthPercent >= 70 ? 'text-success' : healthPercent >= 40 ? 'text-warning' : 'text-destructive';
+  const healthBg = healthPercent >= 70 ? 'bg-success' : healthPercent >= 40 ? 'bg-warning' : 'bg-destructive';
+
   return (
     <AppLayout>
       <div className="p-4 md:p-6 space-y-6 animate-fade-in">
         <h2 className="text-xl font-display font-bold">Financeiro</h2>
+
+        {/* Projeção 30 dias */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-display font-semibold">Projeção dos próximos 30 dias</p>
+              <Badge className={`${healthBg} text-white text-[10px]`}>
+                Saúde: {healthPercent}%
+              </Badge>
+            </div>
+            <div className="grid grid-cols-4 gap-2 mb-3">
+              {projection.map((w, i) => (
+                <div key={i} className="text-center">
+                  <p className="text-[10px] text-muted-foreground">{w.label}</p>
+                  <p className="text-sm font-bold font-display">R$ {fmt(w.total)}</p>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-end gap-1 h-16">
+              {projection.map((w, i) => {
+                const max = Math.max(...projection.map(p => p.total), 1);
+                const h = (w.total / max) * 100;
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center">
+                    <div className="w-full bg-primary/80 rounded-t" style={{ height: `${Math.max(h, 4)}%` }} />
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

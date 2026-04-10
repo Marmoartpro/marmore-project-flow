@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Star, Search, Truck, Phone, Mail } from 'lucide-react';
+import { Plus, Star, Search, Truck, Phone, Mail, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Fornecedores = () => {
   const { user } = useAuth();
@@ -23,6 +24,8 @@ const Fornecedores = () => {
   const [editSupplier, setEditSupplier] = useState<any>(null);
   const [selected, setSelected] = useState<any>(null);
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
+  const [showCompare, setShowCompare] = useState(false);
+  const [compareMaterial, setCompareMaterial] = useState('');
   const [form, setForm] = useState({
     company_name: '', contact_name: '', whatsapp: '', email: '',
     materials_supplied: '', avg_delivery_days: '', observations: '', rating: 3,
@@ -95,9 +98,14 @@ const Fornecedores = () => {
       <div className="p-4 md:p-6 space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <h2 className="text-xl font-display font-bold">Fornecedores</h2>
-          <Button size="sm" onClick={() => { resetForm(); setShowForm(true); }}>
-            <Plus className="w-4 h-4 mr-1" /> Novo fornecedor
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setShowCompare(true)}>
+              <BarChart3 className="w-4 h-4 mr-1" /> Comparar
+            </Button>
+            <Button size="sm" onClick={() => { resetForm(); setShowForm(true); }}>
+              <Plus className="w-4 h-4 mr-1" /> Novo fornecedor
+            </Button>
+          </div>
         </div>
 
         <div className="flex gap-2">
