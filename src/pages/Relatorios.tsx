@@ -8,7 +8,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend, Area, AreaChart,
 } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, FileText, Users, Package } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, FileText, Users, Package, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const COLORS = [
   'hsl(205, 59%, 45%)', 'hsl(145, 63%, 42%)', 'hsl(38, 92%, 50%)',
@@ -123,12 +126,65 @@ const Relatorios = () => {
     labelStyle: { color: 'hsl(35 15% 90%)' },
   };
 
+  const exportPdf = () => {
+    const doc = new jsPDF();
+    let y = 15;
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Relatório Gerencial', 20, y);
+    y += 8;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 20, y);
+    y += 10;
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('KPIs', 20, y); y += 7;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Faturamento total: R$ ${fmt(totalRevenue)}`, 20, y); y += 5;
+    doc.text(`Este mês: R$ ${fmt(thisMonthRevenue)}`, 20, y); y += 5;
+    doc.text(`Taxa de conversão: ${quoteStats.rate}% (${quoteStats.approved}/${quoteStats.total})`, 20, y); y += 5;
+    doc.text(`Ticket médio: R$ ${fmt(avgProjectValue)}`, 20, y); y += 10;
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Faturamento Mensal', 20, y); y += 7;
+    autoTable(doc, {
+      startY: y,
+      head: [['Mês', 'Recebido', 'Projetado']],
+      body: monthlyRevenue.map(m => [m.month, `R$ ${fmt(m.recebido)}`, `R$ ${fmt(m.total)}`]),
+      styles: { fontSize: 8 },
+      margin: { left: 20, right: 20 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Projetos', 20, y); y += 7;
+    autoTable(doc, {
+      startY: y,
+      head: [['Projeto', 'Status', 'Valor']],
+      body: projects.map(p => [p.name, p.status, `R$ ${fmt(Number(p.total_value || 0))}`]),
+      styles: { fontSize: 8 },
+      margin: { left: 20, right: 20 },
+    });
+
+    doc.save(`Relatorio_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   if (loading) return <AppLayout><div className="flex items-center justify-center h-64 text-muted-foreground">Carregando...</div></AppLayout>;
 
   return (
     <AppLayout>
       <div className="p-4 md:p-6 space-y-6">
-        <h2 className="text-xl font-display font-bold">Relatórios</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-display font-bold">Relatórios</h2>
+          <Button size="sm" variant="outline" onClick={exportPdf} className="gap-1">
+            <Download className="w-4 h-4" /> Exportar PDF
+          </Button>
+        </div>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
