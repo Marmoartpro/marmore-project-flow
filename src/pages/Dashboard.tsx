@@ -65,6 +65,12 @@ const Dashboard = () => {
   const openQuotes = quotes.filter(q => q.status === 'aguardando' || q.status === 'negociando');
   const openQuotesValue = openQuotes.reduce((s, q) => s + Number(q.estimated_value || 0), 0);
 
+  const getProjectProgress = (projectId: string) => {
+    const pStages = stages.filter(s => s.project_id === projectId);
+    if (pStages.length === 0) return 0;
+    return (pStages.filter(s => s.status === 'concluida').length / pStages.length) * 100;
+  };
+
   const projectStageMap: Record<string, string> = {};
   const activeProjectsRaw = projects.filter(p => p.status === 'em_andamento' && !p.archived);
   const archivedProjects = projects.filter(p => p.archived);
@@ -81,14 +87,12 @@ const Dashboard = () => {
     const deadline = p.deadline;
     if (deadline) {
       const daysLeft = Math.floor((new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-      if (daysLeft < 0) score += 100; // Prazo vencido
-      else if (daysLeft <= 3) score += 80; // Menos de 3 dias
-      else if (daysLeft <= 7) score += 40; // Menos de 7 dias
+      if (daysLeft < 0) score += 100;
+      else if (daysLeft <= 3) score += 80;
+      else if (daysLeft <= 7) score += 40;
     }
-    // Pagamento em atraso
     const hasOverduePayment = payments.some(pay => pay.project_id === p.id && !pay.paid && pay.due_date && pay.due_date < today);
     if (hasOverduePayment) score += 60;
-    // Progresso abaixo de 30%
     const progress = getProjectProgress(p.id);
     if (progress < 30) score += 20;
     return score;
@@ -101,12 +105,6 @@ const Dashboard = () => {
     const hasOverdue = projectPayments.some(p => !p.paid && p.due_date && p.due_date < today);
     if (hasOverdue) return { label: 'Atrasado', color: 'bg-destructive text-destructive-foreground' };
     return { label: 'Em dia', color: 'bg-success text-success-foreground' };
-  };
-
-  const getProjectProgress = (projectId: string) => {
-    const pStages = stages.filter(s => s.project_id === projectId);
-    if (pStages.length === 0) return 0;
-    return (pStages.filter(s => s.status === 'concluida').length / pStages.length) * 100;
   };
 
   const alerts: { type: 'danger' | 'warning' | 'info'; text: string }[] = [];
