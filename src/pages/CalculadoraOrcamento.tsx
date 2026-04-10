@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
-import { Calculator, Plus, Save, Trash2, FileText, Clock, Sparkles } from 'lucide-react';
+import { Calculator, Plus, Save, Trash2, FileText, Clock, Sparkles, LayoutTemplate } from 'lucide-react';
 import { generateOrcamentoPdf } from '@/components/orcamento/generatePdf';
 import { toast } from 'sonner';
 import ClienteSection from '@/components/orcamento/ClienteSection';
