@@ -24,7 +24,9 @@ const Login = () => {
   useEffect(() => {
     if (user && inviteToken) {
       navigate(`/invite/${inviteToken}`);
-    } else if (user && !inviteToken) {
+    } else if (user && teamToken) {
+      navigate(`/entrar/${teamToken}`);
+    } else if (user && !inviteToken && !teamToken) {
       navigate('/');
     }
   }, [user, inviteToken]);
