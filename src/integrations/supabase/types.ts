@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_logs: {
+        Row: {
+          action: string | null
+          created_at: string
+          id: string
+          ip: string | null
+          owner_id: string
+          page_accessed: string | null
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          owner_id: string
+          page_accessed?: string | null
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          owner_id?: string
+          page_accessed?: string | null
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       billing_reminders: {
         Row: {
           created_at: string
@@ -1392,6 +1425,63 @@ export type Database = {
         }
         Relationships: []
       }
+      team_members: {
+        Row: {
+          accepted_at: string | null
+          active: boolean
+          created_at: string
+          email: string
+          id: string
+          invite_expires_at: string
+          invite_token: string
+          invited_at: string
+          last_seen_at: string | null
+          name: string
+          owner_id: string
+          permissions: Json
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_id: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          active?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          invite_expires_at?: string
+          invite_token?: string
+          invited_at?: string
+          last_seen_at?: string | null
+          name: string
+          owner_id: string
+          permissions?: Json
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          active?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          invite_expires_at?: string
+          invite_token?: string
+          invited_at?: string
+          last_seen_at?: string | null
+          name?: string
+          owner_id?: string
+          permissions?: Json
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1401,6 +1491,7 @@ export type Database = {
         Args: { invite_token_param: string }
         Returns: string
       }
+      accept_team_invite: { Args: { token_param: string }; Returns: string }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -1408,6 +1499,10 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_default_permissions: {
+        Args: { p_role: Database["public"]["Enums"]["user_role"] }
+        Returns: Json
       }
       get_project_invite_by_token: {
         Args: { invite_token_param: string }
@@ -1426,6 +1521,22 @@ export type Database = {
           project_id: string
           project_name: string
           status: string
+        }[]
+      }
+      get_team_invite_by_token: {
+        Args: { token_param: string }
+        Returns: {
+          accepted_at: string
+          active: boolean
+          email: string
+          id: string
+          invite_expires_at: string
+          name: string
+          owner_id: string
+          owner_name: string
+          permissions: Json
+          role: Database["public"]["Enums"]["user_role"]
+          whatsapp: string
         }[]
       }
       move_to_dlq: {
@@ -1451,7 +1562,14 @@ export type Database = {
       }
     }
     Enums: {
-      user_role: "marmorista" | "arquiteta"
+      user_role:
+        | "marmorista"
+        | "arquiteta"
+        | "cliente"
+        | "instalador"
+        | "vendedor"
+        | "rh"
+        | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1579,7 +1697,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      user_role: ["marmorista", "arquiteta"],
+      user_role: [
+        "marmorista",
+        "arquiteta",
+        "cliente",
+        "instalador",
+        "vendedor",
+        "rh",
+        "admin",
+      ],
     },
   },
 } as const

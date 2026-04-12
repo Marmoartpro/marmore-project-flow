@@ -1,13 +1,15 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
   Home, DollarSign, FileText, Users, LogOut, Plus, Menu, X, Bell,
-  Package, Truck, Calculator, CheckCheck, Search, BarChart3, FileSignature,
+  Package, Truck, Calculator, CheckCheck, Search, BarChart3, FileSignature, UsersRound,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import RoleBadge from './RoleBadge';
 import GlobalSearch from './GlobalSearch';
 
 interface Props {
@@ -15,16 +17,17 @@ interface Props {
   alertCount?: number;
 }
 
-const marmoristNavItems = [
-  { path: '/dashboard', label: 'Início', icon: Home },
-  { path: '/financeiro', label: 'Financeiro', icon: DollarSign },
-  { path: '/orcamentos', label: 'Orçamentos', icon: FileText },
-  { path: '/clientes', label: 'Clientes', icon: Users },
-  { path: '/mostruario', label: 'Mostruário', icon: Package },
-  { path: '/fornecedores', label: 'Fornecedores', icon: Truck },
-  { path: '/contratos', label: 'Contratos', icon: FileSignature },
-  { path: '/calculadora', label: 'Orçamento', icon: Calculator },
-  { path: '/relatorios', label: 'Relatórios', icon: BarChart3 },
+const allNavItems = [
+  { path: '/dashboard', label: 'Início', icon: Home, permission: 'dashboard' as const },
+  { path: '/financeiro', label: 'Financeiro', icon: DollarSign, permission: 'financeiro' as const },
+  { path: '/orcamentos', label: 'Orçamentos', icon: FileText, permission: 'orcamentos' as const },
+  { path: '/clientes', label: 'Clientes', icon: Users, permission: 'clientes' as const },
+  { path: '/mostruario', label: 'Mostruário', icon: Package, permission: 'mostruario' as const },
+  { path: '/fornecedores', label: 'Fornecedores', icon: Truck, permission: 'fornecedores' as const },
+  { path: '/contratos', label: 'Contratos', icon: FileSignature, permission: 'contratos' as const },
+  { path: '/calculadora', label: 'Orçamento', icon: Calculator, permission: 'calculadora' as const },
+  { path: '/relatorios', label: 'Relatórios', icon: BarChart3, permission: 'relatorios' as const },
+  { path: '/equipe', label: 'Equipe', icon: UsersRound, permission: 'equipe' as const },
 ];
 
 const architectNavItems = [
@@ -34,34 +37,55 @@ const architectNavItems = [
 
 const AppLayout = ({ children, alertCount = 0 }: Props) => {
   const { user, profile, signOut } = useAuth();
+  const { can, role, isOwner } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
-
   const [searchOpen, setSearchOpen] = useState(false);
-  const isMarmorista = profile?.role === 'marmorista';
-  const navItems = isMarmorista ? marmoristNavItems : architectNavItems;
+
+  const isArchitect = profile?.role === 'arquiteta';
+
+  // Build nav items based on permissions
+  const navItems = isArchitect
+    ? architectNavItems
+    : allNavItems.filter(item => can(item.permission));
 
   useEffect(() => {
     if (!user) return;
     supabase.from('notifications').select('*').eq('user_id', user.id).eq('read', false).order('created_at', { ascending: false }).limit(20).then(({ data }) => setNotifications(data || []));
 
-    // Realtime notifications
     const channel = supabase
       .channel('user-notifications')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-        (payload) => {
-          setNotifications(prev => [payload.new as any, ...prev]);
-        }
-      )
-      .subscribe();
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
+        (payload) => setNotifications(prev => [payload.new as any, ...prev])
+      ).subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [user, location.pathname]);
+
+  // Log page access
+  useEffect(() => {
+    if (!user || !profile) return;
+    const logAccess = async () => {
+      const { data: member } = await supabase
+        .from('team_members').select('owner_id').eq('user_id', user.id).eq('active', true).maybeSingle();
+      const ownerId = member?.owner_id || user.id;
+      await supabase.from('access_logs').insert({
+        user_id: user.id,
+        owner_id: ownerId,
+        role: profile.role,
+        page_accessed: location.pathname,
+        action: 'page_view',
+      });
+      // Update last_seen
+      if (member) {
+        await supabase.from('team_members').update({ last_seen_at: new Date().toISOString() }).eq('user_id', user.id);
+      }
+    };
+    logAccess();
+  }, [location.pathname, user?.id]);
 
   const markRead = async (id: string) => {
     await supabase.from('notifications').update({ read: true }).eq('id', id);
@@ -82,8 +106,13 @@ const AppLayout = ({ children, alertCount = 0 }: Props) => {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-56 bg-sidebar border-r border-sidebar-border fixed h-full z-30">
         <div className="p-4 border-b border-sidebar-border">
-          <h1 className="text-lg font-display font-bold text-foreground">MármoreProart</h1>
-          <p className="text-xs text-muted-foreground truncate">{profile?.full_name || 'Usuário'}</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-display font-bold text-foreground">MármoreProart</h1>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-xs text-muted-foreground truncate flex-1">{profile?.full_name || 'Usuário'}</p>
+            <RoleBadge role={role} />
+          </div>
         </div>
         <div className="px-2 pt-2">
           <button
@@ -104,9 +133,7 @@ const AppLayout = ({ children, alertCount = 0 }: Props) => {
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                  active
-                    ? 'bg-sidebar-accent text-sidebar-primary font-medium'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                  active ? 'bg-sidebar-accent text-sidebar-primary font-medium' : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -116,7 +143,6 @@ const AppLayout = ({ children, alertCount = 0 }: Props) => {
           })}
         </nav>
 
-        {/* Notification bell in sidebar */}
         <div className="px-2 py-1">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
@@ -131,7 +157,7 @@ const AppLayout = ({ children, alertCount = 0 }: Props) => {
         </div>
 
         <div className="p-2 border-t border-sidebar-border space-y-1">
-          {isMarmorista && (
+          {can('projetos') && (
             <Button variant="default" size="sm" className="w-full justify-start" onClick={() => navigate('/projeto/novo')}>
               <Plus className="w-4 h-4 mr-2" /> Novo projeto
             </Button>
@@ -180,7 +206,10 @@ const AppLayout = ({ children, alertCount = 0 }: Props) => {
       {/* Mobile header */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-sidebar border-b border-sidebar-border">
         <div className="flex items-center justify-between px-4 py-3">
-          <h1 className="text-base font-display font-bold">MármoreProart</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-base font-display font-bold">MármoreProart</h1>
+            <RoleBadge role={role} />
+          </div>
           <div className="flex items-center gap-2">
             <button className="relative" onClick={() => setShowNotifications(!showNotifications)}>
               <Bell className="w-5 h-5 text-muted-foreground" />
@@ -229,7 +258,7 @@ const AppLayout = ({ children, alertCount = 0 }: Props) => {
               );
             })}
             <div className="pt-2 border-t border-sidebar-border flex gap-2">
-              {isMarmorista && (
+              {can('projetos') && (
                 <Button size="sm" className="flex-1" onClick={() => { navigate('/projeto/novo'); setMobileOpen(false); }}>
                   <Plus className="w-4 h-4 mr-1" /> Novo projeto
                 </Button>

@@ -11,7 +11,8 @@ import { toast } from 'sonner';
 const Login = () => {
   const [searchParams] = useSearchParams();
   const inviteToken = searchParams.get('invite');
-  const [isSignUp, setIsSignUp] = useState(!!inviteToken);
+  const teamToken = searchParams.get('team');
+  const [isSignUp, setIsSignUp] = useState(!!inviteToken || !!teamToken);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -23,7 +24,9 @@ const Login = () => {
   useEffect(() => {
     if (user && inviteToken) {
       navigate(`/invite/${inviteToken}`);
-    } else if (user && !inviteToken) {
+    } else if (user && teamToken) {
+      navigate(`/entrar/${teamToken}`);
+    } else if (user && !inviteToken && !teamToken) {
       navigate('/');
     }
   }, [user, inviteToken]);
