@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle, Circle, Clock, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import StageComments from './StageComments';
+import { notifyStageCompleted } from '@/lib/notifications';
 
 interface Props {
   projectId: string;
@@ -66,6 +67,19 @@ const ProjectEvolution = ({ projectId, projectName = '', isOwner }: Props) => {
       status: newStatus,
       completed_at: newStatus === 'concluida' ? new Date().toISOString() : null,
     }).eq('id', stageId);
+    
+    // FIX #17: Send notification on stage completion
+    if (newStatus === 'concluida') {
+      const stage = stages.find(s => s.id === stageId);
+      if (stage) {
+        const { data: proj } = await supabase.from('projects').select('owner_id').eq('id', projectId).single();
+        if (proj) {
+          const { data: profile } = await supabase.from('profiles').select('phone').eq('user_id', proj.owner_id).single();
+          await notifyStageCompleted(projectId, stage.name, proj.owner_id, profile?.phone || undefined);
+        }
+      }
+    }
+    
     fetchStages();
     toast.success('Status atualizado!');
   };

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { DollarSign, Check, Upload, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { notifyPaymentReceived } from '@/lib/notifications';
 
 interface Props {
   project: any;
@@ -55,6 +56,7 @@ const ProjectPayments = ({ project, isOwner, onUpdate }: Props) => {
   };
 
   const markAsPaid = async (paymentId: string) => {
+    const payment = payments.find(p => p.id === paymentId);
     await supabase.from('payments').update({
       paid: true,
       paid_at: new Date().toISOString(),
@@ -64,6 +66,12 @@ const ProjectPayments = ({ project, isOwner, onUpdate }: Props) => {
     const newPaid = payments.filter(p => p.paid || p.id === paymentId)
       .reduce((sum, p) => sum + Number(p.amount), 0);
     await supabase.from('projects').update({ paid_value: newPaid }).eq('id', project.id);
+
+    // FIX #17: Send notification on payment confirmed
+    if (payment) {
+      const { data: profile } = await supabase.from('profiles').select('phone').eq('user_id', project.owner_id).single();
+      await notifyPaymentReceived(project.id, payment.description, Number(payment.amount), project.owner_id, profile?.phone || undefined);
+    }
 
     fetchPayments();
     onUpdate();
