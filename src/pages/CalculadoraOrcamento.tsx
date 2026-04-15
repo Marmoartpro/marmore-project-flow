@@ -26,6 +26,7 @@ const today = () => new Date().toISOString().split('T')[0];
 
 const CalculadoraOrcamento = () => {
   const { user, profile } = useAuth();
+  const [resolvedOwnerId, setResolvedOwnerId] = useState<string | null>(null);
   const { quoteId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -109,10 +110,15 @@ const CalculadoraOrcamento = () => {
     })();
   }, [user, quoteId, isDuplicate]);
 
+  // FIX #6: Resolve owner_id for team members (vendedor)
   useEffect(() => {
-    if (user) {
-      supabase.from('stones').select('id, name, price_per_m2, category').order('name').then(({ data }) => setStones(data || []));
-    }
+    if (!user) return;
+    (async () => {
+      const { data: member } = await supabase
+        .from('team_members').select('owner_id').eq('user_id', user.id).eq('active', true).maybeSingle();
+      setResolvedOwnerId(member?.owner_id || user.id);
+    })();
+    supabase.from('stones').select('id, name, price_per_m2, category').order('name').then(({ data }) => setStones(data || []));
   }, [user]);
 
   useEffect(() => {
@@ -208,7 +214,7 @@ const CalculadoraOrcamento = () => {
     const totalFinal = totalBruto - desconto;
 
     return {
-      owner_id: user!.id,
+      owner_id: resolvedOwnerId || user!.id,
       client_name: clienteNome,
       environment_type: tipoAmbiente,
       quote_date: dataOrcamento,
@@ -259,9 +265,10 @@ const CalculadoraOrcamento = () => {
         draftIdRef.current = null;
 
         // Save client if new
-        const { data: existing } = await supabase.from('clients').select('id').eq('owner_id', user.id).eq('name', clienteNome).limit(1);
+        const ownerId = resolvedOwnerId || user.id;
+        const { data: existing } = await supabase.from('clients').select('id').eq('owner_id', ownerId).eq('name', clienteNome).limit(1);
         if (!existing || existing.length === 0) {
-          await supabase.from('clients').insert({ owner_id: user.id, name: clienteNome, service_type: tipoAmbiente });
+          await supabase.from('clients').insert({ owner_id: ownerId, name: clienteNome, service_type: tipoAmbiente });
         }
         toast.success('Orçamento salvo com sucesso!');
       }
