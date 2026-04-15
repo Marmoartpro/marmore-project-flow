@@ -67,6 +67,7 @@ const HomeRedirect = () => {
   if (profile?.role === 'instalador') return <Navigate to="/instalador" replace />;
   if (profile?.role === 'vendedor') return <Navigate to="/vendedor" replace />;
   if (profile?.role === 'rh') return <Navigate to="/rh" replace />;
+  if (profile?.role === 'admin') return <Navigate to="/dashboard" replace />;
   if (profile?.role === 'cliente') return <Navigate to="/meu-projeto" replace />;
   return <Navigate to="/dashboard" replace />;
 };

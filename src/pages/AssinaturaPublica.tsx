@@ -85,7 +85,8 @@ const AssinaturaPublica = () => {
   }, []);
 
   const isContract = signature?.document_type === 'contrato';
-  const canAccept = isContract ? scrolledToEnd : true;
+  const contractTextMissing = isContract && !contractText;
+  const canAccept = isContract ? (scrolledToEnd && !contractTextMissing) : true;
 
   const generateSignedPdf = async (sigName: string, sigImage: string, sigIp: string, sigLocation: string): Promise<string | null> => {
     try {
@@ -338,6 +339,13 @@ const AssinaturaPublica = () => {
               </p>
             </div>
 
+            {contractTextMissing && (
+              <div className="flex items-center gap-2 bg-destructive/10 text-destructive border border-destructive/30 rounded-md p-3 text-sm">
+                <AlertTriangle className="w-5 h-5 shrink-0" />
+                <span>Contrato não disponível para visualização. Entre em contato com a marmoraria.</span>
+              </div>
+            )}
+
             {/* Contract full text with scroll requirement */}
             {isContract && contractText ? (
               <div className="space-y-2">
@@ -359,7 +367,7 @@ const AssinaturaPublica = () => {
                   </p>
                 )}
               </div>
-            ) : (
+            ) : !contractTextMissing && (
               /* Document summary for budget quotes */
               document && (
                 <div className="bg-muted/50 rounded-md p-3 space-y-2 text-sm">
@@ -374,43 +382,47 @@ const AssinaturaPublica = () => {
               )
             )}
 
-            {/* Signer name */}
-            <div>
-              <Label className="text-xs">Nome completo *</Label>
-              <Input
-                value={signerName}
-                onChange={e => setSignerName(e.target.value)}
-                placeholder="Digite seu nome completo"
-                className="h-9 text-sm"
-              />
-            </div>
+            {!contractTextMissing && (
+              <>
+                {/* Signer name */}
+                <div>
+                  <Label className="text-xs">Nome completo *</Label>
+                  <Input
+                    value={signerName}
+                    onChange={e => setSignerName(e.target.value)}
+                    placeholder="Digite seu nome completo"
+                    className="h-9 text-sm"
+                  />
+                </div>
 
-            {/* Signature */}
-            <div>
-              <Label className="text-xs mb-2 block">Sua assinatura *</Label>
-              <SignatureCanvas onSignature={setSignatureImage} />
-            </div>
+                {/* Signature */}
+                <div>
+                  <Label className="text-xs mb-2 block">Sua assinatura *</Label>
+                  <SignatureCanvas onSignature={setSignatureImage} />
+                </div>
 
-            {/* Accept terms */}
-            <div className={`flex items-start gap-2 transition-opacity duration-300 ${canAccept ? 'opacity-100' : 'opacity-40'}`}>
-              <Checkbox
-                id="accept"
-                checked={accepted}
-                onCheckedChange={(v) => setAccepted(v === true)}
-                disabled={!canAccept}
-              />
-              <label htmlFor="accept" className={`text-xs cursor-pointer ${canAccept ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}>
-                Declaro que li e aceito os termos deste {isContract ? 'contrato' : 'orçamento'}.
-              </label>
-            </div>
+                {/* Accept terms */}
+                <div className={`flex items-start gap-2 transition-opacity duration-300 ${canAccept ? 'opacity-100' : 'opacity-40'}`}>
+                  <Checkbox
+                    id="accept"
+                    checked={accepted}
+                    onCheckedChange={(v) => setAccepted(v === true)}
+                    disabled={!canAccept}
+                  />
+                  <label htmlFor="accept" className={`text-xs cursor-pointer ${canAccept ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}>
+                    Declaro que li e aceito os termos deste {isContract ? 'contrato' : 'orçamento'}.
+                  </label>
+                </div>
 
-            <Button
-              className="w-full"
-              onClick={handleSign}
-              disabled={signing || !signerName || !signatureImage || !accepted}
-            >
-              {signing ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Assinando...</> : 'Assinar e confirmar'}
-            </Button>
+                <Button
+                  className="w-full"
+                  onClick={handleSign}
+                  disabled={signing || !signerName || !signatureImage || !accepted}
+                >
+                  {signing ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Assinando...</> : 'Assinar e confirmar'}
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
 
