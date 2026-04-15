@@ -20,13 +20,14 @@ export const usePermissions = () => {
   const { user, profile } = useAuth();
   const [teamMember, setTeamMember] = useState<TeamMemberData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [teamMemberLoaded, setTeamMemberLoaded] = useState(false);
 
   const role = profile?.role || 'marmorista';
-  // The owner is a marmorista who is NOT a team member (they own the account)
-  const isOwner = role === 'marmorista' && !teamMember;
+  // FIX #3: Only calculate isOwner AFTER teamMember fetch is complete
+  const isOwner = teamMemberLoaded && role === 'marmorista' && !teamMember;
 
   useEffect(() => {
-    if (!user) { setLoading(false); return; }
+    if (!user) { setLoading(false); setTeamMemberLoaded(true); return; }
 
     const fetchTeamMember = async () => {
       const { data } = await supabase
@@ -45,6 +46,7 @@ export const usePermissions = () => {
           active: data.active ?? true,
         });
       }
+      setTeamMemberLoaded(true);
       setLoading(false);
     };
 
@@ -52,7 +54,7 @@ export const usePermissions = () => {
   }, [user]);
 
   const can = (permission: PermissionKey): boolean => {
-    if (!user) return false;
+    if (!user || !teamMemberLoaded) return false;
     // Owner (marmorista principal) has all permissions
     if (isOwner) return true;
     // Admin has all permissions except equipe management specifics

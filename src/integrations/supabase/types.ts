@@ -851,6 +851,35 @@ export type Database = {
         }
         Relationships: []
       }
+      project_assignments: {
+        Row: {
+          assigned_at: string
+          id: string
+          project_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          id?: string
+          project_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          id?: string
+          project_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_assignments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_invites: {
         Row: {
           accepted: boolean | null
@@ -1016,6 +1045,7 @@ export type Database = {
           address: string | null
           architect_logo_url: string | null
           archived: boolean
+          client_access_token: string
           client_name: string | null
           created_at: string
           deadline: string | null
@@ -1041,6 +1071,7 @@ export type Database = {
           address?: string | null
           architect_logo_url?: string | null
           archived?: boolean
+          client_access_token?: string
           client_name?: string | null
           created_at?: string
           deadline?: string | null
@@ -1066,6 +1097,7 @@ export type Database = {
           address?: string | null
           architect_logo_url?: string | null
           archived?: boolean
+          client_access_token?: string
           client_name?: string | null
           created_at?: string
           deadline?: string | null
