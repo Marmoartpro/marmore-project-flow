@@ -395,6 +395,8 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   acabamentoBorda: 'Reto', valorAcabamentoBorda: '',
   valorChanfrado45ML: '',
   bordasComAcabamento: 'Só frontal',
+  bordasLadosAtivo: false,
+  bordaFrente: true, bordaFundo: false, bordaEsquerda: false, bordaDireita: false,
   saiaOpcao: 'Só frente',
   furosTorneira: 'Nenhum', valorFuroTorneira: '',
   espelhoBacksplash: false, espelhoBacksplashAltura: '',
