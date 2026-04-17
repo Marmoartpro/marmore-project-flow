@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Clock, Filter, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import CashFlowForecast from '@/components/financeiro/CashFlowForecast';
 
 const COLORS = ['hsl(205 59% 45%)', 'hsl(145 60% 40%)', 'hsl(35 90% 55%)', 'hsl(0 70% 55%)'];
 
@@ -315,6 +316,9 @@ const Financeiro = () => {
             })}
           </div>
         )}
+
+        {/* Fluxo de caixa preditivo 90 dias */}
+        <CashFlowForecast payments={payments} initialBalance={kpis.totalPago - kpis.totalAtrasado} />
 
         <Tabs defaultValue="visao-geral">
           <TabsList>
