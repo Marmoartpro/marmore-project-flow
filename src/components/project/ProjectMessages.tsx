@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Send } from 'lucide-react';
+import { notify } from '@/lib/notifications';
 
 interface Props {
   projectId: string;
 }
 
 const ProjectMessages = ({ projectId }: Props) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [profiles, setProfiles] = useState<Record<string, any>>({});
@@ -62,12 +63,39 @@ const ProjectMessages = ({ projectId }: Props) => {
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !user) return;
+    const content = newMessage.trim();
     await supabase.from('messages').insert({
       project_id: projectId,
       sender_id: user.id,
-      content: newMessage.trim(),
+      content,
     });
     setNewMessage('');
+
+    // Notify the other party (owner ↔ architect)
+    try {
+      const { data: project } = await supabase.from('projects').select('owner_id, name').eq('id', projectId).single();
+      if (project) {
+        const isOwner = project.owner_id === user.id;
+        const senderName = profile?.full_name || (isOwner ? 'Marmorista' : 'Arquiteta');
+        let recipientId: string | undefined;
+        if (isOwner) {
+          const { data: invite } = await supabase.from('project_invites').select('architect_user_id').eq('project_id', projectId).eq('accepted', true).limit(1).maybeSingle();
+          recipientId = invite?.architect_user_id || undefined;
+        } else {
+          recipientId = project.owner_id;
+        }
+        if (recipientId) {
+          await notify({
+            event: 'new_message',
+            userId: recipientId,
+            projectId,
+            title: `Nova mensagem em ${project.name}`,
+            message: `${senderName}: ${content.length > 140 ? content.slice(0, 140) + '…' : content}`,
+            ctaUrl: `${window.location.origin}/projeto/${projectId}`,
+          });
+        }
+      }
+    } catch (e) { console.error(e); }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
