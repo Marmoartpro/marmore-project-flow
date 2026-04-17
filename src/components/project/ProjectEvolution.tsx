@@ -74,8 +74,7 @@ const ProjectEvolution = ({ projectId, projectName = '', isOwner }: Props) => {
       if (stage) {
         const { data: proj } = await supabase.from('projects').select('owner_id').eq('id', projectId).single();
         if (proj) {
-          const { data: profile } = await supabase.from('profiles').select('phone').eq('user_id', proj.owner_id).single();
-          await notifyStageCompleted(projectId, stage.name, proj.owner_id, profile?.phone || undefined);
+          await notifyStageCompleted(projectId, stage.name, proj.owner_id);
         }
       }
     }

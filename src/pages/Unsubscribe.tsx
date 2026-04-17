@@ -81,14 +81,14 @@ const Unsubscribe = () => {
         )}
         {state === 'done' && (
           <>
-            <CheckCircle2 className="w-12 h-12 mx-auto text-emerald-500" />
+            <CheckCircle2 className="w-12 h-12 mx-auto text-primary" />
             <h2 className="text-lg font-semibold">Pronto!</h2>
             <p className="text-sm text-muted-foreground">Você foi removido(a) da nossa lista de e-mails.</p>
           </>
         )}
         {state === 'already' && (
           <>
-            <CheckCircle2 className="w-12 h-12 mx-auto text-emerald-500" />
+            <CheckCircle2 className="w-12 h-12 mx-auto text-primary" />
             <h2 className="text-lg font-semibold">Você já cancelou</h2>
             <p className="text-sm text-muted-foreground">Esta inscrição já havia sido cancelada anteriormente.</p>
           </>

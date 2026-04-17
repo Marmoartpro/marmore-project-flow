@@ -67,10 +67,9 @@ const ProjectPayments = ({ project, isOwner, onUpdate }: Props) => {
       .reduce((sum, p) => sum + Number(p.amount), 0);
     await supabase.from('projects').update({ paid_value: newPaid }).eq('id', project.id);
 
-    // FIX #17: Send notification on payment confirmed
+    // Send notification on payment confirmed
     if (payment) {
-      const { data: profile } = await supabase.from('profiles').select('phone').eq('user_id', project.owner_id).single();
-      await notifyPaymentReceived(project.id, payment.description, Number(payment.amount), project.owner_id, profile?.phone || undefined);
+      await notifyPaymentReceived(project.id, payment.description, Number(payment.amount), project.owner_id);
     }
 
     fetchPayments();
