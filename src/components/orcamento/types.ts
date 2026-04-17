@@ -73,6 +73,12 @@ export interface PecaItem {
   valorAcabamentoBorda: string;
   valorChanfrado45ML: string;
   bordasComAcabamento: string;
+  // Seleção individual de bordas (modo avançado). Se ativo, sobrepõe `bordasComAcabamento`.
+  bordasLadosAtivo: boolean;
+  bordaFrente: boolean;
+  bordaFundo: boolean;
+  bordaEsquerda: boolean;
+  bordaDireita: boolean;
   // Saia (independente das bordas)
   saiaOpcao: string;
   // Furos
