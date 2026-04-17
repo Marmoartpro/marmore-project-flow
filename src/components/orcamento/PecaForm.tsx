@@ -330,11 +330,50 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
             </div>
             <div>
               <Label className="text-[10px]">Bordas com acabamento</Label>
-              <select value={peca.bordasComAcabamento} onChange={e => onChange('bordasComAcabamento', e.target.value)}
+              <select
+                value={peca.bordasLadosAtivo ? '__avancado__' : peca.bordasComAcabamento}
+                onChange={e => {
+                  if (e.target.value === '__avancado__') {
+                    onChange('bordasLadosAtivo', true);
+                  } else {
+                    onChange('bordasLadosAtivo', false);
+                    onChange('bordasComAcabamento', e.target.value);
+                  }
+                }}
                 className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
                 {BORDAS_COM_ACABAMENTO.map(t => <option key={t} value={t}>{t}</option>)}
+                <option value="__avancado__">⚙️ Selecionar lados individualmente…</option>
               </select>
             </div>
+            {peca.bordasLadosAtivo && (
+              <div className="col-span-full bg-muted/30 rounded-md p-2 space-y-1">
+                <div className="text-[10px] font-medium text-muted-foreground">
+                  Marque os lados que terão acabamento:
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" checked={!!peca.bordaFrente}
+                      onChange={e => onChange('bordaFrente', e.target.checked)} />
+                    Frente
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" checked={!!peca.bordaFundo}
+                      onChange={e => onChange('bordaFundo', e.target.checked)} />
+                    Fundo
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" checked={!!peca.bordaEsquerda}
+                      onChange={e => onChange('bordaEsquerda', e.target.checked)} />
+                    Lateral Esq.
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" checked={!!peca.bordaDireita}
+                      onChange={e => onChange('bordaDireita', e.target.checked)} />
+                    Lateral Dir.
+                  </label>
+                </div>
+              </div>
+            )}
             {(isPiscina || peca.acabamentoBorda !== 'Reto') && (
               <div>
                 <Label className="text-[10px]">
