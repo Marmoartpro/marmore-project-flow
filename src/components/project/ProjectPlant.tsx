@@ -67,6 +67,33 @@ const ProjectPlant = ({ projectId }: Props) => {
       comment: newComment.trim(),
       author_id: user.id,
     });
+
+    // Notify the other party (owner ↔ architect) via App + Email + WhatsApp per prefs
+    try {
+      const { data: project } = await supabase.from('projects').select('owner_id, name').eq('id', projectId).single();
+      if (project) {
+        const isOwner = project.owner_id === user.id;
+        const authorName = profile?.full_name || (isOwner ? 'Marmorista' : 'Arquiteta');
+        let recipientId: string | undefined;
+        if (isOwner) {
+          const { data: invite } = await supabase.from('project_invites').select('architect_user_id').eq('project_id', projectId).eq('accepted', true).limit(1).maybeSingle();
+          recipientId = invite?.architect_user_id || undefined;
+        } else {
+          recipientId = project.owner_id;
+        }
+        if (recipientId) {
+          await notify({
+            event: 'plant_comment',
+            userId: recipientId,
+            projectId,
+            title: 'Nova anotação na planta',
+            message: `${authorName} adicionou uma marcação na planta do projeto "${project.name}".`,
+            ctaUrl: `${window.location.origin}/projeto/${projectId}`,
+          });
+        }
+      }
+    } catch (e) { console.error(e); }
+
     setClickPos(null);
     setNewComment('');
     fetchAnnotations();
