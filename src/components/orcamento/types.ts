@@ -73,6 +73,12 @@ export interface PecaItem {
   valorAcabamentoBorda: string;
   valorChanfrado45ML: string;
   bordasComAcabamento: string;
+  // Seleção individual de bordas (modo avançado). Se ativo, sobrepõe `bordasComAcabamento`.
+  bordasLadosAtivo: boolean;
+  bordaFrente: boolean;
+  bordaFundo: boolean;
+  bordaEsquerda: boolean;
+  bordaDireita: boolean;
   // Saia (independente das bordas)
   saiaOpcao: string;
   // Furos
@@ -389,6 +395,8 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   acabamentoBorda: 'Reto', valorAcabamentoBorda: '',
   valorChanfrado45ML: '',
   bordasComAcabamento: 'Só frontal',
+  bordasLadosAtivo: false,
+  bordaFrente: true, bordaFundo: false, bordaEsquerda: false, bordaDireita: false,
   saiaOpcao: 'Só frente',
   furosTorneira: 'Nenhum', valorFuroTorneira: '',
   espelhoBacksplash: false, espelhoBacksplashAltura: '',
@@ -548,23 +556,37 @@ const calcSaiaArea = (p: PecaItem): number => {
   }
 };
 
-/** Helper: calculate espelho area based on bordasComAcabamento */
+/** Retorna quais lados têm acabamento. Prioriza modo avançado (bordasLadosAtivo). */
+export const getBordasLados = (p: PecaItem): { frente: boolean; fundo: boolean; esq: boolean; dir: boolean } => {
+  if (p.bordasLadosAtivo) {
+    return { frente: !!p.bordaFrente, fundo: !!p.bordaFundo, esq: !!p.bordaEsquerda, dir: !!p.bordaDireita };
+  }
+  switch (p.bordasComAcabamento || 'Só frontal') {
+    case 'Sem acabamento de borda': return { frente: false, fundo: false, esq: false, dir: false };
+    case 'Só frontal': return { frente: true, fundo: false, esq: false, dir: false };
+    case 'Frontal e lado direito': return { frente: true, fundo: false, esq: false, dir: true };
+    case 'Frontal e lado esquerdo': return { frente: true, fundo: false, esq: true, dir: false };
+    case 'Frontal e duas laterais':
+    case 'Frontal e laterais': return { frente: true, fundo: false, esq: true, dir: true };
+    case 'Todas as bordas': return { frente: true, fundo: true, esq: true, dir: true };
+    default: return { frente: true, fundo: false, esq: false, dir: false };
+  }
+};
+
+/** Helper: calculate espelho area based on bordas selecionadas */
 const calcEspelhoArea = (p: PecaItem): number => {
   const espH = p.espelhoBacksplash ? cm(p.espelhoBacksplashAltura) : 0;
   if (espH <= 0) return 0;
   const w = cm(p.largura);
   const l = cm(p.comprimento);
-  const bordas = p.bordasComAcabamento || 'Só frontal';
-
-  switch (bordas) {
-    case 'Sem acabamento de borda': return 0;
-    case 'Só frontal': return l * espH;
-    case 'Frontal e lado direito': return (l + w) * espH;
-    case 'Frontal e lado esquerdo': return (l + w) * espH;
-    case 'Frontal e duas laterais': return (l + w * 2) * espH;
-    case 'Todas as bordas': return (l + w) * 2 * espH;
-    default: return l * espH;
-  }
+  const lados = getBordasLados(p);
+  // Espelho geralmente é nas bordas que encostam na parede — usamos os lados selecionados
+  let perim = 0;
+  if (lados.frente) perim += l;
+  if (lados.fundo) perim += l;
+  if (lados.esq) perim += w;
+  if (lados.dir) perim += w;
+  return perim * espH;
 };
 
 export const calcPecaExtrasArea = (p: PecaItem): number => {
@@ -706,20 +728,15 @@ export const calcCubaEsculpida = (ce: CubaEsculpidaData): CubaEsculpidaCalc => {
   };
 };
 
-/** Helper: calculate ml for bordasComAcabamento (expanded options) */
+/** Helper: calculate ml for bordas selecionadas (modo avançado ou legado) */
 const calcBordaML = (p: PecaItem, l: number, w: number): number => {
-  const bordas = p.bordasComAcabamento || 'Só frontal';
-  switch (bordas) {
-    case 'Sem acabamento de borda': return 0;
-    case 'Só frontal': return l;
-    case 'Frontal e lado direito': return l + w;
-    case 'Frontal e lado esquerdo': return l + w;
-    case 'Frontal e duas laterais': return l + w * 2;
-    case 'Todas as bordas': return (l + w) * 2;
-    // Legacy compat
-    case 'Frontal e laterais': return l + w * 2;
-    default: return l;
-  }
+  const lados = getBordasLados(p);
+  let ml = 0;
+  if (lados.frente) ml += l;
+  if (lados.fundo) ml += l;
+  if (lados.esq) ml += w;
+  if (lados.dir) ml += w;
+  return ml;
 };
 
 /** Metros lineares de borda — calcula perímetro real por formato */
@@ -747,20 +764,11 @@ export const calcMetrosLinearesBorda = (p: PecaItem): number => {
       const c2 = cm(p.lTrecho2Comprimento) / 100;
       const w2 = cm(p.lTrecho2Largura) / 100;
       const overlapSide = Math.min(w1, w2);
-      const bordas = p.bordasComAcabamento || 'Só frontal';
-      if (bordas === 'Sem acabamento de borda') {
-        ml = 0;
-      } else if (bordas === 'Só frontal') {
-        ml = c1 + c2 - overlapSide;
-      } else if (['Frontal e lado direito', 'Frontal e lado esquerdo'].includes(bordas)) {
-        ml = c1 + c2 - overlapSide + Math.max(w1, w2);
-      } else if (['Frontal e laterais', 'Frontal e duas laterais'].includes(bordas)) {
-        ml = c1 + c2 - overlapSide + w1 + w2;
-      } else if (bordas === 'Todas as bordas') {
-        ml = 2 * (c1 + w1) + 2 * (c2 + w2) - 4 * overlapSide;
-      } else {
-        ml = c1 + c2 - overlapSide;
-      }
+      const lados = getBordasLados(p);
+      if (lados.frente) ml += Math.max(0, c1 + c2 - overlapSide);
+      if (lados.fundo) ml += Math.max(0, c1 + c2 - overlapSide);
+      if (lados.esq) ml += w1 + w2;
+      if (lados.dir) ml += w1 + w2;
       break;
     }
     case 'redondo':
