@@ -453,6 +453,10 @@ const Mostruario = () => {
         <ARViewer textureUrl={arStone.photo_url} stoneName={arStone.name} onClose={() => setArStone(null)} />
       )}
 
+      {vizStone && (
+        <Visualization3D stoneImageUrl={vizStone.photo_url} stoneName={vizStone.name} onClose={() => setVizStone(null)} />
+      )}
+
       {presentationOpen && (
         <PresentationMode
           stones={filtered}
