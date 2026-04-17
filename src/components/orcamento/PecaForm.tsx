@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Trash2, Plus } from 'lucide-react';
 import CubaEsculpidaFields from './CubaEsculpidaFields';
+import PecaPreview from './PecaPreview';
 import {
   PecaItem, CubaEsculpidaData, Abertura,
   TIPO_CUBA, TIPO_REBAIXO, ACABAMENTO_BORDA,
