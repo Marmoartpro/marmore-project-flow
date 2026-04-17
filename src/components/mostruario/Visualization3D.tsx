@@ -39,7 +39,7 @@ const Visualization3D = ({ stoneImageUrl, stoneName, onClose }: Props) => {
 
   const handleFile = async (file: File) => {
     try {
-      const compressed = await compressImage(file, 1280, 0.85);
+      const compressed = await compressImage(file, 1024, 1280);
       const url = await fileToDataUrl(compressed);
       setAmbient(url);
       setResult(null);
