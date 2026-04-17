@@ -4,6 +4,7 @@ import {
   Ambiente, AcessorioItem,
   calcAmbienteArea, calcAmbienteAreaCompra, calcAmbienteMaterialCost,
   calcAmbienteLaborCost, calcAmbienteInstallCost, calcCubaEsculpida, fmt,
+  calcPecaAreaLiquida, calcPecaAreaCompra, calcMetrosLinearesBorda,
 } from './types';
 
 interface PdfParams {
