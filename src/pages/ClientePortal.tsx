@@ -54,14 +54,17 @@ const ClientePortal = () => {
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !project) return;
-    await supabase.from('messages').insert({
+    const { error } = await supabase.from('messages').insert({
       project_id: project.id,
-      sender_id: project.owner_id, // client messages appear as from project context
+      sender_id: project.owner_id, // anon insert; tag content with [Cliente] prefix to identify
       content: `[Cliente] ${newMessage.trim()}`,
     });
+    if (error) {
+      toast.error('Não foi possível enviar a mensagem.');
+      return;
+    }
     setNewMessage('');
     toast.success('Mensagem enviada!');
-    // Refresh messages
     const { data: msgs } = await supabase.from('messages').select('*').eq('project_id', project.id).order('created_at');
     setMessages(msgs || []);
   };
