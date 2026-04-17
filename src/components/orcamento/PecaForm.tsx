@@ -392,6 +392,15 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
                 )}
               </div>
             )}
+            {/* Preview visual da peça com bordas marcadas */}
+            <div className="col-span-full flex flex-col items-center gap-1 pt-1">
+              <PecaPreview peca={peca} />
+              {mlBorda > 0 && (
+                <span className="text-[10px] text-muted-foreground">
+                  Perímetro com acabamento: <b className="text-foreground">{fmt(mlBorda)} ml</b>
+                </span>
+              )}
+            </div>
           </>
         )}
 
