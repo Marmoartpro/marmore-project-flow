@@ -29,6 +29,8 @@ import InstaladorPortal from "./pages/InstaladorPortal";
 import VendedorPortal from "./pages/VendedorPortal";
 import RhPortal from "./pages/RhPortal";
 import Unauthorized from "./pages/Unauthorized";
+import NotificationPreferences from "./pages/NotificationPreferences";
+import Unsubscribe from "./pages/Unsubscribe";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -82,6 +84,8 @@ const AppRoutes = () => (
     <Route path="/meu-projeto/:token" element={<ClientePortal />} />
     <Route path="/assinar/:token" element={<AssinaturaPublica />} />
     <Route path="/mostruario/:stoneId" element={<StonePage />} />
+    <Route path="/unsubscribe" element={<Unsubscribe />} />
+    <Route path="/configuracoes/notificacoes" element={<ProtectedRoute><NotificationPreferences /></ProtectedRoute>} />
     
     <Route path="/dashboard" element={<PermissionRoute permission="dashboard"><Dashboard /></PermissionRoute>} />
     <Route path="/architect" element={<ProtectedRoute><ArchitectDashboard /></ProtectedRoute>} />
