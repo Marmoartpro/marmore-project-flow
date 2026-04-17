@@ -708,27 +708,77 @@ export interface CubaEsculpidaCalc {
   paredeLateralEsq: number;
   paredeLateralDir: number;
   fundo: number;
+  fundoExtra: number;     // área adicional gerada pelo tipo de fundo
+  fundoLabel: string;     // descrição amigável
   totalM2: number;
   volumeCm3: number;
 }
+
+export const CUBA_FUNDO_OPCOES: { value: CubaFundoTipo; label: string; descricao: string }[] = [
+  { value: 'reto', label: 'Fundo reto', descricao: 'Fundo plano horizontal (padrão)' },
+  { value: 'inclinado_escoamento', label: 'Inclinado p/ escoamento', descricao: 'Caimento suave em direção ao ralo (+~5% área)' },
+  { value: 'cuba_dentro_cuba', label: 'Cuba dentro de cuba', descricao: 'Rebaixo central interno adicional' },
+  { value: 'canaleta_central', label: 'Canaleta central', descricao: 'Canaleta linear de escoamento' },
+  { value: 'fundo_curvo', label: 'Fundo curvo (côncavo)', descricao: 'Fundo arredondado tipo concha (+~15% área)' },
+];
 
 export const calcCubaEsculpida = (ce: CubaEsculpidaData): CubaEsculpidaCalc => {
   const ci = cm(ce.compInterno);
   const li = cm(ce.largInterno);
   const prof = cm(ce.profundidade);
-  const esp = cm(ce.espessuraParede) || 2; // FIX: usa espessura real (default 2cm)
+  const esp = cm(ce.espessuraParede) || 2;
   const cubaQ = parseInt(ce.quantidade) || 1;
+  const fundoTipo = ce.fundoTipo || 'reto';
+  const profExtra = cm(ce.fundoProfundidadeExtra);
 
-  // Paredes internas: comprimento × profundidade. Largura interna efetiva já desconta a espessura na entrada.
-  // Adiciona área da espessura (topo da parede visível) para um cálculo mais realista.
+  // Paredes internas
   const frontal = cm2toM2(ci * prof) * cubaQ;
   const traseira = cm2toM2(ci * prof) * cubaQ;
   const latEsq = cm2toM2(li * prof) * cubaQ;
   const latDir = cm2toM2(li * prof) * cubaQ;
-  const fundo = cm2toM2(ci * li) * cubaQ;
-  // Topo das paredes (espessura visível) — agrega ao acabamento total
+  const fundoBase = cm2toM2(ci * li) * cubaQ;
+  // Topo das paredes (espessura visível)
   const topoParedes = cm2toM2(2 * (ci + li + 2 * esp) * esp) * cubaQ;
-  const total = frontal + traseira + latEsq + latDir + fundo + topoParedes;
+
+  // Acréscimo de área pelo tipo de fundo
+  let fundoExtraCm2 = 0;
+  let fundoLabel = 'Fundo reto';
+  switch (fundoTipo) {
+    case 'inclinado_escoamento':
+      // Fundo inclinado ~3-5° → acréscimo ~5% sobre área do fundo
+      fundoExtraCm2 = ci * li * 0.05;
+      fundoLabel = 'Inclinado para escoamento';
+      break;
+    case 'cuba_dentro_cuba': {
+      // Rebaixo central com profundidade extra (default 3cm) ocupando ~60% da área
+      const pe = profExtra > 0 ? profExtra : 3;
+      const subCi = ci * 0.7;
+      const subLi = li * 0.7;
+      // 4 paredes do rebaixo + área do fundo do rebaixo (já contada como parte do fundo, então só somamos paredes)
+      fundoExtraCm2 = 2 * (subCi + subLi) * pe;
+      fundoLabel = `Cuba dentro de cuba (rebaixo ${pe} cm)`;
+      break;
+    }
+    case 'canaleta_central': {
+      // Canaleta longitudinal: largura 5cm × prof extra (default 2cm) × comprimento interno
+      const pe = profExtra > 0 ? profExtra : 2;
+      const cw = 5; // cm
+      // 2 laterais + fundo da canaleta
+      fundoExtraCm2 = (2 * pe + cw) * ci;
+      fundoLabel = `Canaleta central (${cw}×${pe} cm)`;
+      break;
+    }
+    case 'fundo_curvo':
+      // Fundo curvo aumenta área superficial em ~15%
+      fundoExtraCm2 = ci * li * 0.15;
+      fundoLabel = 'Fundo curvo (côncavo)';
+      break;
+    default:
+      break;
+  }
+  const fundoExtra = cm2toM2(fundoExtraCm2) * cubaQ;
+
+  const total = frontal + traseira + latEsq + latDir + fundoBase + topoParedes + fundoExtra;
   const volume = ci * li * prof * cubaQ;
 
   return {
@@ -736,7 +786,9 @@ export const calcCubaEsculpida = (ce: CubaEsculpidaData): CubaEsculpidaCalc => {
     paredeTraseira: ceilM2(traseira),
     paredeLateralEsq: ceilM2(latEsq),
     paredeLateralDir: ceilM2(latDir),
-    fundo: ceilM2(fundo),
+    fundo: ceilM2(fundoBase),
+    fundoExtra: ceilM2(fundoExtra),
+    fundoLabel,
     totalM2: ceilM2(total),
     volumeCm3: Math.ceil(volume),
   };
