@@ -312,13 +312,18 @@ const Mostruario = () => {
                   {selected.pros && <div><p className="text-muted-foreground font-medium mb-1">Prós</p><p className="text-green-400">{selected.pros}</p></div>}
                   {selected.cons && <div><p className="text-muted-foreground font-medium mb-1">Contras</p><p className="text-red-400">{selected.cons}</p></div>}
                   {selected.observations && <div><span className="text-muted-foreground">Observações:</span> {selected.observations}</div>}
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     {selected.photo_url && (
-                      <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => setArStone(selected)}>
+                      <Button size="sm" variant="outline" className="gap-1" onClick={() => setArStone(selected)}>
                         <Sparkles className="w-3.5 h-3.5" /> Ver no ambiente
                       </Button>
                     )}
-                    <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => setShareStoneData(selected)}>
+                    {selected.photo_url && (
+                      <Button size="sm" variant="outline" className="gap-1" onClick={() => setVizStone(selected)}>
+                        <Wand2 className="w-3.5 h-3.5" /> Visualização 3D IA
+                      </Button>
+                    )}
+                    <Button size="sm" variant="outline" className="col-span-2 gap-1" onClick={() => setShareStoneData(selected)}>
                       <Share2 className="w-3.5 h-3.5" /> Compartilhar
                     </Button>
                   </div>
