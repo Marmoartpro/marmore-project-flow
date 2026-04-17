@@ -388,6 +388,7 @@ export const newServicoCustom = (): ServicoCustom => ({
 const emptyCubaEsculpida = (): CubaEsculpidaData => ({
   compExterno: '', largExterno: '', compInterno: '', largInterno: '',
   profundidade: '', espessuraParede: '2', quantidade: '1',
+  fundoTipo: 'reto', fundoProfundidadeExtra: '', fundoValorAdicional: '',
 });
 
 export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
