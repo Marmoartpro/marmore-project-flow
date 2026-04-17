@@ -948,6 +948,10 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
         const cubaCalc = calcCubaEsculpida(p.cubaEsculpida);
         // FIX: totalM2 já considera quantidade de cubas internamente
         total += (parseFloat(p.valorCuba) || 0) * cubaCalc.totalM2 * q;
+        // Adicional fixo pelo tipo de fundo (por cuba, não por m²)
+        const cubaQ = parseInt(p.cubaEsculpida.quantidade) || 1;
+        const fundoAdic = parseFloat(p.cubaEsculpida.fundoValorAdicional) || 0;
+        if (fundoAdic > 0) total += fundoAdic * cubaQ * q;
       } else {
         const cubaQ = parseInt(p.cubaEsculpida.quantidade) || 1;
         total += (parseFloat(p.valorCuba) || 0) * cubaQ * q;
