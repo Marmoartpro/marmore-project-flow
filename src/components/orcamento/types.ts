@@ -728,20 +728,15 @@ export const calcCubaEsculpida = (ce: CubaEsculpidaData): CubaEsculpidaCalc => {
   };
 };
 
-/** Helper: calculate ml for bordasComAcabamento (expanded options) */
+/** Helper: calculate ml for bordas selecionadas (modo avançado ou legado) */
 const calcBordaML = (p: PecaItem, l: number, w: number): number => {
-  const bordas = p.bordasComAcabamento || 'Só frontal';
-  switch (bordas) {
-    case 'Sem acabamento de borda': return 0;
-    case 'Só frontal': return l;
-    case 'Frontal e lado direito': return l + w;
-    case 'Frontal e lado esquerdo': return l + w;
-    case 'Frontal e duas laterais': return l + w * 2;
-    case 'Todas as bordas': return (l + w) * 2;
-    // Legacy compat
-    case 'Frontal e laterais': return l + w * 2;
-    default: return l;
-  }
+  const lados = getBordasLados(p);
+  let ml = 0;
+  if (lados.frente) ml += l;
+  if (lados.fundo) ml += l;
+  if (lados.esq) ml += w;
+  if (lados.dir) ml += w;
+  return ml;
 };
 
 /** Metros lineares de borda — calcula perímetro real por formato */
