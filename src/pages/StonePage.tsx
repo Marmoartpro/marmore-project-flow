@@ -4,7 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, X } from 'lucide-react';
+import { MessageSquare, X, Sparkles } from 'lucide-react';
+import ARViewer from '@/components/mostruario/ARViewer';
 
 const StonePage = () => {
   const { stoneId } = useParams();
@@ -12,6 +13,7 @@ const StonePage = () => {
   const [photos, setPhotos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [fullscreen, setFullscreen] = useState<string | null>(null);
+  const [arOpen, setArOpen] = useState(false);
 
   useEffect(() => {
     if (stoneId) fetchStone();
@@ -104,10 +106,20 @@ const StonePage = () => {
           </Card>
         )}
 
+        {stone.photo_url && (
+          <Button variant="outline" className="w-full gap-2" onClick={() => setArOpen(true)}>
+            <Sparkles className="w-4 h-4" /> Ver no ambiente (câmera)
+          </Button>
+        )}
+
         <Button className="w-full gap-2" onClick={whatsappContact}>
           <MessageSquare className="w-4 h-4" /> Entrar em contato via WhatsApp
         </Button>
       </div>
+
+      {arOpen && stone.photo_url && (
+        <ARViewer textureUrl={stone.photo_url} stoneName={stone.name} onClose={() => setArOpen(false)} />
+      )}
 
       {fullscreen && (
         <div className="fixed inset-0 z-50 bg-black flex items-center justify-center" onClick={() => setFullscreen(null)}>
