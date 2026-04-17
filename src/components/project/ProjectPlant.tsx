@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Upload, MapPin, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
+import { notify } from '@/lib/notifications';
 
 interface Props {
   projectId: string;
 }
 
 const ProjectPlant = ({ projectId }: Props) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [plantUrl, setPlantUrl] = useState<string | null>(null);
   const [annotations, setAnnotations] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
