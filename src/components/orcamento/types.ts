@@ -556,23 +556,37 @@ const calcSaiaArea = (p: PecaItem): number => {
   }
 };
 
-/** Helper: calculate espelho area based on bordasComAcabamento */
+/** Retorna quais lados têm acabamento. Prioriza modo avançado (bordasLadosAtivo). */
+export const getBordasLados = (p: PecaItem): { frente: boolean; fundo: boolean; esq: boolean; dir: boolean } => {
+  if (p.bordasLadosAtivo) {
+    return { frente: !!p.bordaFrente, fundo: !!p.bordaFundo, esq: !!p.bordaEsquerda, dir: !!p.bordaDireita };
+  }
+  switch (p.bordasComAcabamento || 'Só frontal') {
+    case 'Sem acabamento de borda': return { frente: false, fundo: false, esq: false, dir: false };
+    case 'Só frontal': return { frente: true, fundo: false, esq: false, dir: false };
+    case 'Frontal e lado direito': return { frente: true, fundo: false, esq: false, dir: true };
+    case 'Frontal e lado esquerdo': return { frente: true, fundo: false, esq: true, dir: false };
+    case 'Frontal e duas laterais':
+    case 'Frontal e laterais': return { frente: true, fundo: false, esq: true, dir: true };
+    case 'Todas as bordas': return { frente: true, fundo: true, esq: true, dir: true };
+    default: return { frente: true, fundo: false, esq: false, dir: false };
+  }
+};
+
+/** Helper: calculate espelho area based on bordas selecionadas */
 const calcEspelhoArea = (p: PecaItem): number => {
   const espH = p.espelhoBacksplash ? cm(p.espelhoBacksplashAltura) : 0;
   if (espH <= 0) return 0;
   const w = cm(p.largura);
   const l = cm(p.comprimento);
-  const bordas = p.bordasComAcabamento || 'Só frontal';
-
-  switch (bordas) {
-    case 'Sem acabamento de borda': return 0;
-    case 'Só frontal': return l * espH;
-    case 'Frontal e lado direito': return (l + w) * espH;
-    case 'Frontal e lado esquerdo': return (l + w) * espH;
-    case 'Frontal e duas laterais': return (l + w * 2) * espH;
-    case 'Todas as bordas': return (l + w) * 2 * espH;
-    default: return l * espH;
-  }
+  const lados = getBordasLados(p);
+  // Espelho geralmente é nas bordas que encostam na parede — usamos os lados selecionados
+  let perim = 0;
+  if (lados.frente) perim += l;
+  if (lados.fundo) perim += l;
+  if (lados.esq) perim += w;
+  if (lados.dir) perim += w;
+  return perim * espH;
 };
 
 export const calcPecaExtrasArea = (p: PecaItem): number => {
