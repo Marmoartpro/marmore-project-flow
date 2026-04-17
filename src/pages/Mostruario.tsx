@@ -9,9 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Maximize2, X, Edit, Upload, Trash2, Image, Share2, Presentation, Sparkles } from 'lucide-react';
+import { Plus, Maximize2, X, Edit, Upload, Trash2, Image, Share2, Presentation, Sparkles, Wand2 } from 'lucide-react';
 import ShareStoneModal from '@/components/mostruario/ShareStoneModal';
 import ARViewer from '@/components/mostruario/ARViewer';
+import Visualization3D from '@/components/mostruario/Visualization3D';
 import { toast } from 'sonner';
 import StoneFilters, { COLOR_TONES, CATEGORIES } from '@/components/mostruario/StoneFilters';
 import StoneCard from '@/components/mostruario/StoneCard';
@@ -36,6 +37,7 @@ const Mostruario = () => {
   const [presentationOpen, setPresentationOpen] = useState(false);
   const [presentationStart, setPresentationStart] = useState(0);
   const [arStone, setArStone] = useState<any>(null);
+  const [vizStone, setVizStone] = useState<any>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
@@ -310,13 +312,18 @@ const Mostruario = () => {
                   {selected.pros && <div><p className="text-muted-foreground font-medium mb-1">Prós</p><p className="text-green-400">{selected.pros}</p></div>}
                   {selected.cons && <div><p className="text-muted-foreground font-medium mb-1">Contras</p><p className="text-red-400">{selected.cons}</p></div>}
                   {selected.observations && <div><span className="text-muted-foreground">Observações:</span> {selected.observations}</div>}
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     {selected.photo_url && (
-                      <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => setArStone(selected)}>
+                      <Button size="sm" variant="outline" className="gap-1" onClick={() => setArStone(selected)}>
                         <Sparkles className="w-3.5 h-3.5" /> Ver no ambiente
                       </Button>
                     )}
-                    <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => setShareStoneData(selected)}>
+                    {selected.photo_url && (
+                      <Button size="sm" variant="outline" className="gap-1" onClick={() => setVizStone(selected)}>
+                        <Wand2 className="w-3.5 h-3.5" /> Visualização 3D IA
+                      </Button>
+                    )}
+                    <Button size="sm" variant="outline" className="col-span-2 gap-1" onClick={() => setShareStoneData(selected)}>
                       <Share2 className="w-3.5 h-3.5" /> Compartilhar
                     </Button>
                   </div>
@@ -444,6 +451,10 @@ const Mostruario = () => {
 
       {arStone && (
         <ARViewer textureUrl={arStone.photo_url} stoneName={arStone.name} onClose={() => setArStone(null)} />
+      )}
+
+      {vizStone && (
+        <Visualization3D stoneImageUrl={vizStone.photo_url} stoneName={vizStone.name} onClose={() => setVizStone(null)} />
       )}
 
       {presentationOpen && (

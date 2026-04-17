@@ -4,8 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, X, Sparkles } from 'lucide-react';
+import { MessageSquare, X, Sparkles, Wand2 } from 'lucide-react';
 import ARViewer from '@/components/mostruario/ARViewer';
+import Visualization3D from '@/components/mostruario/Visualization3D';
 
 const StonePage = () => {
   const { stoneId } = useParams();
@@ -14,6 +15,7 @@ const StonePage = () => {
   const [loading, setLoading] = useState(true);
   const [fullscreen, setFullscreen] = useState<string | null>(null);
   const [arOpen, setArOpen] = useState(false);
+  const [vizOpen, setVizOpen] = useState(false);
 
   useEffect(() => {
     if (stoneId) fetchStone();
@@ -107,9 +109,14 @@ const StonePage = () => {
         )}
 
         {stone.photo_url && (
-          <Button variant="outline" className="w-full gap-2" onClick={() => setArOpen(true)}>
-            <Sparkles className="w-4 h-4" /> Ver no ambiente (câmera)
-          </Button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Button variant="outline" className="w-full gap-2" onClick={() => setArOpen(true)}>
+              <Sparkles className="w-4 h-4" /> Ver no ambiente (câmera)
+            </Button>
+            <Button variant="outline" className="w-full gap-2" onClick={() => setVizOpen(true)}>
+              <Wand2 className="w-4 h-4" /> Visualização 3D com IA
+            </Button>
+          </div>
         )}
 
         <Button className="w-full gap-2" onClick={whatsappContact}>
@@ -119,6 +126,10 @@ const StonePage = () => {
 
       {arOpen && stone.photo_url && (
         <ARViewer textureUrl={stone.photo_url} stoneName={stone.name} onClose={() => setArOpen(false)} />
+      )}
+
+      {vizOpen && stone.photo_url && (
+        <Visualization3D stoneImageUrl={stone.photo_url} stoneName={stone.name} onClose={() => setVizOpen(false)} />
       )}
 
       {fullscreen && (
