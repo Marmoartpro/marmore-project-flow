@@ -629,6 +629,39 @@ export type Database = {
           },
         ]
       }
+      nps_responses: {
+        Row: {
+          comment: string | null
+          created_at: string
+          google_review_clicked: boolean | null
+          id: string
+          owner_id: string
+          project_id: string
+          score: number
+          would_recommend: boolean | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          google_review_clicked?: boolean | null
+          id?: string
+          owner_id: string
+          project_id: string
+          score: number
+          would_recommend?: boolean | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          google_review_clicked?: boolean | null
+          id?: string
+          owner_id?: string
+          project_id?: string
+          score?: number
+          would_recommend?: boolean | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number

@@ -9,11 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Maximize2, X, Edit, Upload, Trash2, Image, Share2 } from 'lucide-react';
+import { Plus, Maximize2, X, Edit, Upload, Trash2, Image, Share2, Presentation } from 'lucide-react';
 import ShareStoneModal from '@/components/mostruario/ShareStoneModal';
 import { toast } from 'sonner';
 import StoneFilters, { COLOR_TONES, CATEGORIES } from '@/components/mostruario/StoneFilters';
 import StoneCard from '@/components/mostruario/StoneCard';
+import PresentationMode from '@/components/mostruario/PresentationMode';
 
 const Mostruario = () => {
   const { user, profile } = useAuth();
@@ -31,6 +32,8 @@ const Mostruario = () => {
   const [galleryPhotos, setGalleryPhotos] = useState<any[]>([]);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [shareStoneData, setShareStoneData] = useState<any>(null);
+  const [presentationOpen, setPresentationOpen] = useState(false);
+  const [presentationStart, setPresentationStart] = useState(0);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
@@ -223,11 +226,18 @@ const Mostruario = () => {
       <div className="p-4 md:p-6 space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <h2 className="text-xl font-display font-bold">Mostruário</h2>
-          {isMarmorista && (
-            <Button size="sm" onClick={() => { resetForm(); setShowForm(true); }}>
-              <Plus className="w-4 h-4 mr-1" /> Nova pedra
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {filtered.length > 0 && (
+              <Button size="sm" variant="outline" onClick={() => { setPresentationStart(0); setPresentationOpen(true); }}>
+                <Presentation className="w-4 h-4 mr-1" /> Apresentação
+              </Button>
+            )}
+            {isMarmorista && (
+              <Button size="sm" onClick={() => { resetForm(); setShowForm(true); }}>
+                <Plus className="w-4 h-4 mr-1" /> Nova pedra
+              </Button>
+            )}
+          </div>
         </div>
 
         <StoneFilters
@@ -424,6 +434,14 @@ const Mostruario = () => {
       </div>
 
       <ShareStoneModal open={!!shareStoneData} onClose={() => setShareStoneData(null)} stone={shareStoneData} />
+
+      {presentationOpen && (
+        <PresentationMode
+          stones={filtered}
+          initialIndex={presentationStart}
+          onClose={() => setPresentationOpen(false)}
+        />
+      )}
     </AppLayout>
   );
 };

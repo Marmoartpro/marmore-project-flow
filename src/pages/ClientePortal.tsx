@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle, Circle, Clock, DollarSign, FileText, MessageSquare, Send } from 'lucide-react';
 import { toast } from 'sonner';
+import BeforeAfterSlider from '@/components/project/BeforeAfterSlider';
+import NPSWidget from '@/components/cliente/NPSWidget';
 
 const ClientePortal = () => {
   const { token } = useParams<{ token: string }>();
@@ -120,6 +122,17 @@ const ClientePortal = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Antes & Depois */}
+        <BeforeAfterSlider projectId={project.id} />
+
+        {/* NPS — aparece após 7 dias do acabamento */}
+        <NPSWidget
+          projectId={project.id}
+          ownerId={project.owner_id}
+          stages={stages}
+          googleReviewUrl={null}
+        />
 
         {/* Payments */}
         <Card>

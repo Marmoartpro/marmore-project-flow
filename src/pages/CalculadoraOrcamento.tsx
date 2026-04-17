@@ -21,6 +21,7 @@ import {
 import AlertasOrcamento from '@/components/orcamento/AlertasOrcamento';
 import SmartBudgetGenerator from '@/components/orcamento/SmartBudgetGenerator';
 import AIReviewButton from '@/components/orcamento/AIReviewButton';
+import BudgetTemplates from '@/components/orcamento/BudgetTemplates';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -326,6 +327,9 @@ const CalculadoraOrcamento = () => {
             )}
           </div>
           <div className="flex gap-2 flex-wrap">
+            <Button size="sm" variant="outline" onClick={() => setShowTemplates(true)}>
+              <LayoutTemplate className="w-4 h-4 mr-1" /> Templates
+            </Button>
             <Button size="sm" variant="outline" onClick={() => setShowAIGenerator(true)}>
               <Sparkles className="w-4 h-4 mr-1" /> Preencher com IA
             </Button>
@@ -460,6 +464,18 @@ const CalculadoraOrcamento = () => {
         onAmbientesGenerated={(newAmbs, resumo) => {
           setAmbientes(prev => [...prev.filter(a => a.pecas.some(p => p.nomePeca || p.largura)), ...newAmbs]);
           if (resumo) toast.info(resumo, { duration: 8000 });
+        }}
+      />
+
+      <BudgetTemplates
+        open={showTemplates}
+        onClose={() => setShowTemplates(false)}
+        onApply={(newAmbs) => {
+          setAmbientes(prev => {
+            const hasContent = prev.some(a => a.pecas.some(p => p.nomePeca || p.largura));
+            return hasContent ? [...prev, ...newAmbs] : newAmbs;
+          });
+          toast.success('Template aplicado!');
         }}
       />
     </AppLayout>
