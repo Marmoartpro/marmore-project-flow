@@ -20,6 +20,13 @@ export interface Abertura {
   altura: string;  // cm
 }
 
+export type CubaFundoTipo =
+  | 'reto'
+  | 'inclinado_escoamento'
+  | 'cuba_dentro_cuba'
+  | 'canaleta_central'
+  | 'fundo_curvo';
+
 export interface CubaEsculpidaData {
   compExterno: string;
   largExterno: string;
@@ -28,6 +35,12 @@ export interface CubaEsculpidaData {
   profundidade: string;
   espessuraParede: string;
   quantidade: string;
+  // Tipo de fundo da cuba (afeta área de acabamento e custo de mão de obra)
+  fundoTipo: CubaFundoTipo;
+  // Profundidade do rebaixo central (escoamento/canaleta) — cm
+  fundoProfundidadeExtra: string;
+  // Custo adicional por cuba pelo tipo de fundo (R$)
+  fundoValorAdicional: string;
 }
 
 export type FormatoPeca =
