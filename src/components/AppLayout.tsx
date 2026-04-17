@@ -65,12 +65,14 @@ const AppLayout = ({ children, alertCount = 0 }: Props) => {
     return () => { supabase.removeChannel(channel); };
   }, [user, location.pathname]);
 
-  // Log page access
+  // Log page access (only for authenticated app users with profile)
   useEffect(() => {
     if (!user || !profile) return;
+    let cancelled = false;
     const logAccess = async () => {
       const { data: member } = await supabase
         .from('team_members').select('owner_id').eq('user_id', user.id).eq('active', true).maybeSingle();
+      if (cancelled) return;
       const ownerId = member?.owner_id || user.id;
       await supabase.from('access_logs').insert({
         user_id: user.id,
@@ -79,13 +81,13 @@ const AppLayout = ({ children, alertCount = 0 }: Props) => {
         page_accessed: location.pathname,
         action: 'page_view',
       });
-      // Update last_seen
-      if (member) {
+      if (member && !cancelled) {
         await supabase.from('team_members').update({ last_seen_at: new Date().toISOString() }).eq('user_id', user.id);
       }
     };
     logAccess();
-  }, [location.pathname, user?.id]);
+    return () => { cancelled = true; };
+  }, [location.pathname, user?.id, profile?.role]);
 
   const markRead = async (id: string) => {
     await supabase.from('notifications').update({ read: true }).eq('id', id);
