@@ -15,11 +15,11 @@ interface Template {
 const mkPeca = (nome: string, largura: number, comprimento: number, qtd = 1, espessura = '2cm') => ({
   ...newPeca(),
   nomePeca: nome,
-  largura,
-  comprimento,
-  quantidade: qtd,
+  largura: String(largura),
+  comprimento: String(comprimento),
+  quantidade: String(qtd),
   espessura,
-});
+} as any);
 
 const TEMPLATES: Template[] = [
   {
