@@ -764,20 +764,11 @@ export const calcMetrosLinearesBorda = (p: PecaItem): number => {
       const c2 = cm(p.lTrecho2Comprimento) / 100;
       const w2 = cm(p.lTrecho2Largura) / 100;
       const overlapSide = Math.min(w1, w2);
-      const bordas = p.bordasComAcabamento || 'Só frontal';
-      if (bordas === 'Sem acabamento de borda') {
-        ml = 0;
-      } else if (bordas === 'Só frontal') {
-        ml = c1 + c2 - overlapSide;
-      } else if (['Frontal e lado direito', 'Frontal e lado esquerdo'].includes(bordas)) {
-        ml = c1 + c2 - overlapSide + Math.max(w1, w2);
-      } else if (['Frontal e laterais', 'Frontal e duas laterais'].includes(bordas)) {
-        ml = c1 + c2 - overlapSide + w1 + w2;
-      } else if (bordas === 'Todas as bordas') {
-        ml = 2 * (c1 + w1) + 2 * (c2 + w2) - 4 * overlapSide;
-      } else {
-        ml = c1 + c2 - overlapSide;
-      }
+      const lados = getBordasLados(p);
+      if (lados.frente) ml += Math.max(0, c1 + c2 - overlapSide);
+      if (lados.fundo) ml += Math.max(0, c1 + c2 - overlapSide);
+      if (lados.esq) ml += w1 + w2;
+      if (lados.dir) ml += w1 + w2;
       break;
     }
     case 'redondo':
