@@ -434,6 +434,71 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
   });
 
   // ========================
+  // SECTION — BREAKDOWN TÉCNICO POR PEÇA
+  // ========================
+  sectionTitle('Detalhamento Técnico (Memória de Cálculo)');
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(80);
+  doc.text('Resumo técnico das medidas calculadas para cada peça (m² de chapa e ml de acabamento).', marginL, y);
+  y += 8;
+
+  ambientes.forEach((amb) => {
+    const ambName = amb.tipo === 'Ambiente Personalizado' && amb.nomeCustom ? amb.nomeCustom : amb.tipo;
+    subTitle(ambName);
+
+    const breakdownRows = amb.pecas.map((p) => {
+      const areaLiq = calcPecaAreaLiquida(p);
+      const areaCompra = calcPecaAreaCompra(p);
+      const mlBorda = calcMetrosLinearesBorda(p);
+      const desperdicio = areaLiq > 0 ? ((areaCompra / areaLiq - 1) * 100) : 0;
+      return [
+        p.nomePeca || p.tipo,
+        `${parseInt(p.quantidade) || 1}`,
+        areaLiq > 0 ? `${fmt(areaLiq)} m²` : '—',
+        areaCompra > 0 ? `${fmt(areaCompra)} m²` : '—',
+        desperdicio > 0 ? `+${desperdicio.toFixed(0)}%` : '—',
+        mlBorda > 0 ? `${fmt(mlBorda)} ml` : '—',
+      ];
+    });
+
+    // Totais do ambiente
+    const totLiq = amb.pecas.reduce((s, p) => s + calcPecaAreaLiquida(p), 0);
+    const totCompra = amb.pecas.reduce((s, p) => s + calcPecaAreaCompra(p), 0);
+    const totML = amb.pecas.reduce((s, p) => s + calcMetrosLinearesBorda(p), 0);
+    breakdownRows.push([
+      'TOTAL DO AMBIENTE', '', `${fmt(totLiq)} m²`, `${fmt(totCompra)} m²`, '', `${fmt(totML)} ml`,
+    ]);
+
+    checkPageBreak(15 + breakdownRows.length * 7);
+
+    autoTable(doc, {
+      startY: y,
+      margin: { left: marginL, right: marginR },
+      head: [['Peça', 'Qtd', 'Área Líquida', 'Chapa Necessária', 'Desperdício', 'ML Acabamento']],
+      body: breakdownRows,
+      styles: { fontSize: 7.5, cellPadding: 2, textColor: [40, 40, 40] },
+      headStyles: { fillColor: [240, 240, 240], textColor: [40, 40, 40], fontStyle: 'bold', fontSize: 7.5 },
+      columnStyles: {
+        0: { cellWidth: contentW * 0.32 },
+        1: { halign: 'center', cellWidth: 12 },
+        2: { halign: 'right' },
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+        5: { halign: 'right' },
+      },
+      didParseCell: (data) => {
+        // destaque na linha de total
+        if (data.row.index === breakdownRows.length - 1) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [248, 248, 248];
+        }
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 6;
+  });
+
+  // ========================
   // SECTION: ACESSÓRIOS (if any)
   // ========================
   const validAccessories = acessorios.filter(a => a.nome && (parseFloat(a.valorUnitario) || 0) > 0);
