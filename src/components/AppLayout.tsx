@@ -145,7 +145,7 @@ const AppLayout = ({ children, alertCount = 0 }: Props) => {
           })}
         </nav>
 
-        <div className="px-2 py-1">
+        <div className="px-2 py-1 space-y-0.5">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
@@ -155,6 +155,13 @@ const AppLayout = ({ children, alertCount = 0 }: Props) => {
             {totalAlerts > 0 && (
               <Badge className="ml-auto bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0">{totalAlerts}</Badge>
             )}
+          </button>
+          <button
+            onClick={() => navigate('/configuracoes/notificacoes')}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs text-muted-foreground hover:bg-sidebar-accent/50 transition-colors"
+          >
+            <span className="w-4" />
+            Preferências de notificação
           </button>
         </div>
 

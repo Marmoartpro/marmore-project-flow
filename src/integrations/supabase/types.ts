@@ -591,6 +591,39 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          channel_app: boolean
+          channel_email: boolean
+          channel_whatsapp: boolean
+          created_at: string
+          event_type: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_app?: boolean
+          channel_email?: boolean
+          channel_whatsapp?: boolean
+          created_at?: string
+          event_type: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_app?: boolean
+          channel_email?: boolean
+          channel_whatsapp?: boolean
+          created_at?: string
+          event_type?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
