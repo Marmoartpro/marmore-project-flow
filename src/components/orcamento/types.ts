@@ -629,14 +629,19 @@ export const calcCubaEsculpida = (ce: CubaEsculpidaData): CubaEsculpidaCalc => {
   const ci = cm(ce.compInterno);
   const li = cm(ce.largInterno);
   const prof = cm(ce.profundidade);
+  const esp = cm(ce.espessuraParede) || 2; // FIX: usa espessura real (default 2cm)
   const cubaQ = parseInt(ce.quantidade) || 1;
 
+  // Paredes internas: comprimento × profundidade. Largura interna efetiva já desconta a espessura na entrada.
+  // Adiciona área da espessura (topo da parede visível) para um cálculo mais realista.
   const frontal = cm2toM2(ci * prof) * cubaQ;
   const traseira = cm2toM2(ci * prof) * cubaQ;
   const latEsq = cm2toM2(li * prof) * cubaQ;
   const latDir = cm2toM2(li * prof) * cubaQ;
   const fundo = cm2toM2(ci * li) * cubaQ;
-  const total = frontal + traseira + latEsq + latDir + fundo;
+  // Topo das paredes (espessura visível) — agrega ao acabamento total
+  const topoParedes = cm2toM2(2 * (ci + li + 2 * esp) * esp) * cubaQ;
+  const total = frontal + traseira + latEsq + latDir + fundo + topoParedes;
   const volume = ci * li * prof * cubaQ;
 
   return {
@@ -812,10 +817,11 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
       }
     }
 
-    // Cuba — esculpida por m², outras fixo
+    // Cuba — esculpida por m² (totalM2 já inclui cubaQ; só multiplica por q de peças)
     if (p.tipoCuba !== 'Sem cuba') {
       if (p.tipoCuba === 'Cuba esculpida') {
         const cubaCalc = calcCubaEsculpida(p.cubaEsculpida);
+        // FIX: totalM2 já considera quantidade de cubas internamente
         total += (parseFloat(p.valorCuba) || 0) * cubaCalc.totalM2 * q;
       } else {
         const cubaQ = parseInt(p.cubaEsculpida.quantidade) || 1;
@@ -823,10 +829,15 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
       }
     }
 
-    // Acabamento borda
-    if (p.valorAcabamentoBorda) {
+    // Acabamento borda — FIX: chanfrado 45° é cobrado em polimentoChanfradoML, evita duplicidade
+    if (p.valorAcabamentoBorda && p.acabamentoBorda !== 'Chanfrado 45°') {
       const bordaVal = parseFloat(p.valorAcabamentoBorda) || 0;
       if (bordaVal > 0) total += bordaVal * calcMetrosLinearesBorda(p);
+    }
+    // Chanfrado 45° por peça (caso usuário preencha valorAcabamentoBorda mas não use polimentoChanfradoML)
+    if (p.acabamentoBorda === 'Chanfrado 45°' && parseFloat(p.valorAcabamentoBorda) > 0
+        && (!parseFloat(amb.maoDeObra.polimentoChanfradoML) || amb.maoDeObra.polimentoChanfradoTipo !== 'ml')) {
+      total += (parseFloat(p.valorAcabamentoBorda) || 0) * calcMetrosLinearesBorda(p);
     }
 
     // Furos torneira
@@ -847,9 +858,12 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
       total += (parseFloat(p.canaletaMetros) || 0) * (parseFloat(p.valorCanaletaMetro) || 0) * q;
     }
 
-    // Escada frisos antiderrapante
+    // Escada frisos antiderrapante — FIX: friso percorre a LARGURA do degrau (sentido transversal),
+    // não o comprimento. q = quantidade de degraus.
     if (p.frisosAntiderrapante) {
-      total += (parseFloat(p.valorFrisoMetro) || 0) * (parseInt(p.qtdFrisosPorDegrau) || 2) * (cm(p.comprimento) / 100) * q;
+      const larguraDegrau = cm(p.largura) / 100; // largura do degrau em metros
+      const nFrisos = parseInt(p.qtdFrisosPorDegrau) || 2;
+      total += (parseFloat(p.valorFrisoMetro) || 0) * nFrisos * larguraDegrau * q;
     }
 
     // Soleira/Peitoril boleado
