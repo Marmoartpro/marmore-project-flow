@@ -4,8 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, X, Sparkles } from 'lucide-react';
+import { MessageSquare, X, Sparkles, Wand2 } from 'lucide-react';
 import ARViewer from '@/components/mostruario/ARViewer';
+import Visualization3D from '@/components/mostruario/Visualization3D';
 
 const StonePage = () => {
   const { stoneId } = useParams();
@@ -14,6 +15,7 @@ const StonePage = () => {
   const [loading, setLoading] = useState(true);
   const [fullscreen, setFullscreen] = useState<string | null>(null);
   const [arOpen, setArOpen] = useState(false);
+  const [vizOpen, setVizOpen] = useState(false);
 
   useEffect(() => {
     if (stoneId) fetchStone();
