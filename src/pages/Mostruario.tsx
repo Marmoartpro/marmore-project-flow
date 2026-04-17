@@ -35,6 +35,7 @@ const Mostruario = () => {
   const [shareStoneData, setShareStoneData] = useState<any>(null);
   const [presentationOpen, setPresentationOpen] = useState(false);
   const [presentationStart, setPresentationStart] = useState(0);
+  const [arStone, setArStone] = useState<any>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
@@ -440,6 +441,10 @@ const Mostruario = () => {
       </div>
 
       <ShareStoneModal open={!!shareStoneData} onClose={() => setShareStoneData(null)} stone={shareStoneData} />
+
+      {arStone && (
+        <ARViewer textureUrl={arStone.photo_url} stoneName={arStone.name} onClose={() => setArStone(null)} />
+      )}
 
       {presentationOpen && (
         <PresentationMode
