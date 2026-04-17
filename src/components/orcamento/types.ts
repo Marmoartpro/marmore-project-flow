@@ -238,6 +238,7 @@ export const AMBIENTE_TIPOS = [
   'Cozinha',
   'Banheiro Social',
   'Banheiro Suíte',
+  'Lavabo',
   'Lavatório Avulso',
   'Bancada Tanque',
   'Lavanderia',
@@ -246,26 +247,76 @@ export const AMBIENTE_TIPOS = [
   'Área Externa',
   'Sala / Estar',
   'Área Gourmet',
+  'Churrasqueira',
+  'Escadaria',
   'Ambiente Personalizado',
 ];
 
 export const PECA_TIPOS: Record<string, string[]> = {
-  'Cozinha': ['Bancada', 'Ilha Gourmet', 'Soleira', 'Peitoril', 'Rodapé/Filete', 'Nicho Embutido', 'Revestimento de Parede', 'Piso', 'Peça Personalizada'],
-  'Banheiro Social': ['Bancada de Banheiro', 'Box - Piso', 'Soleira', 'Nicho Embutido', 'Rodapé/Filete', 'Revestimento de Parede', 'Peça Personalizada'],
-  'Banheiro Suíte': ['Bancada de Banheiro', 'Box - Piso', 'Soleira', 'Nicho Embutido', 'Rodapé/Filete', 'Revestimento de Parede', 'Peça Personalizada'],
+  'Cozinha': [
+    'Bancada', 'Ilha Gourmet', 'Península', 'Bancada com Cooktop', 'Frontão',
+    'Soleira', 'Peitoril', 'Rodapé/Filete', 'Nicho Embutido',
+    'Revestimento de Parede', 'Piso', 'Peça Personalizada',
+  ],
+  'Banheiro Social': [
+    'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla',
+    'Frontão de Banheira', 'Box - Piso', 'Soleira de Box', 'Soleira',
+    'Nicho Embutido', 'Nicho de Box', 'Rodapé/Filete', 'Revestimento de Parede',
+    'Peça Personalizada',
+  ],
+  'Banheiro Suíte': [
+    'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla',
+    'Frontão de Banheira', 'Box - Piso', 'Soleira de Box', 'Soleira',
+    'Nicho Embutido', 'Nicho de Box', 'Rodapé/Filete', 'Revestimento de Parede',
+    'Peça Personalizada',
+  ],
   'Lavatório Avulso': ['Lavatório', 'Soleira', 'Peça Personalizada'],
   'Bancada Tanque': ['Bancada Tanque', 'Peça Personalizada'],
   'Lavanderia': ['Bancada', 'Soleira', 'Rodapé/Filete', 'Piso', 'Peça Personalizada'],
-  'Área da Piscina': ['Borda de Piscina', 'Escada/Degrau', 'Soleira', 'Piso', 'Peça Personalizada'],
-  'Acabamentos (Soleiras e Peitoris)': ['Soleira', 'Peitoril', 'Rodapé/Filete', 'Peça Personalizada'],
-  'Área Externa': ['Bancada', 'Soleira', 'Escada/Degrau', 'Borda de Piscina', 'Piso', 'Peça Personalizada'],
-  'Sala / Estar': ['Tampo de Mesa', 'Revestimento de Parede', 'Piso', 'Rodapé/Filete', 'Lareira', 'Peça Personalizada'],
-  'Área Gourmet': ['Bancada', 'Ilha Gourmet', 'Soleira', 'Piso', 'Revestimento de Parede', 'Peça Personalizada'],
+  'Área da Piscina': [
+    'Borda de Piscina', 'Escada/Degrau', 'Espelho de Escada', 'Rodapé Escada',
+    'Soleira', 'Piso', 'Peça Personalizada',
+  ],
+  'Acabamentos (Soleiras e Peitoris)': [
+    'Soleira', 'Peitoril', 'Rodapé/Filete', 'Calha/Pingadeira', 'Peça Personalizada',
+  ],
+  'Área Externa': [
+    'Bancada', 'Bancada de Churrasqueira', 'Lavabo Externo',
+    'Soleira', 'Peitoril', 'Escada/Degrau', 'Espelho de Escada',
+    'Borda de Piscina', 'Piso', 'Revestimento de Parede', 'Peça Personalizada',
+  ],
+  'Sala / Estar': [
+    'Tampo de Mesa', 'Mesa de Mármore', 'Revestimento de Parede',
+    'Lareira', 'Piso', 'Rodapé/Filete', 'Peça Personalizada',
+  ],
+  'Área Gourmet': [
+    'Bancada', 'Bancada Gourmet', 'Ilha Gourmet', 'Bancada com Cooktop',
+    'Bancada de Churrasqueira', 'Soleira', 'Piso', 'Revestimento de Parede',
+    'Peça Personalizada',
+  ],
+  'Churrasqueira': [
+    'Bancada de Churrasqueira', 'Tampo de Grelha', 'Revestimento de Parede',
+    'Lareira', 'Soleira', 'Peça Personalizada',
+  ],
+  'Lavabo': [
+    'Lavatório', 'Bancada de Banheiro', 'Bancada Suspensa', 'Frontão',
+    'Soleira', 'Peça Personalizada',
+  ],
+  'Escadaria': [
+    'Escada/Degrau', 'Espelho de Escada', 'Rodapé Escada', 'Soleira',
+    'Peça Personalizada',
+  ],
   'Ambiente Personalizado': [
-    'Bancada', 'Ilha Gourmet', 'Lavatório', 'Bancada de Banheiro', 'Box - Piso',
-    'Soleira', 'Peitoril', 'Rodapé/Filete', 'Borda de Piscina', 'Escada/Degrau',
+    'Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Ilha Gourmet', 'Península',
+    'Lavatório', 'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla',
+    'Frontão', 'Frontão de Banheira',
+    'Box - Piso', 'Soleira de Box', 'Nicho de Box',
+    'Soleira', 'Peitoril', 'Rodapé/Filete', 'Calha/Pingadeira',
+    'Borda de Piscina', 'Escada/Degrau', 'Espelho de Escada', 'Rodapé Escada',
+    'Bancada de Churrasqueira', 'Tampo de Grelha', 'Lavabo Externo',
     'Nicho Embutido', 'Bancada Tanque', 'Revestimento de Parede', 'Piso',
-    'Tampo de Mesa', 'Calha/Pingadeira', 'Lareira', 'Peça Personalizada',
+    'Tampo de Mesa', 'Mesa de Mármore', 'Lareira',
+    'Peça Personalizada',
   ],
 };
 
