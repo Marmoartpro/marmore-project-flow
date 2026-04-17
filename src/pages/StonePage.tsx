@@ -109,9 +109,14 @@ const StonePage = () => {
         )}
 
         {stone.photo_url && (
-          <Button variant="outline" className="w-full gap-2" onClick={() => setArOpen(true)}>
-            <Sparkles className="w-4 h-4" /> Ver no ambiente (câmera)
-          </Button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Button variant="outline" className="w-full gap-2" onClick={() => setArOpen(true)}>
+              <Sparkles className="w-4 h-4" /> Ver no ambiente (câmera)
+            </Button>
+            <Button variant="outline" className="w-full gap-2" onClick={() => setVizOpen(true)}>
+              <Wand2 className="w-4 h-4" /> Visualização 3D com IA
+            </Button>
+          </div>
         )}
 
         <Button className="w-full gap-2" onClick={whatsappContact}>
@@ -121,6 +126,10 @@ const StonePage = () => {
 
       {arOpen && stone.photo_url && (
         <ARViewer textureUrl={stone.photo_url} stoneName={stone.name} onClose={() => setArOpen(false)} />
+      )}
+
+      {vizOpen && stone.photo_url && (
+        <Visualization3D stoneImageUrl={stone.photo_url} stoneName={stone.name} onClose={() => setVizOpen(false)} />
       )}
 
       {fullscreen && (

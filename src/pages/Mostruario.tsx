@@ -9,9 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Maximize2, X, Edit, Upload, Trash2, Image, Share2, Presentation, Sparkles } from 'lucide-react';
+import { Plus, Maximize2, X, Edit, Upload, Trash2, Image, Share2, Presentation, Sparkles, Wand2 } from 'lucide-react';
 import ShareStoneModal from '@/components/mostruario/ShareStoneModal';
 import ARViewer from '@/components/mostruario/ARViewer';
+import Visualization3D from '@/components/mostruario/Visualization3D';
 import { toast } from 'sonner';
 import StoneFilters, { COLOR_TONES, CATEGORIES } from '@/components/mostruario/StoneFilters';
 import StoneCard from '@/components/mostruario/StoneCard';
@@ -36,6 +37,7 @@ const Mostruario = () => {
   const [presentationOpen, setPresentationOpen] = useState(false);
   const [presentationStart, setPresentationStart] = useState(0);
   const [arStone, setArStone] = useState<any>(null);
+  const [vizStone, setVizStone] = useState<any>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
