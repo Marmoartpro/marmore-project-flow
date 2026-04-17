@@ -82,9 +82,20 @@ const buildAcabamentos = (p: any): string => {
 
   // Acabamento de borda — sempre visível
   const bordaDesc = p.acabamentoBorda === 'Reto' ? 'Acabamento reto (padrão)' : `Acabamento ${p.acabamentoBorda}`;
-  const bordasLabel = p.bordasComAcabamento === 'Só frontal' ? 'aplicado na borda frontal'
-    : p.bordasComAcabamento === 'Frontal e laterais' ? 'aplicado na borda frontal e laterais'
-    : p.bordasComAcabamento === 'Todas as bordas' ? 'aplicado em todas as bordas' : '';
+  let bordasLabel = '';
+  if (p.bordasLadosAtivo) {
+    const ls: string[] = [];
+    if (p.bordaFrente) ls.push('frente');
+    if (p.bordaFundo) ls.push('fundo');
+    if (p.bordaEsquerda) ls.push('lateral esquerda');
+    if (p.bordaDireita) ls.push('lateral direita');
+    bordasLabel = ls.length ? `aplicado em: ${ls.join(', ')}` : 'sem acabamento de borda';
+  } else {
+    bordasLabel = p.bordasComAcabamento === 'Só frontal' ? 'aplicado na borda frontal'
+      : p.bordasComAcabamento === 'Sem acabamento de borda' ? 'sem acabamento de borda'
+      : p.bordasComAcabamento === 'Todas as bordas' ? 'aplicado em todas as bordas'
+      : `aplicado: ${(p.bordasComAcabamento || '').toLowerCase()}`;
+  }
   lines.push(`${bordaDesc}, ${bordasLabel}`);
 
   // Cuba
