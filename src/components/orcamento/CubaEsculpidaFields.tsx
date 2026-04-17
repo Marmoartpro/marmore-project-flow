@@ -2,8 +2,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
-import type { CubaEsculpidaData, CubaEsculpidaCalc } from './types';
-import { calcCubaEsculpida, fmt } from './types';
+import type { CubaEsculpidaData, CubaEsculpidaCalc, CubaFundoTipo } from './types';
+import { calcCubaEsculpida, fmt, CUBA_FUNDO_OPCOES } from './types';
 
 interface Props {
   data: CubaEsculpidaData;
@@ -13,6 +13,9 @@ interface Props {
 const CubaEsculpidaFields = ({ data, onChange }: Props) => {
   const calc: CubaEsculpidaCalc = calcCubaEsculpida(data);
   const hasData = calc.totalM2 > 0;
+  const fundoTipo: CubaFundoTipo = data.fundoTipo || 'reto';
+  const showProfExtra = fundoTipo === 'cuba_dentro_cuba' || fundoTipo === 'canaleta_central';
+  const fundoDescricao = CUBA_FUNDO_OPCOES.find(o => o.value === fundoTipo)?.descricao || '';
 
   return (
     <div className="space-y-3 bg-muted/30 rounded-md p-3">
@@ -54,6 +57,47 @@ const CubaEsculpidaFields = ({ data, onChange }: Props) => {
         </div>
       </div>
 
+      {/* Tipo de fundo */}
+      <div className="border-t border-border/50 pt-2 space-y-2">
+        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+          Tipo de Fundo
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="sm:col-span-2">
+            <Label className="text-[10px]">Modelo do fundo</Label>
+            <select
+              value={fundoTipo}
+              onChange={e => onChange('fundoTipo', e.target.value)}
+              className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs"
+            >
+              {CUBA_FUNDO_OPCOES.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            {fundoDescricao && (
+              <p className="text-[10px] text-muted-foreground mt-1">{fundoDescricao}</p>
+            )}
+          </div>
+          <div>
+            <Label className="text-[10px]">Adicional R$ (por cuba)</Label>
+            <Input type="number" step="0.01" value={data.fundoValorAdicional}
+              onChange={e => onChange('fundoValorAdicional', e.target.value)}
+              className="h-8 text-xs" placeholder="0,00" />
+          </div>
+          {showProfExtra && (
+            <div>
+              <Label className="text-[10px]">
+                {fundoTipo === 'cuba_dentro_cuba' ? 'Prof. rebaixo (cm)' : 'Prof. canaleta (cm)'}
+              </Label>
+              <Input type="number" step="0.1" value={data.fundoProfundidadeExtra}
+                onChange={e => onChange('fundoProfundidadeExtra', e.target.value)}
+                className="h-8 text-xs"
+                placeholder={fundoTipo === 'cuba_dentro_cuba' ? '3' : '2'} />
+            </div>
+          )}
+        </div>
+      </div>
+
       <div>
         <Label className="text-[10px]">Quantidade de cubas</Label>
         <Input type="number" min="1" max="4" value={data.quantidade}
@@ -70,6 +114,12 @@ const CubaEsculpidaFields = ({ data, onChange }: Props) => {
               <span>Parede lateral esq.:</span><span className="font-medium">{fmt(calc.paredeLateralEsq)} m²</span>
               <span>Parede lateral dir.:</span><span className="font-medium">{fmt(calc.paredeLateralDir)} m²</span>
               <span>Fundo da cuba:</span><span className="font-medium">{fmt(calc.fundo)} m²</span>
+              {calc.fundoExtra > 0 && (
+                <>
+                  <span>{calc.fundoLabel}:</span>
+                  <span className="font-medium text-primary">+{fmt(calc.fundoExtra)} m²</span>
+                </>
+              )}
             </div>
             <div className="border-t border-primary/20 pt-1 mt-1 flex justify-between font-semibold text-primary">
               <span>Total escultura: {fmt(calc.totalM2)} m²</span>
