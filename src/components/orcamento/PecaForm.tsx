@@ -895,6 +895,53 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
         </div>
       )}
 
+      {/* ═══ JARDINEIRA / VASO ═══ */}
+      {isJardineira && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
+          <div className="col-span-full text-[10px] font-medium text-muted-foreground">
+            Larg e Comp acima = boca da jardineira/vaso. Defina abaixo a profundidade (altura) e o fundo:
+          </div>
+          <div>
+            <Label className="text-[10px]">Profundidade / Altura (cm)</Label>
+            <Input type="number" step="0.1" value={peca.jardineiraAltura}
+              onChange={e => onChange('jardineiraAltura', e.target.value)} className="h-8 text-xs"
+              placeholder="Ex: 40" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Espessura parede (cm)</Label>
+            <Input type="number" step="0.1" value={peca.jardineiraEspessuraParede}
+              onChange={e => onChange('jardineiraEspessuraParede', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div className="flex items-center gap-2 pt-4">
+            <input type="checkbox" id={`jard-fundo-${peca.id}`}
+              checked={!!peca.jardineiraComFundo}
+              onChange={e => onChange('jardineiraComFundo', e.target.checked)} />
+            <Label htmlFor={`jard-fundo-${peca.id}`} className="text-[11px] cursor-pointer">
+              Com fundo em pedra
+            </Label>
+          </div>
+          <div className="flex items-center gap-2 pt-4">
+            <input type="checkbox" id={`jard-dreno-${peca.id}`}
+              checked={!!peca.jardineiraFuroDreno}
+              onChange={e => onChange('jardineiraFuroDreno', e.target.checked)} />
+            <Label htmlFor={`jard-dreno-${peca.id}`} className="text-[11px] cursor-pointer">
+              Furo de dreno
+            </Label>
+          </div>
+          {peca.jardineiraFuroDreno && (
+            <div>
+              <Label className="text-[10px]">Valor furo dreno (R$)</Label>
+              <Input type="number" step="0.01" value={peca.valorFuroDreno}
+                onChange={e => onChange('valorFuroDreno', e.target.value)} className="h-8 text-xs" />
+            </div>
+          )}
+          <div className="col-span-full text-[10px] text-muted-foreground">
+            Cálculo: 4 paredes externas (perímetro × altura){peca.jardineiraComFundo ? ' + fundo' : ''}.
+            Sugerido orçar como peça em pedra com cortes a 45° nas quinas.
+          </div>
+        </div>
+      )}
+
       {/* ═══ BOX BANHEIRO ═══ */}
       {isBox && (
         <div className="space-y-2 bg-muted/30 rounded-md p-2">
