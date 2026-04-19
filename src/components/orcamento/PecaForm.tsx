@@ -58,6 +58,7 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
   const isTampo = is('Tampo de Mesa', 'Mesa de Mármore');
   const isNicho = is('Nicho Embutido', 'Nicho de Box');
   const isBox = is('Box - Piso');
+  const isJardineira = is('Jardineira/Vaso');
   const showFormato = is('Tampo de Mesa', 'Mesa de Mármore', 'Peça Personalizada', 'Piso',
     'Lareira', 'Revestimento de Parede');
   const showPrateleira = is('Lavatório', 'Lavabo Externo', 'Bancada de Banheiro', 'Bancada Suspensa');
