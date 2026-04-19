@@ -1049,6 +1049,11 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
     // Nicho serviço
     if (p.tipo === 'Nicho Embutido') total += (parseFloat(p.valorServicoNicho) || 0) * q;
 
+    // Jardineira/Vaso — furo de dreno
+    if (p.tipo === 'Jardineira/Vaso' && p.jardineiraFuroDreno) {
+      total += (parseFloat(p.valorFuroDreno) || 0) * q;
+    }
+
     // Box ralo
     if (p.raloLinear) total += (parseFloat(p.valorServicoRalo) || 0) * q;
 
