@@ -163,6 +163,12 @@ export interface PecaItem {
   nichoProfundidade: string;
   nichoQtdPrateleiras: string;
   valorServicoNicho: string;
+  // Jardineira / Vaso (largura e comprimento = boca; altura = profundidade do vaso)
+  jardineiraAltura: string;          // altura/profundidade interna em cm
+  jardineiraEspessuraParede: string; // cm (visual/cálculo de topo)
+  jardineiraComFundo: boolean;       // se há fundo em pedra
+  jardineiraFuroDreno: boolean;      // furo de drenagem
+  valorFuroDreno: string;            // R$ por furo
   // Box banheiro
   paredesBox: string;
   alturaParede: string;
@@ -302,16 +308,17 @@ export const PECA_TIPOS: Record<string, string[]> = {
   'Área Externa': [
     'Bancada', 'Bancada de Churrasqueira', 'Lavabo Externo',
     'Soleira', 'Peitoril', 'Escada/Degrau', 'Espelho de Escada',
-    'Borda de Piscina', 'Piso', 'Revestimento de Parede', 'Peça Personalizada',
+    'Borda de Piscina', 'Piso', 'Revestimento de Parede',
+    'Jardineira/Vaso', 'Peça Personalizada',
   ],
   'Sala / Estar': [
     'Tampo de Mesa', 'Mesa de Mármore', 'Revestimento de Parede',
-    'Lareira', 'Piso', 'Rodapé/Filete', 'Peça Personalizada',
+    'Lareira', 'Piso', 'Rodapé/Filete', 'Jardineira/Vaso', 'Peça Personalizada',
   ],
   'Área Gourmet': [
     'Bancada', 'Bancada Gourmet', 'Ilha Gourmet', 'Bancada com Cooktop',
     'Bancada de Churrasqueira', 'Soleira', 'Piso', 'Revestimento de Parede',
-    'Peça Personalizada',
+    'Jardineira/Vaso', 'Peça Personalizada',
   ],
   'Churrasqueira': [
     'Bancada de Churrasqueira', 'Tampo de Grelha', 'Revestimento de Parede',
@@ -335,7 +342,7 @@ export const PECA_TIPOS: Record<string, string[]> = {
     'Bancada de Churrasqueira', 'Tampo de Grelha', 'Lavabo Externo',
     'Nicho Embutido', 'Bancada Tanque', 'Revestimento de Parede', 'Piso',
     'Tampo de Mesa', 'Mesa de Mármore', 'Lareira',
-    'Peça Personalizada',
+    'Jardineira/Vaso', 'Peça Personalizada',
   ],
 };
 
@@ -435,6 +442,8 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   perimetroAmbiente: '', larguraPortas: '',
   furoColuna: false, valorFuroColuna: '', diametroFuro: '',
   nichoProfundidade: '', nichoQtdPrateleiras: '0', valorServicoNicho: '',
+  jardineiraAltura: '', jardineiraEspessuraParede: '2',
+  jardineiraComFundo: true, jardineiraFuroDreno: false, valorFuroDreno: '',
   paredesBox: '0', alturaParede: '', larguraParede1: '', larguraParede2: '', larguraParede3: '',
   bancoBox: false, bancoLargura: '', bancoComprimento: '', bancoAltura: '',
   raloLinear: false, raloComprimento: '', raloLargura: '', valorServicoRalo: '',
@@ -683,8 +692,22 @@ export const calcNichoArea = (p: PecaItem): number => {
   return cm2toM2(areaCm2) * q;
 };
 
+export const calcJardineiraArea = (p: PecaItem): number => {
+  if (p.tipo !== 'Jardineira/Vaso') return 0;
+  const q = parseInt(p.quantidade) || 1;
+  const w = cm(p.largura);
+  const l = cm(p.comprimento);
+  const h = cm(p.jardineiraAltura);
+  if (w <= 0 || l <= 0 || h <= 0) return 0;
+  // 4 paredes externas (perímetro × altura) + opcional fundo (largura × comprimento)
+  let areaCm2 = 2 * (w + l) * h;
+  if (p.jardineiraComFundo) areaCm2 += w * l;
+  return cm2toM2(areaCm2) * q;
+};
+
 export const calcPecaAreaLiquida = (p: PecaItem): number => {
   if (p.tipo === 'Nicho Embutido') return calcNichoArea(p);
+  if (p.tipo === 'Jardineira/Vaso') return calcJardineiraArea(p);
   const base = calcPecaAreaBase(p);
   const deductions = calcPecaDeductions(p);
   const extras = calcPecaExtrasArea(p);
@@ -1025,6 +1048,11 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
 
     // Nicho serviço
     if (p.tipo === 'Nicho Embutido') total += (parseFloat(p.valorServicoNicho) || 0) * q;
+
+    // Jardineira/Vaso — furo de dreno
+    if (p.tipo === 'Jardineira/Vaso' && p.jardineiraFuroDreno) {
+      total += (parseFloat(p.valorFuroDreno) || 0) * q;
+    }
 
     // Box ralo
     if (p.raloLinear) total += (parseFloat(p.valorServicoRalo) || 0) * q;
