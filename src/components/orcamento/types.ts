@@ -692,8 +692,22 @@ export const calcNichoArea = (p: PecaItem): number => {
   return cm2toM2(areaCm2) * q;
 };
 
+export const calcJardineiraArea = (p: PecaItem): number => {
+  if (p.tipo !== 'Jardineira/Vaso') return 0;
+  const q = parseInt(p.quantidade) || 1;
+  const w = cm(p.largura);
+  const l = cm(p.comprimento);
+  const h = cm(p.jardineiraAltura);
+  if (w <= 0 || l <= 0 || h <= 0) return 0;
+  // 4 paredes externas (perímetro × altura) + opcional fundo (largura × comprimento)
+  let areaCm2 = 2 * (w + l) * h;
+  if (p.jardineiraComFundo) areaCm2 += w * l;
+  return cm2toM2(areaCm2) * q;
+};
+
 export const calcPecaAreaLiquida = (p: PecaItem): number => {
   if (p.tipo === 'Nicho Embutido') return calcNichoArea(p);
+  if (p.tipo === 'Jardineira/Vaso') return calcJardineiraArea(p);
   const base = calcPecaAreaBase(p);
   const deductions = calcPecaDeductions(p);
   const extras = calcPecaExtrasArea(p);
