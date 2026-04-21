@@ -159,10 +159,14 @@ export interface PecaItem {
   furoColuna: boolean;
   valorFuroColuna: string;
   diametroFuro: string;
-  // Nicho
+  // Nicho Embutido
   nichoProfundidade: string;
   nichoQtdPrateleiras: string;
   valorServicoNicho: string;
+  nichoPolimentoML: string;       // metros lineares de borda polida (boca do nicho)
+  valorPolimentoML: string;       // R$ por ML de polimento
+  nichoQtd45: string;             // qtd de cantos com 45° interno
+  valorServico45: string;         // R$ por canto 45°
   // Jardineira / Vaso (largura e comprimento = boca; altura = profundidade do vaso)
   jardineiraAltura: string;          // altura/profundidade interna em cm
   jardineiraEspessuraParede: string; // cm (visual/cálculo de topo)
