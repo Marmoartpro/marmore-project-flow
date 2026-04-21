@@ -683,7 +683,10 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
   return cm2toM2(extraCm2) * q;
 };
 
-/** Nicho embutido standalone */
+/** Nicho embutido standalone — 5 faces internas + prateleiras
+ * largura (w) = boca largura, comprimento (h) = boca altura, profundidade (d).
+ * Faces: fundo (w×h) + topo (w×d) + base (w×d) + 2 laterais (d×h) + prateleiras (w×d)
+ */
 export const calcNichoArea = (p: PecaItem): number => {
   if (p.tipo !== 'Nicho Embutido') return 0;
   const q = parseInt(p.quantidade) || 1;
@@ -691,9 +694,10 @@ export const calcNichoArea = (p: PecaItem): number => {
   const h = cm(p.comprimento);
   const d = cm(p.nichoProfundidade);
   const nPrat = parseInt(p.nichoQtdPrateleiras) || 0;
-  let areaCm2 = w * h;
-  areaCm2 += 2 * d * h;
-  areaCm2 += nPrat * w * d;
+  let areaCm2 = w * h;          // fundo
+  areaCm2 += 2 * (w * d);       // topo + base
+  areaCm2 += 2 * (d * h);       // laterais
+  areaCm2 += nPrat * w * d;     // prateleiras
   return cm2toM2(areaCm2) * q;
 };
 
