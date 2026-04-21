@@ -872,7 +872,7 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
       )}
 
       {/* ═══ NICHO EMBUTIDO ═══ */}
-      {isNicho && peca.tipo === 'Nicho Embutido' && (
+      {isNicho && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
           <div className="col-span-full text-[10px] font-medium text-muted-foreground">
             Larg × Comp = boca do nicho. Cálculo considera 5 faces internas (fundo, topo, base, 2 laterais) + prateleiras.
