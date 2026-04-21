@@ -664,13 +664,13 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
     extraCm2 += cm(p.bancoAltura) * cm(p.bancoComprimento);
   }
 
-  // Nicho no box
+  // Nicho no box — 5 faces internas (fundo + topo + base + 2 laterais)
   const nichoQ = parseInt(p.nichoBoxQtd) || 0;
   if (nichoQ > 0) {
     const nW = cm(p.nichoBoxLargura);
     const nH = cm(p.nichoBoxAltura);
     const nD = cm(p.nichoBoxProfundidade);
-    extraCm2 += nichoQ * (nW * nH + 2 * nD * nH);
+    extraCm2 += nichoQ * (nW * nH + 2 * nW * nD + 2 * nD * nH);
   }
 
   // Revestimento — deduct aberturas
