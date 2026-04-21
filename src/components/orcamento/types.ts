@@ -159,10 +159,14 @@ export interface PecaItem {
   furoColuna: boolean;
   valorFuroColuna: string;
   diametroFuro: string;
-  // Nicho
+  // Nicho Embutido
   nichoProfundidade: string;
   nichoQtdPrateleiras: string;
   valorServicoNicho: string;
+  nichoPolimentoML: string;       // metros lineares de borda polida (boca do nicho)
+  valorPolimentoML: string;       // R$ por ML de polimento
+  nichoQtd45: string;             // qtd de cantos com 45° interno
+  valorServico45: string;         // R$ por canto 45°
   // Jardineira / Vaso (largura e comprimento = boca; altura = profundidade do vaso)
   jardineiraAltura: string;          // altura/profundidade interna em cm
   jardineiraEspessuraParede: string; // cm (visual/cálculo de topo)
@@ -442,6 +446,7 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   perimetroAmbiente: '', larguraPortas: '',
   furoColuna: false, valorFuroColuna: '', diametroFuro: '',
   nichoProfundidade: '', nichoQtdPrateleiras: '0', valorServicoNicho: '',
+  nichoPolimentoML: '', valorPolimentoML: '', nichoQtd45: '0', valorServico45: '',
   jardineiraAltura: '', jardineiraEspessuraParede: '2',
   jardineiraComFundo: true, jardineiraFuroDreno: false, valorFuroDreno: '',
   paredesBox: '0', alturaParede: '', larguraParede1: '', larguraParede2: '', larguraParede3: '',
@@ -659,13 +664,13 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
     extraCm2 += cm(p.bancoAltura) * cm(p.bancoComprimento);
   }
 
-  // Nicho no box
+  // Nicho no box — 5 faces internas (fundo + topo + base + 2 laterais)
   const nichoQ = parseInt(p.nichoBoxQtd) || 0;
   if (nichoQ > 0) {
     const nW = cm(p.nichoBoxLargura);
     const nH = cm(p.nichoBoxAltura);
     const nD = cm(p.nichoBoxProfundidade);
-    extraCm2 += nichoQ * (nW * nH + 2 * nD * nH);
+    extraCm2 += nichoQ * (nW * nH + 2 * nW * nD + 2 * nD * nH);
   }
 
   // Revestimento — deduct aberturas
@@ -678,7 +683,10 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
   return cm2toM2(extraCm2) * q;
 };
 
-/** Nicho embutido standalone */
+/** Nicho embutido standalone — 5 faces internas + prateleiras
+ * largura (w) = boca largura, comprimento (h) = boca altura, profundidade (d).
+ * Faces: fundo (w×h) + topo (w×d) + base (w×d) + 2 laterais (d×h) + prateleiras (w×d)
+ */
 export const calcNichoArea = (p: PecaItem): number => {
   if (p.tipo !== 'Nicho Embutido') return 0;
   const q = parseInt(p.quantidade) || 1;
@@ -686,9 +694,10 @@ export const calcNichoArea = (p: PecaItem): number => {
   const h = cm(p.comprimento);
   const d = cm(p.nichoProfundidade);
   const nPrat = parseInt(p.nichoQtdPrateleiras) || 0;
-  let areaCm2 = w * h;
-  areaCm2 += 2 * d * h;
-  areaCm2 += nPrat * w * d;
+  let areaCm2 = w * h;          // fundo
+  areaCm2 += 2 * (w * d);       // topo + base
+  areaCm2 += 2 * (d * h);       // laterais
+  areaCm2 += nPrat * w * d;     // prateleiras
   return cm2toM2(areaCm2) * q;
 };
 
@@ -1046,8 +1055,14 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
     // Furo coluna tampo
     if (p.furoColuna) total += (parseFloat(p.valorFuroColuna) || 0) * q;
 
-    // Nicho serviço
-    if (p.tipo === 'Nicho Embutido') total += (parseFloat(p.valorServicoNicho) || 0) * q;
+    // Nicho Embutido — serviço base + polimento de bordas (ML) + 45° internos
+    if (p.tipo === 'Nicho Embutido') {
+      total += (parseFloat(p.valorServicoNicho) || 0) * q;
+      const polML = parseFloat(p.nichoPolimentoML) || 0;
+      total += polML * (parseFloat(p.valorPolimentoML) || 0) * q;
+      const qtd45 = parseInt(p.nichoQtd45) || 0;
+      total += qtd45 * (parseFloat(p.valorServico45) || 0) * q;
+    }
 
     // Jardineira/Vaso — furo de dreno
     if (p.tipo === 'Jardineira/Vaso' && p.jardineiraFuroDreno) {
