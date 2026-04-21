@@ -446,6 +446,7 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   perimetroAmbiente: '', larguraPortas: '',
   furoColuna: false, valorFuroColuna: '', diametroFuro: '',
   nichoProfundidade: '', nichoQtdPrateleiras: '0', valorServicoNicho: '',
+  nichoPolimentoML: '', valorPolimentoML: '', nichoQtd45: '0', valorServico45: '',
   jardineiraAltura: '', jardineiraEspessuraParede: '2',
   jardineiraComFundo: true, jardineiraFuroDreno: false, valorFuroDreno: '',
   paredesBox: '0', alturaParede: '', larguraParede1: '', larguraParede2: '', larguraParede3: '',
