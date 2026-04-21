@@ -1055,8 +1055,14 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
     // Furo coluna tampo
     if (p.furoColuna) total += (parseFloat(p.valorFuroColuna) || 0) * q;
 
-    // Nicho serviço
-    if (p.tipo === 'Nicho Embutido') total += (parseFloat(p.valorServicoNicho) || 0) * q;
+    // Nicho Embutido — serviço base + polimento de bordas (ML) + 45° internos
+    if (p.tipo === 'Nicho Embutido') {
+      total += (parseFloat(p.valorServicoNicho) || 0) * q;
+      const polML = parseFloat(p.nichoPolimentoML) || 0;
+      total += polML * (parseFloat(p.valorPolimentoML) || 0) * q;
+      const qtd45 = parseInt(p.nichoQtd45) || 0;
+      total += qtd45 * (parseFloat(p.valorServico45) || 0) * q;
+    }
 
     // Jardineira/Vaso — furo de dreno
     if (p.tipo === 'Jardineira/Vaso' && p.jardineiraFuroDreno) {
