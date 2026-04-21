@@ -872,10 +872,10 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
       )}
 
       {/* ═══ NICHO EMBUTIDO ═══ */}
-      {isNicho && (
+      {isNicho && peca.tipo === 'Nicho Embutido' && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-muted/30 rounded-md p-2">
           <div className="col-span-full text-[10px] font-medium text-muted-foreground">
-            Larg e Comp acima = largura e altura do fundo. Profundidade abaixo:
+            Larg × Comp = boca do nicho. Cálculo considera 5 faces internas (fundo, topo, base, 2 laterais) + prateleiras.
           </div>
           <div>
             <Label className="text-[10px]">Profundidade (cm)</Label>
@@ -891,6 +891,30 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
             <Label className="text-[10px]">Valor serviço/nicho (R$)</Label>
             <Input type="number" step="0.01" value={peca.valorServicoNicho}
               onChange={e => onChange('valorServicoNicho', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div className="col-span-full border-t border-border/40 pt-2 mt-1 text-[10px] font-medium text-muted-foreground">
+            Acabamentos extras (polimento de bordas e 45° internos)
+          </div>
+          <div>
+            <Label className="text-[10px]">Polimento bordas (ML)</Label>
+            <Input type="number" step="0.01" value={peca.nichoPolimentoML}
+              onChange={e => onChange('nichoPolimentoML', e.target.value)} className="h-8 text-xs" placeholder="ex: 1.40" />
+          </div>
+          <div>
+            <Label className="text-[10px]">R$ por ML polimento</Label>
+            <Input type="number" step="0.01" value={peca.valorPolimentoML}
+              onChange={e => onChange('valorPolimentoML', e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div />
+          <div>
+            <Label className="text-[10px]">Cantos 45° internos (qtd)</Label>
+            <Input type="number" min="0" value={peca.nichoQtd45}
+              onChange={e => onChange('nichoQtd45', e.target.value)} className="h-8 text-xs" placeholder="ex: 4" />
+          </div>
+          <div>
+            <Label className="text-[10px]">R$ por canto 45°</Label>
+            <Input type="number" step="0.01" value={peca.valorServico45}
+              onChange={e => onChange('valorServico45', e.target.value)} className="h-8 text-xs" />
           </div>
         </div>
       )}
