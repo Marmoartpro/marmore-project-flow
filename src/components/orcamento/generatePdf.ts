@@ -613,19 +613,20 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
         const idx = Math.min(optIdx, amb.materialOptions.length - 1);
         const matCost = calcAmbienteMaterialCost(amb, idx) * fMat;
         const labCost = calcAmbienteLaborCost(amb) * fServ;
-        const ambTotal = matCost + labCost;
+        const instCost = calcAmbienteInstallCost(amb) * fInst;
+        const ambTotal = matCost + labCost + instCost;
         scenarioTotal += ambTotal;
         row.push(`R$ ${fmt(ambTotal)}`);
       });
 
-      scenarioTotal += totalInst + totalAcc;
+      scenarioTotal += totalAcc;
       // Apply discount to scenario
       const scenarioDiscount = descontoTipo === 'percent'
         ? scenarioTotal * ((parseFloat(descontoValor) || 0) / 100)
         : (parseFloat(descontoValor) || 0);
       const scenarioFinal = scenarioTotal - scenarioDiscount;
 
-      row.push(`R$ ${fmt(totalInst)}`);
+      row.push(`Incluída nos subtotais`);
       row.push(`R$ ${fmt(scenarioFinal)}`);
       scenarioRows.push(row);
     }
