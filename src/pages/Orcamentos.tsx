@@ -237,10 +237,10 @@ const Orcamentos = () => {
                   <Copy className="w-3.5 h-3.5 mr-2" /> Duplicar
                 </DropdownMenuItem>
                 {bq.status === 'rascunho' && (
-                  <DropdownMenuItem onClick={() => updateBudgetStatus(bq.id, 'enviado')}>Marcar como enviado</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => openNegotiation(bq, 'send', 'budget')}>Marcar como enviado</DropdownMenuItem>
                 )}
                 {['rascunho', 'enviado'].includes(bq.status) && (
-                  <DropdownMenuItem onClick={() => convertToProject(bq)}>Converter em projeto</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => openNegotiation(bq, 'project', 'budget')}>Converter em projeto</DropdownMenuItem>
                 )}
                 {['enviado', 'aceito', 'aprovado'].includes(bq.status) && (
                   <DropdownMenuItem onClick={() => setContratoQuote(bq)}>
@@ -405,7 +405,7 @@ const Orcamentos = () => {
                         </div>
                         {(q.status === 'aguardando' || q.status === 'negociando') && (
                           <div className="flex gap-2 mt-2">
-                            <Button size="sm" className="text-xs h-7" onClick={() => convertToProject(q)}>Fechar como projeto</Button>
+                            <Button size="sm" className="text-xs h-7" onClick={() => openNegotiation(q, 'project', 'quote')}>Fechar como projeto</Button>
                             <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => updateStatus(q.id, 'perdido')}>Perdido</Button>
                           </div>
                         )}
