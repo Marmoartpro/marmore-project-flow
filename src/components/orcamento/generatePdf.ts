@@ -369,7 +369,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(80);
-  doc.text('Custos variáveis referentes à chapa do material e à mão de obra de corte, colagem e acabamento de cada peça.', marginL, y);
+  doc.text('Custos por opção de pedra, somando material, mão de obra e instalação para facilitar a comparação.', marginL, y);
   y += 8;
 
   ambientes.forEach((amb) => {
@@ -394,6 +394,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     y += 6;
 
     const laborCost = calcAmbienteLaborCost(amb) * fServ;
+    const installCost = calcAmbienteInstallCost(amb) * fInst;
     const matData = amb.materialOptions.map((opt, i) => {
       if (opt.materialDoCliente) {
         return [
@@ -401,7 +402,8 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
           'Material do cliente',
           'R$ 0,00',
           `R$ ${fmt(laborCost)}`,
-          `R$ ${fmt(laborCost)}`,
+          `R$ ${fmt(installCost)}`,
+          `R$ ${fmt(laborCost + installCost)}`,
         ];
       }
       const matCost = calcAmbienteMaterialCost(amb, i) * fMat;
@@ -410,7 +412,8 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
         opt.stoneName || '—',
         `R$ ${fmt(matCost)}`,
         `R$ ${fmt(laborCost)}`,
-        `R$ ${fmt(matCost + laborCost)}`,
+        `R$ ${fmt(installCost)}`,
+        `R$ ${fmt(matCost + laborCost + installCost)}`,
       ];
     });
 
@@ -419,7 +422,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     autoTable(doc, {
       startY: y,
       margin: { left: marginL, right: marginR },
-      head: [['Opção de Material', 'Material', 'Valor Material', 'Valor Serviços', 'Subtotal (Mat + Serv)']],
+      head: [['Opção de Material', 'Material', 'Valor Material', 'Valor Serviços', 'Instalação', 'Total da Opção']],
       body: matData,
       styles: { fontSize: 8, cellPadding: 2, textColor: [40, 40, 40] },
       headStyles: { fillColor: [240, 240, 240], textColor: [40, 40, 40], fontStyle: 'bold', fontSize: 8 },
@@ -427,7 +430,8 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
       columnStyles: {
         2: { halign: 'right' },
         3: { halign: 'right' },
-        4: { halign: 'right', fontStyle: 'bold' },
+        4: { halign: 'right' },
+        5: { halign: 'right', fontStyle: 'bold' },
       },
     });
     y = (doc as any).lastAutoTable.finalY + 8;
