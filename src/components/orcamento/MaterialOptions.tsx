@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2 } from 'lucide-react';
-import { MaterialOption, newMaterialOption, calcAmbienteArea, calcAmbienteAreaCompra, fmt } from './types';
+import { MaterialOption, calcAmbienteArea, calcAmbienteAreaCompra, calcAmbienteInstallCost, fmt } from './types';
 import type { Ambiente } from './types';
 
 interface Props {
@@ -104,14 +104,15 @@ const MaterialOptions = ({ ambiente, stones, onUpdateOption, onUpdateOptionBatch
 
       {/* Comparison table */}
       {ambiente.materialOptions.length > 1 && areaLiq > 0 && (
-        <div className="border border-primary/30 rounded-md overflow-hidden">
+        <div className="border border-primary/30 rounded-md overflow-x-auto rounded-md">
           <table className="w-full text-[10px]">
             <thead>
               <tr className="bg-primary/10">
                 <th className="text-left px-2 py-1">Opção</th>
                 <th className="text-right px-2 py-1">Material</th>
                 <th className="text-right px-2 py-1">Serviços</th>
-                <th className="text-right px-2 py-1 font-bold">Subtotal</th>
+                <th className="text-right px-2 py-1">Instalação</th>
+                <th className="text-right px-2 py-1 font-bold">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -119,14 +120,15 @@ const MaterialOptions = ({ ambiente, stones, onUpdateOption, onUpdateOptionBatch
                 const matCost = opt.materialDoCliente ? 0 : areaCompra * opt.pricePerM2;
                 const laborCost = (parseFloat(ambiente.maoDeObra.corte) || 0) +
                   (parseFloat(ambiente.maoDeObra.polimento) || 0) +
-                  (parseFloat(ambiente.maoDeObra.instalacao) || 0) +
                   (parseFloat(ambiente.maoDeObra.visitaTecnica) || 0);
+                const installCost = calcAmbienteInstallCost(ambiente);
                 return (
                   <tr key={opt.id} className="border-t border-border">
                     <td className="px-2 py-1">{OPTION_LABELS[i]}: {opt.materialDoCliente ? 'Cliente' : (opt.stoneName || '—')}</td>
                     <td className="text-right px-2 py-1">R$ {fmt(matCost)}</td>
                     <td className="text-right px-2 py-1">R$ {fmt(laborCost)}</td>
-                    <td className="text-right px-2 py-1 font-bold text-primary">R$ {fmt(matCost + laborCost)}</td>
+                    <td className="text-right px-2 py-1">R$ {fmt(installCost)}</td>
+                    <td className="text-right px-2 py-1 font-bold text-primary">R$ {fmt(matCost + laborCost + installCost)}</td>
                   </tr>
                 );
               })}
