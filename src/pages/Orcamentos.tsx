@@ -54,6 +54,8 @@ const Orcamentos = () => {
   const [form, setForm] = useState(emptyForm);
   const [mainTab, setMainTab] = useState('calculados');
   const [contratoQuote, setContratoQuote] = useState<any>(null);
+  const [negotiation, setNegotiation] = useState<{ quote: any; action: 'send' | 'project'; type: 'budget' | 'quote' } | null>(null);
+  const [negotiatedValue, setNegotiatedValue] = useState('');
   
 
   useEffect(() => { if (user) { fetchQuotes(); fetchBudgetQuotes(); } }, [user]);
@@ -116,6 +118,33 @@ const Orcamentos = () => {
   const updateStatus = async (id: string, status: string) => {
     await supabase.from('quotes').update({ status }).eq('id', id);
     fetchQuotes(); toast.success('Status atualizado!');
+  };
+
+  const openNegotiation = (quote: any, action: 'send' | 'project', type: 'budget' | 'quote') => {
+    setNegotiation({ quote, action, type });
+    setNegotiatedValue(String(Number(quote.total ?? quote.estimated_value ?? 0) || ''));
+  };
+
+  const applyNegotiation = async () => {
+    if (!negotiation || !user) return;
+    const finalValue = parseFloat(negotiatedValue) || 0;
+    const { quote, action, type } = negotiation;
+
+    if (action === 'send') {
+      if (type === 'budget') {
+        await supabase.from('budget_quotes').update({ total: finalValue, status: 'enviado' }).eq('id', quote.id);
+        fetchBudgetQuotes();
+      } else {
+        await supabase.from('quotes').update({ estimated_value: finalValue, status: 'negociando' }).eq('id', quote.id);
+        fetchQuotes();
+      }
+      toast.success('Valor negociado salvo e status atualizado!');
+    } else {
+      await convertToProject({ ...quote, total: finalValue, estimated_value: finalValue });
+    }
+
+    setNegotiation(null);
+    setNegotiatedValue('');
   };
 
   const convertToProject = async (q: any) => {
@@ -208,10 +237,10 @@ const Orcamentos = () => {
                   <Copy className="w-3.5 h-3.5 mr-2" /> Duplicar
                 </DropdownMenuItem>
                 {bq.status === 'rascunho' && (
-                  <DropdownMenuItem onClick={() => updateBudgetStatus(bq.id, 'enviado')}>Marcar como enviado</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => openNegotiation(bq, 'send', 'budget')}>Marcar como enviado</DropdownMenuItem>
                 )}
                 {['rascunho', 'enviado'].includes(bq.status) && (
-                  <DropdownMenuItem onClick={() => convertToProject(bq)}>Converter em projeto</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => openNegotiation(bq, 'project', 'budget')}>Converter em projeto</DropdownMenuItem>
                 )}
                 {['enviado', 'aceito', 'aprovado'].includes(bq.status) && (
                   <DropdownMenuItem onClick={() => setContratoQuote(bq)}>
@@ -376,7 +405,7 @@ const Orcamentos = () => {
                         </div>
                         {(q.status === 'aguardando' || q.status === 'negociando') && (
                           <div className="flex gap-2 mt-2">
-                            <Button size="sm" className="text-xs h-7" onClick={() => convertToProject(q)}>Fechar como projeto</Button>
+                            <Button size="sm" className="text-xs h-7" onClick={() => openNegotiation(q, 'project', 'quote')}>Fechar como projeto</Button>
                             <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => updateStatus(q.id, 'perdido')}>Perdido</Button>
                           </div>
                         )}
@@ -397,6 +426,27 @@ const Orcamentos = () => {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDeleteId(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={confirmDelete}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!negotiation} onOpenChange={() => setNegotiation(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{negotiation?.action === 'project' ? 'Valor final negociado' : 'Valor para envio'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Ajuste o valor combinado com o cliente antes de {negotiation?.action === 'project' ? 'converter em projeto' : 'marcar como enviado'}.
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Valor final (R$)</Label>
+              <Input type="number" step="0.01" value={negotiatedValue} onChange={e => setNegotiatedValue(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setNegotiation(null)}>Cancelar</Button>
+            <Button onClick={applyNegotiation}>{negotiation?.action === 'project' ? 'Converter' : 'Salvar e enviar'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
