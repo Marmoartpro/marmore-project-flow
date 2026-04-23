@@ -430,6 +430,27 @@ const Orcamentos = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!negotiation} onOpenChange={() => setNegotiation(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{negotiation?.action === 'project' ? 'Valor final negociado' : 'Valor para envio'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Ajuste o valor combinado com o cliente antes de {negotiation?.action === 'project' ? 'converter em projeto' : 'marcar como enviado'}.
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Valor final (R$)</Label>
+              <Input type="number" step="0.01" value={negotiatedValue} onChange={e => setNegotiatedValue(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setNegotiation(null)}>Cancelar</Button>
+            <Button onClick={applyNegotiation}>{negotiation?.action === 'project' ? 'Converter' : 'Salvar e enviar'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {contratoQuote && (
         <ContratoDialog
           open={!!contratoQuote}
