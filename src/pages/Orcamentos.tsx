@@ -54,6 +54,8 @@ const Orcamentos = () => {
   const [form, setForm] = useState(emptyForm);
   const [mainTab, setMainTab] = useState('calculados');
   const [contratoQuote, setContratoQuote] = useState<any>(null);
+  const [negotiation, setNegotiation] = useState<{ quote: any; action: 'send' | 'project'; type: 'budget' | 'quote' } | null>(null);
+  const [negotiatedValue, setNegotiatedValue] = useState('');
   
 
   useEffect(() => { if (user) { fetchQuotes(); fetchBudgetQuotes(); } }, [user]);
@@ -116,6 +118,33 @@ const Orcamentos = () => {
   const updateStatus = async (id: string, status: string) => {
     await supabase.from('quotes').update({ status }).eq('id', id);
     fetchQuotes(); toast.success('Status atualizado!');
+  };
+
+  const openNegotiation = (quote: any, action: 'send' | 'project', type: 'budget' | 'quote') => {
+    setNegotiation({ quote, action, type });
+    setNegotiatedValue(String(Number(quote.total ?? quote.estimated_value ?? 0) || ''));
+  };
+
+  const applyNegotiation = async () => {
+    if (!negotiation || !user) return;
+    const finalValue = parseFloat(negotiatedValue) || 0;
+    const { quote, action, type } = negotiation;
+
+    if (action === 'send') {
+      if (type === 'budget') {
+        await supabase.from('budget_quotes').update({ total: finalValue, status: 'enviado' }).eq('id', quote.id);
+        fetchBudgetQuotes();
+      } else {
+        await supabase.from('quotes').update({ estimated_value: finalValue, status: 'negociando' }).eq('id', quote.id);
+        fetchQuotes();
+      }
+      toast.success('Valor negociado salvo e status atualizado!');
+    } else {
+      await convertToProject({ ...quote, total: finalValue, estimated_value: finalValue });
+    }
+
+    setNegotiation(null);
+    setNegotiatedValue('');
   };
 
   const convertToProject = async (q: any) => {
