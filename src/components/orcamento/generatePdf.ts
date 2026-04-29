@@ -812,6 +812,8 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
   }
 
   // ========================
+  // SECTION: OBSERVAÇÃO IMPORTANTE
+  // ========================
   if (observacoes) {
     sectionTitle('Observação Importante');
     checkPageBreak(15);
