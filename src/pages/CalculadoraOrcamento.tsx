@@ -53,6 +53,11 @@ const CalculadoraOrcamento = () => {
   const [validadeDias, setValidadeDias] = useState('15');
   const [ambientes, setAmbientes] = useState<Ambiente[]>([newAmbiente('Cozinha')]);
   const [acessorios, setAcessorios] = useState<AcessorioItem[]>([newAcessorio()]);
+  // Versões alternativas do orçamento (ex: "Com ilhargas" / "Sem ilhargas")
+  const PRINCIPAL_VERSION_ID = 'principal';
+  const [versoes, setVersoes] = useState<VersaoOrcamento[]>([]);
+  const [versaoAtivaId, setVersaoAtivaId] = useState<string>(PRINCIPAL_VERSION_ID);
+  const [versaoPrincipalNome, setVersaoPrincipalNome] = useState<string>('Versão Principal');
   const [margemMaterial, setMargemMaterial] = useState(30);
   const [margemServicos, setMargemServicos] = useState(30);
   const [margemAcessorios, setMargemAcessorios] = useState(30);
