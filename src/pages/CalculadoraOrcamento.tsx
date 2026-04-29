@@ -152,7 +152,7 @@ const CalculadoraOrcamento = () => {
       } catch {}
     }, 15000);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
-  }, [clienteNome, tipoAmbiente, ambientes, acessorios, margemMaterial, margemServicos, margemAcessorios, margemInstalacao, descontoValor, observacoes]);
+  }, [clienteNome, tipoAmbiente, ambientes, acessorios, margemMaterial, margemServicos, margemAcessorios, margemInstalacao, descontoValor, observacoes, versoes, versaoPrincipalNome]);
 
   // Auto-add marble warning
   useEffect(() => {
