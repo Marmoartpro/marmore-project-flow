@@ -232,6 +232,7 @@ const CalculadoraOrcamento = () => {
         ambientes, acessorios, condicoesPagamento, observacoes,
         margemMaterial, margemServicos, margemAcessorios, margemInstalacao,
         nomeEmpresa, nomeResponsavel, enderecoEmpresa, telefoneEmpresa,
+        versoes, versaoPrincipalNome,
       })),
       subtotal_materials: subtotalMaterials,
       subtotal_labor: subtotalLabor,
