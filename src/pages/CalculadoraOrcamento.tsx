@@ -22,6 +22,7 @@ import AlertasOrcamento from '@/components/orcamento/AlertasOrcamento';
 import SmartBudgetGenerator from '@/components/orcamento/SmartBudgetGenerator';
 import AIReviewButton from '@/components/orcamento/AIReviewButton';
 import BudgetTemplates from '@/components/orcamento/BudgetTemplates';
+import VersoesOrcamento, { VersaoOrcamento } from '@/components/orcamento/VersoesOrcamento';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -52,6 +53,11 @@ const CalculadoraOrcamento = () => {
   const [validadeDias, setValidadeDias] = useState('15');
   const [ambientes, setAmbientes] = useState<Ambiente[]>([newAmbiente('Cozinha')]);
   const [acessorios, setAcessorios] = useState<AcessorioItem[]>([newAcessorio()]);
+  // Versões alternativas do orçamento (ex: "Com ilhargas" / "Sem ilhargas")
+  const PRINCIPAL_VERSION_ID = 'principal';
+  const [versoes, setVersoes] = useState<VersaoOrcamento[]>([]);
+  const [versaoAtivaId, setVersaoAtivaId] = useState<string>(PRINCIPAL_VERSION_ID);
+  const [versaoPrincipalNome, setVersaoPrincipalNome] = useState<string>('Versão Principal');
   const [margemMaterial, setMargemMaterial] = useState(30);
   const [margemServicos, setMargemServicos] = useState(30);
   const [margemAcessorios, setMargemAcessorios] = useState(30);
@@ -85,6 +91,8 @@ const CalculadoraOrcamento = () => {
       setValidadeDias(String(data.validity_days || 15));
       if (d?.ambientes) setAmbientes(d.ambientes);
       if (d?.acessorios) setAcessorios(d.acessorios);
+      if (Array.isArray(d?.versoes)) setVersoes(d.versoes);
+      if (d?.versaoPrincipalNome) setVersaoPrincipalNome(d.versaoPrincipalNome);
       setMargemMaterial(d?.margemMaterial ?? data.profit_margin_percent ?? 30);
       setMargemServicos(d?.margemServicos ?? 30);
       setMargemAcessorios(d?.margemAcessorios ?? 30);
@@ -144,7 +152,7 @@ const CalculadoraOrcamento = () => {
       } catch {}
     }, 15000);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
-  }, [clienteNome, tipoAmbiente, ambientes, acessorios, margemMaterial, margemServicos, margemAcessorios, margemInstalacao, descontoValor, observacoes]);
+  }, [clienteNome, tipoAmbiente, ambientes, acessorios, margemMaterial, margemServicos, margemAcessorios, margemInstalacao, descontoValor, observacoes, versoes, versaoPrincipalNome]);
 
   // Auto-add marble warning
   useEffect(() => {
@@ -188,6 +196,103 @@ const CalculadoraOrcamento = () => {
     setShowAddAmbiente(false);
   };
 
+  // ─── Versões alternativas ───
+  // Ao trocar versão, salva o estado atual na versão atualmente ativa antes
+  const persistirAtualEm = (versaoId: string) => {
+    if (versaoId === PRINCIPAL_VERSION_ID) {
+      // o estado principal já está em ambientes/acessorios; nada a persistir externamente
+      // mas se a versão "principal" estiver salva no array versoes (caso editamos outra antes), atualizamos
+      setVersoes(prev => prev.map(v => v.id === versaoId
+        ? { ...v, ambientes: JSON.parse(JSON.stringify(ambientes)), acessorios: JSON.parse(JSON.stringify(acessorios)) }
+        : v));
+    } else {
+      setVersoes(prev => prev.map(v => v.id === versaoId
+        ? { ...v, ambientes: JSON.parse(JSON.stringify(ambientes)), acessorios: JSON.parse(JSON.stringify(acessorios)) }
+        : v));
+    }
+  };
+
+  const trocarVersaoAtiva = (novaId: string) => {
+    if (novaId === versaoAtivaId) return;
+    // 1) salva o atual na ativa
+    if (versaoAtivaId === PRINCIPAL_VERSION_ID) {
+      // garante que existe um snapshot da principal no array para restaurar depois
+      setVersoes(prev => {
+        const exists = prev.some(v => v.id === PRINCIPAL_VERSION_ID);
+        const snap: VersaoOrcamento = {
+          id: PRINCIPAL_VERSION_ID,
+          nome: versaoPrincipalNome,
+          ambientes: JSON.parse(JSON.stringify(ambientes)),
+          acessorios: JSON.parse(JSON.stringify(acessorios)),
+        };
+        return exists ? prev.map(v => v.id === PRINCIPAL_VERSION_ID ? snap : v) : [snap, ...prev];
+      });
+    } else {
+      persistirAtualEm(versaoAtivaId);
+    }
+    // 2) carrega a nova
+    if (novaId === PRINCIPAL_VERSION_ID) {
+      const principal = versoes.find(v => v.id === PRINCIPAL_VERSION_ID);
+      if (principal) {
+        setAmbientes(principal.ambientes);
+        setAcessorios(principal.acessorios);
+      }
+    } else {
+      const target = versoes.find(v => v.id === novaId);
+      if (target) {
+        setAmbientes(JSON.parse(JSON.stringify(target.ambientes)));
+        setAcessorios(JSON.parse(JSON.stringify(target.acessorios)));
+      }
+    }
+    setVersaoAtivaId(novaId);
+  };
+
+  const criarVersao = (nome: string) => {
+    // duplica o estado atual como nova versão e ativa-a
+    persistirAtualEm(versaoAtivaId);
+    if (versaoAtivaId === PRINCIPAL_VERSION_ID) {
+      setVersoes(prev => {
+        const exists = prev.some(v => v.id === PRINCIPAL_VERSION_ID);
+        const snap: VersaoOrcamento = {
+          id: PRINCIPAL_VERSION_ID,
+          nome: versaoPrincipalNome,
+          ambientes: JSON.parse(JSON.stringify(ambientes)),
+          acessorios: JSON.parse(JSON.stringify(acessorios)),
+        };
+        return exists ? prev : [snap, ...prev];
+      });
+    }
+    const novaId = crypto.randomUUID();
+    const nova: VersaoOrcamento = {
+      id: novaId,
+      nome,
+      ambientes: JSON.parse(JSON.stringify(ambientes)),
+      acessorios: JSON.parse(JSON.stringify(acessorios)),
+    };
+    setVersoes(prev => [...prev, nova]);
+    setVersaoAtivaId(novaId);
+    toast.success(`Versão "${nome}" criada — agora você pode editá-la.`);
+  };
+
+  const renomearVersao = (id: string, nome: string) => {
+    setVersoes(prev => prev.map(v => v.id === id ? { ...v, nome } : v));
+  };
+
+  const removerVersao = (id: string) => {
+    if (id === PRINCIPAL_VERSION_ID) return;
+    if (id === versaoAtivaId) {
+      // volta para principal
+      const principal = versoes.find(v => v.id === PRINCIPAL_VERSION_ID);
+      if (principal) {
+        setAmbientes(principal.ambientes);
+        setAcessorios(principal.acessorios);
+      }
+      setVersaoAtivaId(PRINCIPAL_VERSION_ID);
+    }
+    setVersoes(prev => prev.filter(v => v.id !== id));
+  };
+
+
   // Totals
   const subtotalMaterials = ambientes.reduce((sum, amb) => sum + calcAmbienteMaterialCost(amb, 0), 0);
   const subtotalLabor = ambientes.reduce((sum, amb) => sum + calcAmbienteLaborCost(amb), 0);
@@ -224,6 +329,7 @@ const CalculadoraOrcamento = () => {
         ambientes, acessorios, condicoesPagamento, observacoes,
         margemMaterial, margemServicos, margemAcessorios, margemInstalacao,
         nomeEmpresa, nomeResponsavel, enderecoEmpresa, telefoneEmpresa,
+        versoes, versaoPrincipalNome,
       })),
       subtotal_materials: subtotalMaterials,
       subtotal_labor: subtotalLabor,
@@ -288,6 +394,7 @@ const CalculadoraOrcamento = () => {
     setDescontoValor(''); setDescontoTipo('percent');
     setCondicoesPagamento('Entrada 40%, parcela intermediária 30%, saldo na conclusão 30%');
     setObservacoes(''); setEditingQuoteId(null); setEditingVersion(1); setEditingQuoteNumber('');
+    setVersoes([]); setVersaoAtivaId(PRINCIPAL_VERSION_ID); setVersaoPrincipalNome('Versão Principal');
     draftIdRef.current = null;
     toast.success('Campos limpos!');
   };
@@ -296,6 +403,26 @@ const CalculadoraOrcamento = () => {
     if (!clienteNome) { toast.error('Informe o nome do cliente'); return; }
     setGeneratingPdf(true);
     try {
+      // Garante que a versão ativa esteja sincronizada antes de gerar o PDF
+      const versoesParaPdf = (() => {
+        const principalSnap: VersaoOrcamento = {
+          id: PRINCIPAL_VERSION_ID,
+          nome: versaoPrincipalNome,
+          ambientes: versaoAtivaId === PRINCIPAL_VERSION_ID
+            ? ambientes
+            : (versoes.find(v => v.id === PRINCIPAL_VERSION_ID)?.ambientes || ambientes),
+          acessorios: versaoAtivaId === PRINCIPAL_VERSION_ID
+            ? acessorios
+            : (versoes.find(v => v.id === PRINCIPAL_VERSION_ID)?.acessorios || acessorios),
+        };
+        const alts = versoes
+          .filter(v => v.id !== PRINCIPAL_VERSION_ID)
+          .map(v => v.id === versaoAtivaId
+            ? { ...v, ambientes, acessorios }
+            : v);
+        return [principalSnap, ...alts];
+      })();
+
       await generateOrcamentoPdf({
         quoteNumber: editingQuoteNumber || generateQuoteNumber(),
         clienteNome, tipoAmbiente, dataOrcamento, validadeDias, ambientes, acessorios,
@@ -305,6 +432,8 @@ const CalculadoraOrcamento = () => {
         logoUrl: companyLogo, companyName: nomeEmpresa || 'Marmoraria Artesanal',
         responsibleName: nomeResponsavel, companyAddress: enderecoEmpresa,
         companyPhone: telefoneEmpresa || (profile as any)?.phone || '',
+        versoes: versoesParaPdf.length > 1 ? versoesParaPdf : undefined,
+        versaoPrincipalNome,
       });
       toast.success('PDF gerado!');
     } catch (err: any) { toast.error(err.message || 'Erro ao gerar PDF'); } finally { setGeneratingPdf(false); }
@@ -358,6 +487,27 @@ const CalculadoraOrcamento = () => {
           clienteNome={clienteNome} tipoAmbiente={tipoAmbiente} dataOrcamento={dataOrcamento}
           validadeDias={validadeDias} nomeEmpresa={nomeEmpresa} nomeResponsavel={nomeResponsavel}
           enderecoEmpresa={enderecoEmpresa} telefoneEmpresa={telefoneEmpresa} onChange={handleClienteChange}
+        />
+
+
+        <VersoesOrcamento
+          versoes={versoes}
+          versaoAtivaId={versaoAtivaId}
+          versaoPrincipalNome={versaoPrincipalNome}
+          ambientesAtuais={ambientes}
+          acessoriosAtuais={acessorios}
+          margemMaterial={margemMaterial}
+          margemServicos={margemServicos}
+          margemAcessorios={margemAcessorios}
+          margemInstalacao={margemInstalacao}
+          descontoValor={descontoValor}
+          descontoTipo={descontoTipo}
+          onSetVersaoAtiva={trocarVersaoAtiva}
+          onSaveCurrentTo={persistirAtualEm}
+          onCreateVersao={criarVersao}
+          onRenameVersao={renomearVersao}
+          onRemoveVersao={removerVersao}
+          onSetPrincipalNome={setVersaoPrincipalNome}
         />
 
         {/* Ambientes */}
