@@ -466,6 +466,27 @@ const CalculadoraOrcamento = () => {
           enderecoEmpresa={enderecoEmpresa} telefoneEmpresa={telefoneEmpresa} onChange={handleClienteChange}
         />
 
+
+        <VersoesOrcamento
+          versoes={versoes}
+          versaoAtivaId={versaoAtivaId}
+          versaoPrincipalNome={versaoPrincipalNome}
+          ambientesAtuais={ambientes}
+          acessoriosAtuais={acessorios}
+          margemMaterial={margemMaterial}
+          margemServicos={margemServicos}
+          margemAcessorios={margemAcessorios}
+          margemInstalacao={margemInstalacao}
+          descontoValor={descontoValor}
+          descontoTipo={descontoTipo}
+          onSetVersaoAtiva={trocarVersaoAtiva}
+          onSaveCurrentTo={persistirAtualEm}
+          onCreateVersao={criarVersao}
+          onRenameVersao={renomearVersao}
+          onRemoveVersao={removerVersao}
+          onSetPrincipalNome={setVersaoPrincipalNome}
+        />
+
         {/* Ambientes */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
