@@ -394,6 +394,7 @@ const CalculadoraOrcamento = () => {
     setDescontoValor(''); setDescontoTipo('percent');
     setCondicoesPagamento('Entrada 40%, parcela intermediária 30%, saldo na conclusão 30%');
     setObservacoes(''); setEditingQuoteId(null); setEditingVersion(1); setEditingQuoteNumber('');
+    setVersoes([]); setVersaoAtivaId(PRINCIPAL_VERSION_ID); setVersaoPrincipalNome('Versão Principal');
     draftIdRef.current = null;
     toast.success('Campos limpos!');
   };
