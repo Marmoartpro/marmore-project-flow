@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
   Home, DollarSign, FileText, Users, LogOut, Plus, Menu, X, Bell,
-  Package, Truck, Calculator, CheckCheck, Search, BarChart3, FileSignature, UsersRound,
+  Package, Truck, Calculator, CheckCheck, Search, BarChart3, FileSignature, UsersRound, CalendarDays,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import RoleBadge from './RoleBadge';
@@ -19,6 +19,7 @@ interface Props {
 
 const allNavItems = [
   { path: '/dashboard', label: 'Início', icon: Home, permission: 'dashboard' as const },
+  { path: '/agenda', label: 'Agenda', icon: CalendarDays, permission: 'dashboard' as const },
   { path: '/financeiro', label: 'Financeiro', icon: DollarSign, permission: 'financeiro' as const },
   { path: '/orcamentos', label: 'Orçamentos', icon: FileText, permission: 'orcamentos' as const },
   { path: '/clientes', label: 'Clientes', icon: Users, permission: 'clientes' as const },
@@ -32,6 +33,7 @@ const allNavItems = [
 
 const architectNavItems = [
   { path: '/architect', label: 'Início', icon: Home },
+  { path: '/agenda', label: 'Agenda', icon: CalendarDays },
   { path: '/mostruario', label: 'Mostruário', icon: Package },
 ];
 

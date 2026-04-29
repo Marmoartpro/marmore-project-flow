@@ -24,6 +24,7 @@ import Contratos from "./pages/Contratos";
 import AssinaturaPublica from "./pages/AssinaturaPublica";
 import StonePage from "./pages/StonePage";
 import Equipe from "./pages/Equipe";
+import Agenda from "./pages/Agenda";
 import ClientePortal from "./pages/ClientePortal";
 import InstaladorPortal from "./pages/InstaladorPortal";
 import VendedorPortal from "./pages/VendedorPortal";
@@ -102,6 +103,7 @@ const AppRoutes = () => (
     <Route path="/relatorios" element={<PermissionRoute permission="relatorios"><Relatorios /></PermissionRoute>} />
     <Route path="/contratos" element={<PermissionRoute permission="contratos"><Contratos /></PermissionRoute>} />
     <Route path="/equipe" element={<OwnerOrPermRoute permission="equipe"><Equipe /></OwnerOrPermRoute>} />
+    <Route path="/agenda" element={<ProtectedRoute><Agenda /></ProtectedRoute>} />
     <Route path="/projeto/novo" element={<PermissionRoute permission="projetos"><NewProject /></PermissionRoute>} />
     <Route path="/projeto/:id" element={<PermissionRoute permission="projetos"><ProjectDetail /></PermissionRoute>} />
     <Route path="/nao-autorizado" element={<Unauthorized />} />
