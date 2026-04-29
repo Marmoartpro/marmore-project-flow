@@ -47,6 +47,66 @@ export type Database = {
         }
         Relationships: []
       }
+      appointments: {
+        Row: {
+          all_day: boolean
+          client_id: string | null
+          color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_at: string | null
+          id: string
+          location: string | null
+          owner_id: string
+          project_id: string | null
+          reminder_minutes: number | null
+          start_at: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean
+          client_id?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at?: string | null
+          id?: string
+          location?: string | null
+          owner_id: string
+          project_id?: string | null
+          reminder_minutes?: number | null
+          start_at: string
+          status?: string
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean
+          client_id?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at?: string | null
+          id?: string
+          location?: string | null
+          owner_id?: string
+          project_id?: string | null
+          reminder_minutes?: number | null
+          start_at?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       billing_reminders: {
         Row: {
           created_at: string
