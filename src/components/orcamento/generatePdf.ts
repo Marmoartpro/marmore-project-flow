@@ -7,6 +7,13 @@ import {
   calcPecaAreaLiquida, calcPecaAreaCompra, calcMetrosLinearesBorda,
 } from './types';
 
+interface VersaoPdf {
+  id: string;
+  nome: string;
+  ambientes: Ambiente[];
+  acessorios: AcessorioItem[];
+}
+
 interface PdfParams {
   quoteNumber: string;
   clienteNome: string;
@@ -32,6 +39,9 @@ interface PdfParams {
   responsibleName: string;
   companyAddress: string;
   companyPhone: string;
+  // Versões alternativas (opcional). A primeira é a principal/atual.
+  versoes?: VersaoPdf[];
+  versaoPrincipalNome?: string;
 }
 
 const BLUE = '#2E7DB5';
