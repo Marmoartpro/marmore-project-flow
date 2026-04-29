@@ -739,7 +739,78 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
   }
 
   // ========================
-  // SECTION: OBSERVAÇÃO IMPORTANTE
+  // SECTION: COMPARATIVO DE VERSÕES
+  // (ex: "Com ilhargas" vs "Sem ilhargas")
+  // ========================
+  if (versoes && versoes.length > 0) {
+    // Monta uma lista única: principal + alternativas (sem duplicar a principal)
+    const principalSnap = versoes.find(v => v.id === 'principal');
+    const alternativas = versoes.filter(v => v.id !== 'principal');
+    const todasVersoes: VersaoPdf[] = [
+      principalSnap || {
+        id: 'principal',
+        nome: versaoPrincipalNome || 'Versão Principal',
+        ambientes,
+        acessorios,
+      },
+      ...alternativas,
+    ];
+
+    if (todasVersoes.length > 1) {
+      sectionTitle('Comparativo de Versões');
+      checkPageBreak(20);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(DARK);
+      const intro = doc.splitTextToSize(
+        'Apresentamos as variações deste orçamento para sua avaliação. Os valores abaixo já consideram material, serviços, instalação e acessórios.',
+        contentW,
+      );
+      doc.text(intro, marginL, y);
+      y += intro.length * 4 + 4;
+
+      const head = ['Versão', 'Material', 'Serviços', 'Instalação', 'Acessórios', 'Total'];
+      const body = todasVersoes.map(v => {
+        const subMat = v.ambientes.reduce((s, a) => s + calcAmbienteMaterialCost(a, 0), 0) * fMat;
+        const subLab = v.ambientes.reduce((s, a) => s + calcAmbienteLaborCost(a), 0) * fServ;
+        const subAcc = v.acessorios.reduce((s, a) => s + (parseInt(a.quantidade) || 1) * (parseFloat(a.valorUnitario) || 0), 0) * fAcc;
+        const subInst = v.ambientes.reduce((s, a) => s + calcAmbienteInstallCost(a), 0) * fInst;
+        const bruto = subMat + subLab + subAcc + subInst;
+        const dsc = descontoTipo === 'percent'
+          ? bruto * ((parseFloat(descontoValor) || 0) / 100)
+          : (parseFloat(descontoValor) || 0);
+        const tot = bruto - dsc;
+        return [
+          v.nome,
+          `R$ ${fmt(subMat)}`,
+          `R$ ${fmt(subLab)}`,
+          `R$ ${fmt(subInst)}`,
+          `R$ ${fmt(subAcc)}`,
+          `R$ ${fmt(tot)}`,
+        ];
+      });
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: marginL, right: marginR },
+        head: [head],
+        body,
+        styles: { fontSize: 8, cellPadding: 2.5, textColor: [40, 40, 40] },
+        headStyles: { fillColor: [46, 125, 181], textColor: [255, 255, 255], fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        columnStyles: {
+          0: { fontStyle: 'bold' },
+          1: { halign: 'right' },
+          2: { halign: 'right' },
+          3: { halign: 'right' },
+          4: { halign: 'right' },
+          5: { halign: 'right', fontStyle: 'bold', textColor: [46, 125, 181] },
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+    }
+  }
+
   // ========================
   if (observacoes) {
     sectionTitle('Observação Importante');
