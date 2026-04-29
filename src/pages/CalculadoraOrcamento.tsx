@@ -22,6 +22,7 @@ import AlertasOrcamento from '@/components/orcamento/AlertasOrcamento';
 import SmartBudgetGenerator from '@/components/orcamento/SmartBudgetGenerator';
 import AIReviewButton from '@/components/orcamento/AIReviewButton';
 import BudgetTemplates from '@/components/orcamento/BudgetTemplates';
+import VersoesOrcamento, { VersaoOrcamento } from '@/components/orcamento/VersoesOrcamento';
 
 const today = () => new Date().toISOString().split('T')[0];
 
