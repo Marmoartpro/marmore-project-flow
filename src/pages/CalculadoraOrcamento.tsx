@@ -402,6 +402,26 @@ const CalculadoraOrcamento = () => {
     if (!clienteNome) { toast.error('Informe o nome do cliente'); return; }
     setGeneratingPdf(true);
     try {
+      // Garante que a versão ativa esteja sincronizada antes de gerar o PDF
+      const versoesParaPdf = (() => {
+        const principalSnap: VersaoOrcamento = {
+          id: PRINCIPAL_VERSION_ID,
+          nome: versaoPrincipalNome,
+          ambientes: versaoAtivaId === PRINCIPAL_VERSION_ID
+            ? ambientes
+            : (versoes.find(v => v.id === PRINCIPAL_VERSION_ID)?.ambientes || ambientes),
+          acessorios: versaoAtivaId === PRINCIPAL_VERSION_ID
+            ? acessorios
+            : (versoes.find(v => v.id === PRINCIPAL_VERSION_ID)?.acessorios || acessorios),
+        };
+        const alts = versoes
+          .filter(v => v.id !== PRINCIPAL_VERSION_ID)
+          .map(v => v.id === versaoAtivaId
+            ? { ...v, ambientes, acessorios }
+            : v);
+        return [principalSnap, ...alts];
+      })();
+
       await generateOrcamentoPdf({
         quoteNumber: editingQuoteNumber || generateQuoteNumber(),
         clienteNome, tipoAmbiente, dataOrcamento, validadeDias, ambientes, acessorios,
@@ -411,6 +431,8 @@ const CalculadoraOrcamento = () => {
         logoUrl: companyLogo, companyName: nomeEmpresa || 'Marmoraria Artesanal',
         responsibleName: nomeResponsavel, companyAddress: enderecoEmpresa,
         companyPhone: telefoneEmpresa || (profile as any)?.phone || '',
+        versoes: versoesParaPdf.length > 1 ? versoesParaPdf : undefined,
+        versaoPrincipalNome,
       });
       toast.success('PDF gerado!');
     } catch (err: any) { toast.error(err.message || 'Erro ao gerar PDF'); } finally { setGeneratingPdf(false); }
