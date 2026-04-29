@@ -91,6 +91,8 @@ const CalculadoraOrcamento = () => {
       setValidadeDias(String(data.validity_days || 15));
       if (d?.ambientes) setAmbientes(d.ambientes);
       if (d?.acessorios) setAcessorios(d.acessorios);
+      if (Array.isArray(d?.versoes)) setVersoes(d.versoes);
+      if (d?.versaoPrincipalNome) setVersaoPrincipalNome(d.versaoPrincipalNome);
       setMargemMaterial(d?.margemMaterial ?? data.profit_margin_percent ?? 30);
       setMargemServicos(d?.margemServicos ?? 30);
       setMargemAcessorios(d?.margemAcessorios ?? 30);
