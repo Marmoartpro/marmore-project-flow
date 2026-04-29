@@ -178,6 +178,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     descontoValor, descontoTipo,
     condicoesPagamento, observacoes, logoUrl, companyName, responsibleName,
     companyAddress, companyPhone,
+    versoes, versaoPrincipalNome,
   } = params;
 
   const doc = new jsPDF('p', 'mm', 'a4');
