@@ -196,6 +196,103 @@ const CalculadoraOrcamento = () => {
     setShowAddAmbiente(false);
   };
 
+  // ─── Versões alternativas ───
+  // Ao trocar versão, salva o estado atual na versão atualmente ativa antes
+  const persistirAtualEm = (versaoId: string) => {
+    if (versaoId === PRINCIPAL_VERSION_ID) {
+      // o estado principal já está em ambientes/acessorios; nada a persistir externamente
+      // mas se a versão "principal" estiver salva no array versoes (caso editamos outra antes), atualizamos
+      setVersoes(prev => prev.map(v => v.id === versaoId
+        ? { ...v, ambientes: JSON.parse(JSON.stringify(ambientes)), acessorios: JSON.parse(JSON.stringify(acessorios)) }
+        : v));
+    } else {
+      setVersoes(prev => prev.map(v => v.id === versaoId
+        ? { ...v, ambientes: JSON.parse(JSON.stringify(ambientes)), acessorios: JSON.parse(JSON.stringify(acessorios)) }
+        : v));
+    }
+  };
+
+  const trocarVersaoAtiva = (novaId: string) => {
+    if (novaId === versaoAtivaId) return;
+    // 1) salva o atual na ativa
+    if (versaoAtivaId === PRINCIPAL_VERSION_ID) {
+      // garante que existe um snapshot da principal no array para restaurar depois
+      setVersoes(prev => {
+        const exists = prev.some(v => v.id === PRINCIPAL_VERSION_ID);
+        const snap: VersaoOrcamento = {
+          id: PRINCIPAL_VERSION_ID,
+          nome: versaoPrincipalNome,
+          ambientes: JSON.parse(JSON.stringify(ambientes)),
+          acessorios: JSON.parse(JSON.stringify(acessorios)),
+        };
+        return exists ? prev.map(v => v.id === PRINCIPAL_VERSION_ID ? snap : v) : [snap, ...prev];
+      });
+    } else {
+      persistirAtualEm(versaoAtivaId);
+    }
+    // 2) carrega a nova
+    if (novaId === PRINCIPAL_VERSION_ID) {
+      const principal = versoes.find(v => v.id === PRINCIPAL_VERSION_ID);
+      if (principal) {
+        setAmbientes(principal.ambientes);
+        setAcessorios(principal.acessorios);
+      }
+    } else {
+      const target = versoes.find(v => v.id === novaId);
+      if (target) {
+        setAmbientes(JSON.parse(JSON.stringify(target.ambientes)));
+        setAcessorios(JSON.parse(JSON.stringify(target.acessorios)));
+      }
+    }
+    setVersaoAtivaId(novaId);
+  };
+
+  const criarVersao = (nome: string) => {
+    // duplica o estado atual como nova versão e ativa-a
+    persistirAtualEm(versaoAtivaId);
+    if (versaoAtivaId === PRINCIPAL_VERSION_ID) {
+      setVersoes(prev => {
+        const exists = prev.some(v => v.id === PRINCIPAL_VERSION_ID);
+        const snap: VersaoOrcamento = {
+          id: PRINCIPAL_VERSION_ID,
+          nome: versaoPrincipalNome,
+          ambientes: JSON.parse(JSON.stringify(ambientes)),
+          acessorios: JSON.parse(JSON.stringify(acessorios)),
+        };
+        return exists ? prev : [snap, ...prev];
+      });
+    }
+    const novaId = crypto.randomUUID();
+    const nova: VersaoOrcamento = {
+      id: novaId,
+      nome,
+      ambientes: JSON.parse(JSON.stringify(ambientes)),
+      acessorios: JSON.parse(JSON.stringify(acessorios)),
+    };
+    setVersoes(prev => [...prev, nova]);
+    setVersaoAtivaId(novaId);
+    toast.success(`Versão "${nome}" criada — agora você pode editá-la.`);
+  };
+
+  const renomearVersao = (id: string, nome: string) => {
+    setVersoes(prev => prev.map(v => v.id === id ? { ...v, nome } : v));
+  };
+
+  const removerVersao = (id: string) => {
+    if (id === PRINCIPAL_VERSION_ID) return;
+    if (id === versaoAtivaId) {
+      // volta para principal
+      const principal = versoes.find(v => v.id === PRINCIPAL_VERSION_ID);
+      if (principal) {
+        setAmbientes(principal.ambientes);
+        setAcessorios(principal.acessorios);
+      }
+      setVersaoAtivaId(PRINCIPAL_VERSION_ID);
+    }
+    setVersoes(prev => prev.filter(v => v.id !== id));
+  };
+
+
   // Totals
   const subtotalMaterials = ambientes.reduce((sum, amb) => sum + calcAmbienteMaterialCost(amb, 0), 0);
   const subtotalLabor = ambientes.reduce((sum, amb) => sum + calcAmbienteLaborCost(amb), 0);
