@@ -299,14 +299,14 @@ export const PECA_TIPOS: Record<string, string[]> = {
   'Banheiro Social': [
     'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla',
     'Frontão de Banheira', 'Box - Piso', 'Soleira de Box', 'Soleira',
-    'Nicho Embutido', 'Nicho de Box', 'Rodapé/Filete', 'Revestimento de Parede',
-    'Peça Personalizada',
+    'Nicho Embutido', 'Nicho de Box', 'Prateleira/Canaleta de Box',
+    'Rodapé/Filete', 'Revestimento de Parede', 'Peça Personalizada',
   ],
   'Banheiro Suíte': [
     'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla',
     'Frontão de Banheira', 'Box - Piso', 'Soleira de Box', 'Soleira',
-    'Nicho Embutido', 'Nicho de Box', 'Rodapé/Filete', 'Revestimento de Parede',
-    'Peça Personalizada',
+    'Nicho Embutido', 'Nicho de Box', 'Prateleira/Canaleta de Box',
+    'Rodapé/Filete', 'Revestimento de Parede', 'Peça Personalizada',
   ],
   'Lavatório Avulso': ['Lavatório', 'Soleira', 'Peça Personalizada'],
   'Bancada Tanque': ['Bancada Tanque', 'Peça Personalizada'],
