@@ -463,6 +463,10 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   raloLinear: false, raloComprimento: '', raloLargura: '', valorServicoRalo: '',
   nichoBoxLargura: '', nichoBoxAltura: '', nichoBoxProfundidade: '', nichoBoxQtd: '0',
   valorServicoNichoBox: '',
+  prateleiraBoxQtd: '0', prateleiraBoxComprimento: '', prateleiraBoxProfundidade: '',
+  prateleiraBoxAlturaAba: '', prateleiraBoxTampasLaterais: false,
+  prateleiraBoxCorteEscoamento: false, valorServicoCorteEscoamento: '',
+  valorServicoPrateleiraBox: '',
   extras: [],
 });
 
