@@ -193,6 +193,15 @@ export interface PecaItem {
   nichoBoxProfundidade: string;
   nichoBoxQtd: string;
   valorServicoNichoBox: string;
+  // Prateleira/Canaleta de Box (sobreposta — sem cortar parede)
+  prateleiraBoxQtd: string;             // quantidade de prateleiras/canaletas
+  prateleiraBoxComprimento: string;     // cm — extensão horizontal (largura da parede)
+  prateleiraBoxProfundidade: string;    // cm — quanto sai da parede (profundidade da base)
+  prateleiraBoxAlturaAba: string;       // cm — altura da aba frontal (borda contenção)
+  prateleiraBoxTampasLaterais: boolean; // adiciona 2 tampas laterais fechando os cantos
+  prateleiraBoxCorteEscoamento: boolean;// inclui corte/rasgo p/ escoamento
+  valorServicoCorteEscoamento: string;  // R$ por corte de escoamento (cobrança fixa)
+  valorServicoPrateleiraBox: string;    // R$ adicional por prateleira (montagem/colagem)
   // Extras
   extras: ExtraItem[];
 }
@@ -290,14 +299,14 @@ export const PECA_TIPOS: Record<string, string[]> = {
   'Banheiro Social': [
     'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla',
     'Frontão de Banheira', 'Box - Piso', 'Soleira de Box', 'Soleira',
-    'Nicho Embutido', 'Nicho de Box', 'Rodapé/Filete', 'Revestimento de Parede',
-    'Peça Personalizada',
+    'Nicho Embutido', 'Nicho de Box', 'Prateleira/Canaleta de Box',
+    'Rodapé/Filete', 'Revestimento de Parede', 'Peça Personalizada',
   ],
   'Banheiro Suíte': [
     'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla',
     'Frontão de Banheira', 'Box - Piso', 'Soleira de Box', 'Soleira',
-    'Nicho Embutido', 'Nicho de Box', 'Rodapé/Filete', 'Revestimento de Parede',
-    'Peça Personalizada',
+    'Nicho Embutido', 'Nicho de Box', 'Prateleira/Canaleta de Box',
+    'Rodapé/Filete', 'Revestimento de Parede', 'Peça Personalizada',
   ],
   'Lavatório Avulso': ['Lavatório', 'Soleira', 'Peça Personalizada'],
   'Bancada Tanque': ['Bancada Tanque', 'Peça Personalizada'],
@@ -340,7 +349,7 @@ export const PECA_TIPOS: Record<string, string[]> = {
     'Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Ilha Gourmet', 'Península',
     'Lavatório', 'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla',
     'Frontão', 'Frontão de Banheira',
-    'Box - Piso', 'Soleira de Box', 'Nicho de Box',
+    'Box - Piso', 'Soleira de Box', 'Nicho de Box', 'Prateleira/Canaleta de Box',
     'Soleira', 'Peitoril', 'Rodapé/Filete', 'Calha/Pingadeira',
     'Borda de Piscina', 'Escada/Degrau', 'Espelho de Escada', 'Rodapé Escada',
     'Bancada de Churrasqueira', 'Tampo de Grelha', 'Lavabo Externo',
@@ -454,6 +463,10 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   raloLinear: false, raloComprimento: '', raloLargura: '', valorServicoRalo: '',
   nichoBoxLargura: '', nichoBoxAltura: '', nichoBoxProfundidade: '', nichoBoxQtd: '0',
   valorServicoNichoBox: '',
+  prateleiraBoxQtd: '0', prateleiraBoxComprimento: '', prateleiraBoxProfundidade: '',
+  prateleiraBoxAlturaAba: '', prateleiraBoxTampasLaterais: false,
+  prateleiraBoxCorteEscoamento: false, valorServicoCorteEscoamento: '',
+  valorServicoPrateleiraBox: '',
   extras: [],
 });
 
@@ -498,6 +511,8 @@ const cm2toM2 = (cm2: number): number => cm2 / 10000;
 
 export const calcPecaAreaBase = (p: PecaItem): number => {
   const q = parseInt(p.quantidade) || 1;
+  // Prateleira/Canaleta de Box: área é totalmente derivada de campos próprios (extras).
+  if (p.tipo === 'Prateleira/Canaleta de Box') return 0;
   let areaCm2 = 0;
 
   switch (p.formato) {
@@ -671,6 +686,21 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
     const nH = cm(p.nichoBoxAltura);
     const nD = cm(p.nichoBoxProfundidade);
     extraCm2 += nichoQ * (nW * nH + 2 * nW * nD + 2 * nD * nH);
+  }
+
+  // Prateleira/Canaleta de Box — peça sobreposta na parede (tipo "L" deitado)
+  // Área = base (comp×prof) + aba frontal (comp×altAba) + opcional 2 tampas laterais (prof×altAba)
+  if (p.tipo === 'Prateleira/Canaleta de Box') {
+    const pratQ = parseInt(p.prateleiraBoxQtd) || 1;
+    const pComp = cm(p.prateleiraBoxComprimento);
+    const pProf = cm(p.prateleiraBoxProfundidade);
+    const pAba = cm(p.prateleiraBoxAlturaAba);
+    let pCm2 = pComp * pProf;                       // base superior
+    if (pAba > 0) pCm2 += pComp * pAba;             // aba frontal
+    if (p.prateleiraBoxTampasLaterais && pAba > 0) {
+      pCm2 += 2 * (pProf * pAba);                   // 2 tampas laterais
+    }
+    extraCm2 += pratQ * pCm2;
   }
 
   // Revestimento — deduct aberturas
@@ -1075,6 +1105,15 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
     // Box nicho
     if ((parseInt(p.nichoBoxQtd) || 0) > 0) {
       total += (parseInt(p.nichoBoxQtd) || 0) * (parseFloat(p.valorServicoNichoBox) || 0) * q;
+    }
+
+    // Prateleira/Canaleta de Box — serviço por prateleira + corte de escoamento
+    if (p.tipo === 'Prateleira/Canaleta de Box') {
+      const pratQ = parseInt(p.prateleiraBoxQtd) || 1;
+      total += pratQ * (parseFloat(p.valorServicoPrateleiraBox) || 0) * q;
+      if (p.prateleiraBoxCorteEscoamento) {
+        total += pratQ * (parseFloat(p.valorServicoCorteEscoamento) || 0) * q;
+      }
     }
 
     // Extras

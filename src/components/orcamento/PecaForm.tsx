@@ -58,6 +58,7 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
   const isTampo = is('Tampo de Mesa', 'Mesa de Mármore');
   const isNicho = is('Nicho Embutido', 'Nicho de Box');
   const isBox = is('Box - Piso');
+  const isPrateleiraBox = is('Prateleira/Canaleta de Box');
   const isJardineira = is('Jardineira/Vaso');
   const showFormato = is('Tampo de Mesa', 'Mesa de Mármore', 'Peça Personalizada', 'Piso',
     'Lareira', 'Revestimento de Parede');
@@ -1099,7 +1100,72 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
         </div>
       )}
 
-      {/* ═══ AREA SUMMARY ═══ */}
+      {/* ═══ PRATELEIRA / CANALETA DE BOX (sobreposta — sem cortar parede) ═══ */}
+      {isPrateleiraBox && (
+        <div className="space-y-2 bg-primary/5 border border-primary/20 rounded-md p-3">
+          <div className="text-[11px] font-semibold text-primary">
+            Prateleira/Canaleta de Box (sobreposta)
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Modelo aplicado <b>sobre a parede</b> (ideal para apartamentos sem possibilidade de embutir).
+            Forma de "L" deitado: base + aba frontal de contenção + corte para escoamento da água.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div>
+              <Label className="text-[10px]">Quantidade</Label>
+              <Input type="number" min="1" value={peca.prateleiraBoxQtd}
+                onChange={e => onChange('prateleiraBoxQtd', e.target.value)} className="h-8 text-xs" />
+            </div>
+            <div>
+              <Label className="text-[10px]">Comprimento (cm)</Label>
+              <Input type="number" step="0.1" value={peca.prateleiraBoxComprimento}
+                onChange={e => onChange('prateleiraBoxComprimento', e.target.value)}
+                className="h-8 text-xs" placeholder="Ex: 90" />
+            </div>
+            <div>
+              <Label className="text-[10px]">Profundidade (cm)</Label>
+              <Input type="number" step="0.1" value={peca.prateleiraBoxProfundidade}
+                onChange={e => onChange('prateleiraBoxProfundidade', e.target.value)}
+                className="h-8 text-xs" placeholder="Ex: 12" />
+            </div>
+            <div>
+              <Label className="text-[10px]">Altura aba frontal (cm)</Label>
+              <Input type="number" step="0.1" value={peca.prateleiraBoxAlturaAba}
+                onChange={e => onChange('prateleiraBoxAlturaAba', e.target.value)}
+                className="h-8 text-xs" placeholder="Ex: 4" />
+            </div>
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 text-xs cursor-pointer">
+                <input type="checkbox" checked={!!peca.prateleiraBoxTampasLaterais}
+                  onChange={e => onChange('prateleiraBoxTampasLaterais', e.target.checked)} />
+                Tampas laterais (2)
+              </label>
+            </div>
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 text-xs cursor-pointer">
+                <input type="checkbox" checked={!!peca.prateleiraBoxCorteEscoamento}
+                  onChange={e => onChange('prateleiraBoxCorteEscoamento', e.target.checked)} />
+                Corte p/ escoamento
+              </label>
+            </div>
+            {peca.prateleiraBoxCorteEscoamento && (
+              <div>
+                <Label className="text-[10px]">R$ corte escoamento</Label>
+                <Input type="number" step="0.01" value={peca.valorServicoCorteEscoamento}
+                  onChange={e => onChange('valorServicoCorteEscoamento', e.target.value)}
+                  className="h-8 text-xs" placeholder="0,00" />
+              </div>
+            )}
+            <div>
+              <Label className="text-[10px]">R$ serviço/prateleira</Label>
+              <Input type="number" step="0.01" value={peca.valorServicoPrateleiraBox}
+                onChange={e => onChange('valorServicoPrateleiraBox', e.target.value)}
+                className="h-8 text-xs" placeholder="Montagem/colagem" />
+            </div>
+          </div>
+        </div>
+      )}
+
       {areaLiq > 0 && (
         <div className="text-[11px] text-muted-foreground flex flex-wrap gap-3 bg-primary/5 rounded-md p-2">
           <span className="font-medium">m² líquido: <b className="text-foreground">{fmt(areaLiq)}</b></span>
