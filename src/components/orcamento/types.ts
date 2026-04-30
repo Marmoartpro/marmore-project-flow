@@ -193,6 +193,15 @@ export interface PecaItem {
   nichoBoxProfundidade: string;
   nichoBoxQtd: string;
   valorServicoNichoBox: string;
+  // Prateleira/Canaleta de Box (sobreposta — sem cortar parede)
+  prateleiraBoxQtd: string;             // quantidade de prateleiras/canaletas
+  prateleiraBoxComprimento: string;     // cm — extensão horizontal (largura da parede)
+  prateleiraBoxProfundidade: string;    // cm — quanto sai da parede (profundidade da base)
+  prateleiraBoxAlturaAba: string;       // cm — altura da aba frontal (borda contenção)
+  prateleiraBoxTampasLaterais: boolean; // adiciona 2 tampas laterais fechando os cantos
+  prateleiraBoxCorteEscoamento: boolean;// inclui corte/rasgo p/ escoamento
+  valorServicoCorteEscoamento: string;  // R$ por corte de escoamento (cobrança fixa)
+  valorServicoPrateleiraBox: string;    // R$ adicional por prateleira (montagem/colagem)
   // Extras
   extras: ExtraItem[];
 }
