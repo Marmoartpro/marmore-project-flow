@@ -511,6 +511,8 @@ const cm2toM2 = (cm2: number): number => cm2 / 10000;
 
 export const calcPecaAreaBase = (p: PecaItem): number => {
   const q = parseInt(p.quantidade) || 1;
+  // Prateleira/Canaleta de Box: área é totalmente derivada de campos próprios (extras).
+  if (p.tipo === 'Prateleira/Canaleta de Box') return 0;
   let areaCm2 = 0;
 
   switch (p.formato) {
