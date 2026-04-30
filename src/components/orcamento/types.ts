@@ -349,7 +349,7 @@ export const PECA_TIPOS: Record<string, string[]> = {
     'Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Ilha Gourmet', 'Península',
     'Lavatório', 'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla',
     'Frontão', 'Frontão de Banheira',
-    'Box - Piso', 'Soleira de Box', 'Nicho de Box',
+    'Box - Piso', 'Soleira de Box', 'Nicho de Box', 'Prateleira/Canaleta de Box',
     'Soleira', 'Peitoril', 'Rodapé/Filete', 'Calha/Pingadeira',
     'Borda de Piscina', 'Escada/Degrau', 'Espelho de Escada', 'Rodapé Escada',
     'Bancada de Churrasqueira', 'Tampo de Grelha', 'Lavabo Externo',
