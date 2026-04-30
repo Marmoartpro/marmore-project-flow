@@ -1107,6 +1107,15 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
       total += (parseInt(p.nichoBoxQtd) || 0) * (parseFloat(p.valorServicoNichoBox) || 0) * q;
     }
 
+    // Prateleira/Canaleta de Box — serviço por prateleira + corte de escoamento
+    if (p.tipo === 'Prateleira/Canaleta de Box') {
+      const pratQ = parseInt(p.prateleiraBoxQtd) || 1;
+      total += pratQ * (parseFloat(p.valorServicoPrateleiraBox) || 0) * q;
+      if (p.prateleiraBoxCorteEscoamento) {
+        total += pratQ * (parseFloat(p.valorServicoCorteEscoamento) || 0) * q;
+      }
+    }
+
     // Extras
     (p.extras || []).forEach(e => { total += (e.valor || 0) * q; });
   });
