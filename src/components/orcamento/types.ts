@@ -688,6 +688,21 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
     extraCm2 += nichoQ * (nW * nH + 2 * nW * nD + 2 * nD * nH);
   }
 
+  // Prateleira/Canaleta de Box — peça sobreposta na parede (tipo "L" deitado)
+  // Área = base (comp×prof) + aba frontal (comp×altAba) + opcional 2 tampas laterais (prof×altAba)
+  if (p.tipo === 'Prateleira/Canaleta de Box') {
+    const pratQ = parseInt(p.prateleiraBoxQtd) || 1;
+    const pComp = cm(p.prateleiraBoxComprimento);
+    const pProf = cm(p.prateleiraBoxProfundidade);
+    const pAba = cm(p.prateleiraBoxAlturaAba);
+    let pCm2 = pComp * pProf;                       // base superior
+    if (pAba > 0) pCm2 += pComp * pAba;             // aba frontal
+    if (p.prateleiraBoxTampasLaterais && pAba > 0) {
+      pCm2 += 2 * (pProf * pAba);                   // 2 tampas laterais
+    }
+    extraCm2 += pratQ * pCm2;
+  }
+
   // Revestimento — deduct aberturas
   if (p.aberturas && p.aberturas.length > 0) {
     p.aberturas.forEach(ab => {
