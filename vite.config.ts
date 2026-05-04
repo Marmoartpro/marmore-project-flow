@@ -5,6 +5,10 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: process.env.ELECTRON === "true" ? "./" : "/",
+  define: {
+    __IS_ELECTRON__: JSON.stringify(process.env.ELECTRON === "true"),
+  },
   server: {
     host: "::",
     port: 8080,
