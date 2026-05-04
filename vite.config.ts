@@ -5,6 +5,8 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // Use relative base when building for Electron (file:// protocol)
+  base: process.env.ELECTRON === "true" ? "./" : "/",
   server: {
     host: "::",
     port: 8080,
