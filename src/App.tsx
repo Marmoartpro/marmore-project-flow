@@ -1,5 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, HashRouter, Route, Routes, Navigate } from "react-router-dom";
+
+const Router = typeof __IS_ELECTRON__ !== "undefined" && __IS_ELECTRON__ ? HashRouter : BrowserRouter;
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
