@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -10,7 +11,11 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "electron:build": "cross-env ELECTRON=true vite build",
+    "electron:dev": "npm run electron:build && electron .",
+    "electron:pack:win": "npm run electron:build && electron-packager . \"MarmoArt Pro\" --platform=win32 --arch=x64 --out=electron-release --overwrite --ignore=\"^/src\" --ignore=\"^/public\" --ignore=\"^/supabase\" --ignore=\"^/electron-release\" --ignore=\"^/playwright\" --ignore=\"^/tests\"",
+    "electron:pack:mac": "npm run electron:build && electron-packager . \"MarmoArt Pro\" --platform=darwin --arch=universal --out=electron-release --overwrite --ignore=\"^/src\" --ignore=\"^/public\" --ignore=\"^/supabase\" --ignore=\"^/electron-release\" --ignore=\"^/playwright\" --ignore=\"^/tests\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
