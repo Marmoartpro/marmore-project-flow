@@ -458,7 +458,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(80);
-  doc.text('Resumo técnico das medidas calculadas para cada peça (m² de chapa e ml de acabamento).', marginL, y);
+  doc.text('Resumo das medidas calculadas para cada peça (área e metros lineares de acabamento).', marginL, y);
   y += 8;
 
   ambientes.forEach((amb) => {
