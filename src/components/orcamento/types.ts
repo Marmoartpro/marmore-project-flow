@@ -202,6 +202,13 @@ export interface PecaItem {
   prateleiraBoxCorteEscoamento: boolean;// inclui corte/rasgo p/ escoamento
   valorServicoCorteEscoamento: string;  // R$ por corte de escoamento (cobrança fixa)
   valorServicoPrateleiraBox: string;    // R$ adicional por prateleira (montagem/colagem)
+  // Balcão Gourmet 2 Alturas — bar/nível superior elevado sobre a bancada
+  nivelSuperior: boolean;
+  nivelSuperiorLargura: string;       // cm — profundidade do tampo superior
+  nivelSuperiorComprimento: string;   // cm — extensão do tampo superior
+  nivelSuperiorAltura: string;        // cm — altura da saia/frontão entre os 2 níveis
+  nivelSuperiorComSaia: boolean;      // adiciona painel frontal entre níveis
+  nivelSuperiorComLaterais: boolean;  // adiciona 2 tampas laterais fechando os cantos
   // Extras
   extras: ExtraItem[];
 }
@@ -467,6 +474,8 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   prateleiraBoxAlturaAba: '', prateleiraBoxTampasLaterais: false,
   prateleiraBoxCorteEscoamento: false, valorServicoCorteEscoamento: '',
   valorServicoPrateleiraBox: '',
+  nivelSuperior: false, nivelSuperiorLargura: '', nivelSuperiorComprimento: '',
+  nivelSuperiorAltura: '', nivelSuperiorComSaia: true, nivelSuperiorComLaterais: false,
   extras: [],
 });
 
@@ -702,6 +711,19 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
     }
     extraCm2 += pratQ * pCm2;
   }
+
+  // Balcão Gourmet 2 Alturas — tampo superior + saia frontal + opcional laterais
+  if (p.nivelSuperior) {
+    const nW = cm(p.nivelSuperiorLargura);
+    const nL = cm(p.nivelSuperiorComprimento);
+    const nH = cm(p.nivelSuperiorAltura);
+    if (nW > 0 && nL > 0) extraCm2 += nW * nL;          // tampo superior
+    if (p.nivelSuperiorComSaia && nH > 0 && nL > 0) {
+      extraCm2 += nL * nH;                               // saia frontal entre níveis
+    }
+    if (p.nivelSuperiorComLaterais && nH > 0 && nW > 0) {
+      extraCm2 += 2 * (nW * nH);                         // 2 tampas laterais
+    }
 
   // Revestimento — deduct aberturas
   if (p.aberturas && p.aberturas.length > 0) {
