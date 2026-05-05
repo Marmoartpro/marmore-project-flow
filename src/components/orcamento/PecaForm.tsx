@@ -28,24 +28,24 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
   const mlBorda = calcMetrosLinearesBorda(peca);
 
   const is = (...tipos: string[]) => tipos.includes(peca.tipo);
-  const showCuba = is('Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Lavatório', 'Lavabo Externo',
+  const showCuba = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Lavatório', 'Lavabo Externo',
     'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla', 'Bancada Tanque', 'Ilha Gourmet', 'Península',
     'Bancada de Churrasqueira');
-  const showRebaixo = is('Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Bancada de Banheiro',
+  const showRebaixo = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Bancada de Banheiro',
     'Bancada Suspensa', 'Tampo Cuba Dupla', 'Ilha Gourmet', 'Península', 'Bancada de Churrasqueira');
-  const showBorda = is('Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Lavatório', 'Lavabo Externo',
+  const showBorda = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Lavatório', 'Lavabo Externo',
     'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla', 'Soleira', 'Soleira de Box',
     'Borda de Piscina', 'Escada/Degrau', 'Espelho de Escada', 'Peitoril', 'Calha/Pingadeira',
     'Tampo de Mesa', 'Mesa de Mármore', 'Ilha Gourmet', 'Península', 'Frontão', 'Frontão de Banheira',
     'Bancada de Churrasqueira', 'Tampo de Grelha');
-  const showFuros = is('Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Lavatório', 'Lavabo Externo',
+  const showFuros = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Lavatório', 'Lavabo Externo',
     'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla', 'Ilha Gourmet', 'Península',
     'Bancada de Churrasqueira');
-  const showBacksplash = is('Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Bancada de Banheiro',
+  const showBacksplash = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Bancada de Banheiro',
     'Bancada Suspensa', 'Tampo Cuba Dupla', 'Lavatório', 'Lavabo Externo', 'Bancada Tanque',
     'Ilha Gourmet', 'Península', 'Bancada de Churrasqueira');
-  const showCooktop = is('Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Ilha Gourmet', 'Península');
-  const showIlhargas = is('Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Bancada de Banheiro',
+  const showCooktop = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Ilha Gourmet', 'Península');
+  const showIlhargas = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Bancada de Banheiro',
     'Bancada Suspensa', 'Bancada Tanque', 'Lavatório', 'Lavabo Externo', 'Ilha Gourmet', 'Península',
     'Bancada de Churrasqueira');
   const isPiscina = is('Borda de Piscina');
