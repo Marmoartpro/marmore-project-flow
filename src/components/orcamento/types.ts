@@ -720,12 +720,15 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
     const nW = cm(p.nivelSuperiorLargura);
     const nL = cm(p.nivelSuperiorComprimento);
     const nH = cm(p.nivelSuperiorAltura);
-    if (nW > 0 && nL > 0) extraCm2 += nW * nL;          // tampo superior
+    if (nW > 0 && nL > 0) extraCm2 += nW * nL;          // tampo superior (profundidade × comprimento)
     if (p.nivelSuperiorComSaia && nH > 0 && nL > 0) {
-      extraCm2 += nL * nH;                               // saia frontal entre níveis
+      extraCm2 += nL * nH;                               // saia frontal (comprimento × altura)
     }
     if (p.nivelSuperiorComLaterais && nH > 0 && nW > 0) {
-      extraCm2 += 2 * (nW * nH);                         // 2 tampas laterais
+      extraCm2 += 2 * (nW * nH);                         // 2 ilhargas laterais (profundidade × altura)
+    }
+    if (p.nivelSuperiorComEspelho && nH > 0 && nL > 0) {
+      extraCm2 += nL * nH;                               // espelho traseiro (comprimento × altura)
     }
   }
 
