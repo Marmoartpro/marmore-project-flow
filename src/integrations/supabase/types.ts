@@ -1247,6 +1247,36 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_pdfs: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_url: string
+          id: string
+          owner_id: string
+          quote_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_url: string
+          id?: string
+          owner_id: string
+          quote_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_url?: string
+          id?: string
+          owner_id?: string
+          quote_id?: string
+        }
+        Relationships: []
+      }
       quotes: {
         Row: {
           client_name: string
