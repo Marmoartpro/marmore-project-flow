@@ -1031,6 +1031,9 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
       ml += mlPeca * q;
     });
     total += (parseFloat(mo.corte45) || 0) * ml;
+  } else {
+    total += parseFloat(mo.corte45) || 0;
+  }
 
   // Per-piece costs
   amb.pecas.forEach(p => {
