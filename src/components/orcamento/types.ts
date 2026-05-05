@@ -724,6 +724,7 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
     if (p.nivelSuperiorComLaterais && nH > 0 && nW > 0) {
       extraCm2 += 2 * (nW * nH);                         // 2 tampas laterais
     }
+  }
 
   // Revestimento — deduct aberturas
   if (p.aberturas && p.aberturas.length > 0) {
