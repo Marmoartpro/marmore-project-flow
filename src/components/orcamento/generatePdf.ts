@@ -43,6 +43,9 @@ interface PdfParams {
   // Versões alternativas (opcional). A primeira é a principal/atual.
   versoes?: VersaoPdf[];
   versaoPrincipalNome?: string;
+  // Quando informado, salva o PDF no histórico do orçamento (bucket quote-pdfs)
+  quoteId?: string;
+  ownerId?: string;
 }
 
 const BLUE = '#2E7DB5';
