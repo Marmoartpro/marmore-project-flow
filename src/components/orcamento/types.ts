@@ -292,7 +292,7 @@ export const AMBIENTE_TIPOS = [
 
 export const PECA_TIPOS: Record<string, string[]> = {
   'Cozinha': [
-    'Bancada', 'Ilha Gourmet', 'Península', 'Bancada com Cooktop', 'Frontão',
+    'Bancada', 'Balcão Gourmet 2 Alturas', 'Ilha Gourmet', 'Península', 'Bancada com Cooktop', 'Frontão',
     'Soleira', 'Peitoril', 'Rodapé/Filete', 'Nicho Embutido',
     'Revestimento de Parede', 'Piso', 'Peça Personalizada',
   ],
@@ -329,7 +329,7 @@ export const PECA_TIPOS: Record<string, string[]> = {
     'Lareira', 'Piso', 'Rodapé/Filete', 'Jardineira/Vaso', 'Peça Personalizada',
   ],
   'Área Gourmet': [
-    'Bancada', 'Bancada Gourmet', 'Ilha Gourmet', 'Bancada com Cooktop',
+    'Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Ilha Gourmet', 'Bancada com Cooktop',
     'Bancada de Churrasqueira', 'Soleira', 'Piso', 'Revestimento de Parede',
     'Jardineira/Vaso', 'Peça Personalizada',
   ],
@@ -346,7 +346,7 @@ export const PECA_TIPOS: Record<string, string[]> = {
     'Peça Personalizada',
   ],
   'Ambiente Personalizado': [
-    'Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Ilha Gourmet', 'Península',
+    'Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Ilha Gourmet', 'Península',
     'Lavatório', 'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla',
     'Frontão', 'Frontão de Banheira',
     'Box - Piso', 'Soleira de Box', 'Nicho de Box', 'Prateleira/Canaleta de Box',
