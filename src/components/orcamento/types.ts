@@ -209,6 +209,8 @@ export interface PecaItem {
   nivelSuperiorAltura: string;        // cm — altura da saia/frontão entre os 2 níveis
   nivelSuperiorComSaia: boolean;      // adiciona painel frontal entre níveis
   nivelSuperiorComLaterais: boolean;  // adiciona 2 tampas laterais fechando os cantos
+  nivelSuperiorComEspelho: boolean;   // adiciona espelho/painel traseiro ligando bancada inferior ao tampo superior
+  nivelSuperiorUniao45: boolean;      // junções em 45° (mitra) entre tampo, saia, laterais e espelho — soma ML auto
   // Extras
   extras: ExtraItem[];
 }
@@ -476,6 +478,7 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   valorServicoPrateleiraBox: '',
   nivelSuperior: false, nivelSuperiorLargura: '', nivelSuperiorComprimento: '',
   nivelSuperiorAltura: '', nivelSuperiorComSaia: true, nivelSuperiorComLaterais: false,
+  nivelSuperiorComEspelho: false, nivelSuperiorUniao45: false,
   extras: [],
 });
 
@@ -717,12 +720,15 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
     const nW = cm(p.nivelSuperiorLargura);
     const nL = cm(p.nivelSuperiorComprimento);
     const nH = cm(p.nivelSuperiorAltura);
-    if (nW > 0 && nL > 0) extraCm2 += nW * nL;          // tampo superior
+    if (nW > 0 && nL > 0) extraCm2 += nW * nL;          // tampo superior (profundidade × comprimento)
     if (p.nivelSuperiorComSaia && nH > 0 && nL > 0) {
-      extraCm2 += nL * nH;                               // saia frontal entre níveis
+      extraCm2 += nL * nH;                               // saia frontal (comprimento × altura)
     }
     if (p.nivelSuperiorComLaterais && nH > 0 && nW > 0) {
-      extraCm2 += 2 * (nW * nH);                         // 2 tampas laterais
+      extraCm2 += 2 * (nW * nH);                         // 2 ilhargas laterais (profundidade × altura)
+    }
+    if (p.nivelSuperiorComEspelho && nH > 0 && nL > 0) {
+      extraCm2 += nL * nH;                               // espelho traseiro (comprimento × altura)
     }
   }
 
@@ -1008,7 +1014,23 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
   total += parseFloat(mo.visitaTecnica) || 0;
 
   if (mo.corte45Tipo === 'ml') {
-    total += (parseFloat(mo.corte45) || 0) * (parseFloat(mo.corte45Metros) || 0);
+    let ml = parseFloat(mo.corte45Metros) || 0;
+    // Soma automática dos ML em 45° das uniões do 2º nível (mitra)
+    amb.pecas.forEach(p => {
+      if (!p.nivelSuperior || !p.nivelSuperiorUniao45) return;
+      const q = parseInt(p.quantidade) || 1;
+      const nW = (parseFloat(p.nivelSuperiorLargura) || 0) / 100;
+      const nL = (parseFloat(p.nivelSuperiorComprimento) || 0) / 100;
+      const nH = (parseFloat(p.nivelSuperiorAltura) || 0) / 100;
+      let mlPeca = 0;
+      if (p.nivelSuperiorComSaia && nL > 0) mlPeca += nL;                       // tampo↔saia
+      if (p.nivelSuperiorComEspelho && nL > 0) mlPeca += nL;                    // tampo↔espelho traseiro
+      if (p.nivelSuperiorComLaterais && nW > 0) mlPeca += 2 * nW;               // tampo↔2 laterais
+      if (p.nivelSuperiorComLaterais && p.nivelSuperiorComSaia && nH > 0) mlPeca += 2 * nH; // saia↔laterais
+      if (p.nivelSuperiorComLaterais && p.nivelSuperiorComEspelho && nH > 0) mlPeca += 2 * nH; // espelho↔laterais
+      ml += mlPeca * q;
+    });
+    total += (parseFloat(mo.corte45) || 0) * ml;
   } else {
     total += parseFloat(mo.corte45) || 0;
   }

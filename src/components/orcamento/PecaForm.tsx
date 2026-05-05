@@ -634,7 +634,17 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={peca.nivelSuperiorComLaterais}
                 onChange={e => onChange('nivelSuperiorComLaterais', e.target.checked)} />
-              Tampas laterais
+              Ilhargas laterais (45°)
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={peca.nivelSuperiorComEspelho}
+                onChange={e => onChange('nivelSuperiorComEspelho', e.target.checked)} />
+              Espelho traseiro (liga bancada ao tampo)
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={peca.nivelSuperiorUniao45}
+                onChange={e => onChange('nivelSuperiorUniao45', e.target.checked)} />
+              Uniões em 45° (mitra) — soma ML auto
             </label>
           </div>
         </div>
