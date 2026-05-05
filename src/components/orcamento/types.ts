@@ -1014,10 +1014,23 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
   total += parseFloat(mo.visitaTecnica) || 0;
 
   if (mo.corte45Tipo === 'ml') {
-    total += (parseFloat(mo.corte45) || 0) * (parseFloat(mo.corte45Metros) || 0);
-  } else {
-    total += parseFloat(mo.corte45) || 0;
-  }
+    let ml = parseFloat(mo.corte45Metros) || 0;
+    // Soma automática dos ML em 45° das uniões do 2º nível (mitra)
+    amb.pecas.forEach(p => {
+      if (!p.nivelSuperior || !p.nivelSuperiorUniao45) return;
+      const q = parseInt(p.quantidade) || 1;
+      const nW = (parseFloat(p.nivelSuperiorLargura) || 0) / 100;
+      const nL = (parseFloat(p.nivelSuperiorComprimento) || 0) / 100;
+      const nH = (parseFloat(p.nivelSuperiorAltura) || 0) / 100;
+      let mlPeca = 0;
+      if (p.nivelSuperiorComSaia && nL > 0) mlPeca += nL;                       // tampo↔saia
+      if (p.nivelSuperiorComEspelho && nL > 0) mlPeca += nL;                    // tampo↔espelho traseiro
+      if (p.nivelSuperiorComLaterais && nW > 0) mlPeca += 2 * nW;               // tampo↔2 laterais
+      if (p.nivelSuperiorComLaterais && p.nivelSuperiorComSaia && nH > 0) mlPeca += 2 * nH; // saia↔laterais
+      if (p.nivelSuperiorComLaterais && p.nivelSuperiorComEspelho && nH > 0) mlPeca += 2 * nH; // espelho↔laterais
+      ml += mlPeca * q;
+    });
+    total += (parseFloat(mo.corte45) || 0) * ml;
 
   // Per-piece costs
   amb.pecas.forEach(p => {
