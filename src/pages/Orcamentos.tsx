@@ -56,7 +56,15 @@ const Orcamentos = () => {
   const [contratoQuote, setContratoQuote] = useState<any>(null);
   const [negotiation, setNegotiation] = useState<{ quote: any; action: 'send' | 'project'; type: 'budget' | 'quote' } | null>(null);
   const [negotiatedValue, setNegotiatedValue] = useState('');
-  
+  const [pdfHistoryQuote, setPdfHistoryQuote] = useState<any>(null);
+  const [pdfHistory, setPdfHistory] = useState<any[]>([]);
+
+  const openPdfHistory = async (bq: any) => {
+    setPdfHistoryQuote(bq);
+    const { data } = await supabase.from('quote_pdfs').select('*').eq('quote_id', bq.id).order('created_at', { ascending: false });
+    setPdfHistory(data || []);
+  };
+
 
   useEffect(() => { if (user) { fetchQuotes(); fetchBudgetQuotes(); } }, [user]);
 
