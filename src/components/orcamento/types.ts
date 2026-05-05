@@ -478,6 +478,7 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   valorServicoPrateleiraBox: '',
   nivelSuperior: false, nivelSuperiorLargura: '', nivelSuperiorComprimento: '',
   nivelSuperiorAltura: '', nivelSuperiorComSaia: true, nivelSuperiorComLaterais: false,
+  nivelSuperiorComEspelho: false, nivelSuperiorUniao45: false,
   extras: [],
 });
 
