@@ -434,6 +434,8 @@ const CalculadoraOrcamento = () => {
         companyPhone: telefoneEmpresa || (profile as any)?.phone || '',
         versoes: versoesParaPdf.length > 1 ? versoesParaPdf : undefined,
         versaoPrincipalNome,
+        quoteId: editingQuoteId || undefined,
+        ownerId: user?.id,
       });
       toast.success('PDF gerado!');
     } catch (err: any) { toast.error(err.message || 'Erro ao gerar PDF'); } finally { setGeneratingPdf(false); }
