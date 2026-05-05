@@ -209,6 +209,8 @@ export interface PecaItem {
   nivelSuperiorAltura: string;        // cm — altura da saia/frontão entre os 2 níveis
   nivelSuperiorComSaia: boolean;      // adiciona painel frontal entre níveis
   nivelSuperiorComLaterais: boolean;  // adiciona 2 tampas laterais fechando os cantos
+  nivelSuperiorComEspelho: boolean;   // adiciona espelho/painel traseiro ligando bancada inferior ao tampo superior
+  nivelSuperiorUniao45: boolean;      // junções em 45° (mitra) entre tampo, saia, laterais e espelho — soma ML auto
   // Extras
   extras: ExtraItem[];
 }
