@@ -470,7 +470,31 @@ const Orcamentos = () => {
         />
       )}
 
-      
+      <Dialog open={!!pdfHistoryQuote} onOpenChange={(o) => { if (!o) { setPdfHistoryQuote(null); setPdfHistory([]); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>PDFs gerados — {pdfHistoryQuote?.quote_number}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            {pdfHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhum PDF salvo ainda. Os próximos PDFs gerados ficarão aqui.
+              </p>
+            ) : pdfHistory.map(p => (
+              <div key={p.id} className="flex items-center justify-between gap-2 p-2 border rounded">
+                <div className="min-w-0">
+                  <p className="text-sm truncate">{p.file_name}</p>
+                  <p className="text-[11px] text-muted-foreground">{new Date(p.created_at).toLocaleString('pt-BR')}</p>
+                </div>
+                <Button size="sm" variant="outline" asChild>
+                  <a href={p.file_url} target="_blank" rel="noreferrer">Baixar</a>
+                </Button>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </AppLayout>
   );
 };
