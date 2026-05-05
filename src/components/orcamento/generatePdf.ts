@@ -83,8 +83,7 @@ const buildPecaDescricao = (p: any): string => {
   const areaLiq = calcPecaAreaLiquida(p);
   const areaCompra = calcPecaAreaCompra(p);
   const mlBorda = calcMetrosLinearesBorda(p);
-  if (areaLiq > 0) lines.push(`Área líquida: ${fmt(areaLiq)} m²`);
-  if (areaCompra > 0 && areaCompra !== areaLiq) lines.push(`Chapa c/ desperdício: ${fmt(areaCompra)} m²`);
+  if (areaLiq > 0) lines.push(`Área: ${fmt(areaLiq)} m²`);
   if (mlBorda > 0) lines.push(`Acabamento: ${fmt(mlBorda)} ml de borda`);
   if (p.descricao) lines.push(`Obs: ${p.descricao}`);
   return lines.join('\n');
