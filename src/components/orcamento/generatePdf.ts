@@ -6,6 +6,7 @@ import {
   calcAmbienteLaborCost, calcAmbienteInstallCost, calcCubaEsculpida, fmt,
   calcPecaAreaLiquida, calcPecaAreaCompra, calcMetrosLinearesBorda,
 } from './types';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VersaoPdf {
   id: string;
@@ -42,6 +43,9 @@ interface PdfParams {
   // Versões alternativas (opcional). A primeira é a principal/atual.
   versoes?: VersaoPdf[];
   versaoPrincipalNome?: string;
+  // Quando informado, salva o PDF no histórico do orçamento (bucket quote-pdfs)
+  quoteId?: string;
+  ownerId?: string;
 }
 
 const BLUE = '#2E7DB5';
@@ -922,5 +926,29 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     addFooter(i, totalPages);
   }
 
-  doc.save(`orcamento-${quoteNumber}.pdf`);
+  const fileName = `orcamento-${quoteNumber}.pdf`;
+  doc.save(fileName);
+
+  // Salva uma cópia no armazenamento para histórico
+  if (params.quoteId && params.ownerId) {
+    try {
+      const blob = doc.output('blob');
+      const path = `${params.ownerId}/${params.quoteId}/${Date.now()}-${fileName}`;
+      const { error: upErr } = await supabase.storage.from('quote-pdfs').upload(path, blob, {
+        contentType: 'application/pdf', upsert: false,
+      });
+      if (!upErr) {
+        const { data: pub } = supabase.storage.from('quote-pdfs').getPublicUrl(path);
+        await supabase.from('quote_pdfs').insert({
+          owner_id: params.ownerId,
+          quote_id: params.quoteId,
+          file_url: pub.publicUrl,
+          file_path: path,
+          file_name: fileName,
+        });
+      }
+    } catch (e) {
+      console.warn('Falha ao salvar PDF no histórico:', e);
+    }
+  }
 };

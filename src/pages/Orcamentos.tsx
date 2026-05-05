@@ -56,7 +56,15 @@ const Orcamentos = () => {
   const [contratoQuote, setContratoQuote] = useState<any>(null);
   const [negotiation, setNegotiation] = useState<{ quote: any; action: 'send' | 'project'; type: 'budget' | 'quote' } | null>(null);
   const [negotiatedValue, setNegotiatedValue] = useState('');
-  
+  const [pdfHistoryQuote, setPdfHistoryQuote] = useState<any>(null);
+  const [pdfHistory, setPdfHistory] = useState<any[]>([]);
+
+  const openPdfHistory = async (bq: any) => {
+    setPdfHistoryQuote(bq);
+    const { data } = await supabase.from('quote_pdfs').select('*').eq('quote_id', bq.id).order('created_at', { ascending: false });
+    setPdfHistory(data || []);
+  };
+
 
   useEffect(() => { if (user) { fetchQuotes(); fetchBudgetQuotes(); } }, [user]);
 
@@ -254,6 +262,9 @@ const Orcamentos = () => {
                 )}
                 <DropdownMenuItem onClick={() => sendWhatsApp(bq)}>
                   <MessageCircle className="w-3.5 h-3.5 mr-2" /> Enviar por WhatsApp
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => openPdfHistory(bq)}>
+                  <FileText className="w-3.5 h-3.5 mr-2" /> PDFs gerados
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => { setDeleteId(bq.id); setDeleteType('budget'); }} className="text-destructive">
                   <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
@@ -459,7 +470,31 @@ const Orcamentos = () => {
         />
       )}
 
-      
+      <Dialog open={!!pdfHistoryQuote} onOpenChange={(o) => { if (!o) { setPdfHistoryQuote(null); setPdfHistory([]); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>PDFs gerados — {pdfHistoryQuote?.quote_number}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            {pdfHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhum PDF salvo ainda. Os próximos PDFs gerados ficarão aqui.
+              </p>
+            ) : pdfHistory.map(p => (
+              <div key={p.id} className="flex items-center justify-between gap-2 p-2 border rounded">
+                <div className="min-w-0">
+                  <p className="text-sm truncate">{p.file_name}</p>
+                  <p className="text-[11px] text-muted-foreground">{new Date(p.created_at).toLocaleString('pt-BR')}</p>
+                </div>
+                <Button size="sm" variant="outline" asChild>
+                  <a href={p.file_url} target="_blank" rel="noreferrer">Baixar</a>
+                </Button>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </AppLayout>
   );
 };
