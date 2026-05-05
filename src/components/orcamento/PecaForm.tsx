@@ -512,6 +512,13 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
             Prateleira inferior
           </label>
         )}
+        {showCooktop && (
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={peca.nivelSuperior}
+              onChange={e => onChange('nivelSuperior', e.target.checked)} />
+            Bar / 2º nível elevado
+          </label>
+        )}
       </div>
 
       {/* Saia options (independent from bordas) */}
@@ -593,6 +600,42 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
                 onChange={e => onChange('prateleiraAltura', e.target.value)}
                 className="h-7 text-xs" placeholder="Altura saia (cm)" />
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Balcão Gourmet 2 Alturas — bar/nível superior */}
+      {peca.nivelSuperior && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-amber-50 dark:bg-amber-950/20 rounded-md p-2">
+          <div className="col-span-full text-[10px] font-medium text-muted-foreground">
+            2º nível (bar elevado) — tampo superior + saia entre níveis:
+          </div>
+          <div>
+            <Label className="text-[10px]">Profundidade tampo (cm)</Label>
+            <Input type="number" step="0.1" value={peca.nivelSuperiorLargura}
+              onChange={e => onChange('nivelSuperiorLargura', e.target.value)} className="h-8 text-xs" placeholder="Ex: 30" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Comprimento tampo (cm)</Label>
+            <Input type="number" step="0.1" value={peca.nivelSuperiorComprimento}
+              onChange={e => onChange('nivelSuperiorComprimento', e.target.value)} className="h-8 text-xs" placeholder="Ex: 240" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Altura entre níveis (cm)</Label>
+            <Input type="number" step="0.1" value={peca.nivelSuperiorAltura}
+              onChange={e => onChange('nivelSuperiorAltura', e.target.value)} className="h-8 text-xs" placeholder="Ex: 25" />
+          </div>
+          <div className="col-span-full flex flex-wrap gap-4 text-[11px]">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={peca.nivelSuperiorComSaia}
+                onChange={e => onChange('nivelSuperiorComSaia', e.target.checked)} />
+              Saia frontal entre níveis
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={peca.nivelSuperiorComLaterais}
+                onChange={e => onChange('nivelSuperiorComLaterais', e.target.checked)} />
+              Tampas laterais
+            </label>
           </div>
         </div>
       )}
