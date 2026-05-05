@@ -28,24 +28,24 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
   const mlBorda = calcMetrosLinearesBorda(peca);
 
   const is = (...tipos: string[]) => tipos.includes(peca.tipo);
-  const showCuba = is('Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Lavatório', 'Lavabo Externo',
+  const showCuba = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Lavatório', 'Lavabo Externo',
     'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla', 'Bancada Tanque', 'Ilha Gourmet', 'Península',
     'Bancada de Churrasqueira');
-  const showRebaixo = is('Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Bancada de Banheiro',
+  const showRebaixo = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Bancada de Banheiro',
     'Bancada Suspensa', 'Tampo Cuba Dupla', 'Ilha Gourmet', 'Península', 'Bancada de Churrasqueira');
-  const showBorda = is('Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Lavatório', 'Lavabo Externo',
+  const showBorda = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Lavatório', 'Lavabo Externo',
     'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla', 'Soleira', 'Soleira de Box',
     'Borda de Piscina', 'Escada/Degrau', 'Espelho de Escada', 'Peitoril', 'Calha/Pingadeira',
     'Tampo de Mesa', 'Mesa de Mármore', 'Ilha Gourmet', 'Península', 'Frontão', 'Frontão de Banheira',
     'Bancada de Churrasqueira', 'Tampo de Grelha');
-  const showFuros = is('Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Lavatório', 'Lavabo Externo',
+  const showFuros = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Lavatório', 'Lavabo Externo',
     'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla', 'Ilha Gourmet', 'Península',
     'Bancada de Churrasqueira');
-  const showBacksplash = is('Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Bancada de Banheiro',
+  const showBacksplash = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Bancada de Banheiro',
     'Bancada Suspensa', 'Tampo Cuba Dupla', 'Lavatório', 'Lavabo Externo', 'Bancada Tanque',
     'Ilha Gourmet', 'Península', 'Bancada de Churrasqueira');
-  const showCooktop = is('Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Ilha Gourmet', 'Península');
-  const showIlhargas = is('Bancada', 'Bancada Gourmet', 'Bancada com Cooktop', 'Bancada de Banheiro',
+  const showCooktop = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Ilha Gourmet', 'Península');
+  const showIlhargas = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Bancada de Banheiro',
     'Bancada Suspensa', 'Bancada Tanque', 'Lavatório', 'Lavabo Externo', 'Ilha Gourmet', 'Península',
     'Bancada de Churrasqueira');
   const isPiscina = is('Borda de Piscina');
@@ -512,6 +512,13 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
             Prateleira inferior
           </label>
         )}
+        {showCooktop && (
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={peca.nivelSuperior}
+              onChange={e => onChange('nivelSuperior', e.target.checked)} />
+            Bar / 2º nível elevado
+          </label>
+        )}
       </div>
 
       {/* Saia options (independent from bordas) */}
@@ -593,6 +600,42 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
                 onChange={e => onChange('prateleiraAltura', e.target.value)}
                 className="h-7 text-xs" placeholder="Altura saia (cm)" />
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Balcão Gourmet 2 Alturas — bar/nível superior */}
+      {peca.nivelSuperior && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-amber-50 dark:bg-amber-950/20 rounded-md p-2">
+          <div className="col-span-full text-[10px] font-medium text-muted-foreground">
+            2º nível (bar elevado) — tampo superior + saia entre níveis:
+          </div>
+          <div>
+            <Label className="text-[10px]">Profundidade tampo (cm)</Label>
+            <Input type="number" step="0.1" value={peca.nivelSuperiorLargura}
+              onChange={e => onChange('nivelSuperiorLargura', e.target.value)} className="h-8 text-xs" placeholder="Ex: 30" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Comprimento tampo (cm)</Label>
+            <Input type="number" step="0.1" value={peca.nivelSuperiorComprimento}
+              onChange={e => onChange('nivelSuperiorComprimento', e.target.value)} className="h-8 text-xs" placeholder="Ex: 240" />
+          </div>
+          <div>
+            <Label className="text-[10px]">Altura entre níveis (cm)</Label>
+            <Input type="number" step="0.1" value={peca.nivelSuperiorAltura}
+              onChange={e => onChange('nivelSuperiorAltura', e.target.value)} className="h-8 text-xs" placeholder="Ex: 25" />
+          </div>
+          <div className="col-span-full flex flex-wrap gap-4 text-[11px]">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={peca.nivelSuperiorComSaia}
+                onChange={e => onChange('nivelSuperiorComSaia', e.target.checked)} />
+              Saia frontal entre níveis
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={peca.nivelSuperiorComLaterais}
+                onChange={e => onChange('nivelSuperiorComLaterais', e.target.checked)} />
+              Tampas laterais
+            </label>
           </div>
         </div>
       )}
