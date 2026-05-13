@@ -93,13 +93,20 @@ const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Prop
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 flex-1">
             <CardTitle className="text-sm font-display">{displayName}</CardTitle>
-            {ambiente.tipo === 'Ambiente Personalizado' && (
+            {editingName ? (
               <Input
                 value={ambiente.nomeCustom}
                 onChange={e => onUpdate({ ...ambiente, nomeCustom: e.target.value })}
+                onBlur={() => setEditingName(false)}
+                onKeyDown={e => { if (e.key === 'Enter') setEditingName(false); }}
+                autoFocus
                 className="h-7 text-xs max-w-[200px]"
-                placeholder="Nome do ambiente"
+                placeholder={ambiente.tipo}
               />
+            ) : (
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditingName(true)} title="Renomear ambiente">
+                <Pencil className="w-3 h-3 text-muted-foreground" />
+              </Button>
             )}
             {areaLiq > 0 && (
               <span className="text-[10px] text-muted-foreground">
