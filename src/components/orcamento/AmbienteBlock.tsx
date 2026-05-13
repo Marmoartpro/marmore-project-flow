@@ -24,6 +24,7 @@ interface Props {
 
 const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Props) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [editingName, setEditingName] = useState(false);
   const pecaTipos = PECA_TIPOS[ambiente.tipo] || PECA_TIPOS['Ambiente Personalizado'];
   const areaLiq = calcAmbienteArea(ambiente);
   const areaCompra = calcAmbienteAreaCompra(ambiente);
