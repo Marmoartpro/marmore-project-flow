@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import PecaForm from './PecaForm';
 import MaterialOptions from './MaterialOptions';
@@ -24,6 +24,7 @@ interface Props {
 
 const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Props) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [editingName, setEditingName] = useState(false);
   const pecaTipos = PECA_TIPOS[ambiente.tipo] || PECA_TIPOS['Ambiente Personalizado'];
   const areaLiq = calcAmbienteArea(ambiente);
   const areaCompra = calcAmbienteAreaCompra(ambiente);
@@ -84,8 +85,7 @@ const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Prop
     onUpdate({ ...ambiente, instalacao: { ...ambiente.instalacao, [field]: value } });
   };
 
-  const displayName = ambiente.tipo === 'Ambiente Personalizado' && ambiente.nomeCustom
-    ? ambiente.nomeCustom : ambiente.tipo;
+  const displayName = ambiente.nomeCustom?.trim() ? ambiente.nomeCustom : ambiente.tipo;
 
   return (
     <Card className="border-primary/20">
@@ -93,13 +93,20 @@ const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Prop
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 flex-1">
             <CardTitle className="text-sm font-display">{displayName}</CardTitle>
-            {ambiente.tipo === 'Ambiente Personalizado' && (
+            {editingName ? (
               <Input
                 value={ambiente.nomeCustom}
                 onChange={e => onUpdate({ ...ambiente, nomeCustom: e.target.value })}
+                onBlur={() => setEditingName(false)}
+                onKeyDown={e => { if (e.key === 'Enter') setEditingName(false); }}
+                autoFocus
                 className="h-7 text-xs max-w-[200px]"
-                placeholder="Nome do ambiente"
+                placeholder={ambiente.tipo}
               />
+            ) : (
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditingName(true)} title="Renomear ambiente">
+                <Pencil className="w-3 h-3 text-muted-foreground" />
+              </Button>
             )}
             {areaLiq > 0 && (
               <span className="text-[10px] text-muted-foreground">

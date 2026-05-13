@@ -56,7 +56,7 @@ const Contratos = () => {
       const buildScope = (): string => {
         if (!d.ambientes) return contract.scope_description || '';
         return (d.ambientes as Ambiente[]).map(amb => {
-          const name = amb.tipo === 'Ambiente Personalizado' && amb.nomeCustom ? amb.nomeCustom : amb.tipo;
+          const name = amb.nomeCustom?.trim() ? amb.nomeCustom : amb.tipo;
           const area = calcAmbienteArea(amb);
           const pecas = amb.pecas.map((p: any) => {
             const nome = p.nomePeca || p.tipo;
