@@ -348,7 +348,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
   y += 8;
 
   ambientes.forEach((amb) => {
-    const ambName = amb.tipo === 'Ambiente Personalizado' && amb.nomeCustom ? amb.nomeCustom : amb.tipo;
+    const ambName = amb.nomeCustom?.trim() ? amb.nomeCustom : amb.tipo;
     subTitle(ambName);
 
     const pecasData = amb.pecas.map((p) => [
@@ -387,7 +387,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
   y += 8;
 
   ambientes.forEach((amb) => {
-    const ambName = amb.tipo === 'Ambiente Personalizado' && amb.nomeCustom ? amb.nomeCustom : amb.tipo;
+    const ambName = amb.nomeCustom?.trim() ? amb.nomeCustom : amb.tipo;
     const area = calcAmbienteArea(amb);
 
     subTitle(ambName.toUpperCase());
@@ -462,7 +462,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
   y += 8;
 
   ambientes.forEach((amb) => {
-    const ambName = amb.tipo === 'Ambiente Personalizado' && amb.nomeCustom ? amb.nomeCustom : amb.tipo;
+    const ambName = amb.nomeCustom?.trim() ? amb.nomeCustom : amb.tipo;
     subTitle(ambName);
 
     const breakdownRows = amb.pecas.map((p) => {
@@ -545,7 +545,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
   const installRows = ambientes
     .filter(a => !a.instalacao.semInstalacao && calcAmbienteInstallCost(a) > 0)
     .map(a => {
-      const name = a.tipo === 'Ambiente Personalizado' && a.nomeCustom ? a.nomeCustom : a.tipo;
+      const name = a.nomeCustom?.trim() ? a.nomeCustom : a.tipo;
       return [
         `Instalação e Logística (${name})`,
         `R$ ${fmt(calcAmbienteInstallCost(a) * fInst)}`,
@@ -596,7 +596,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     doc.text(simIntro, marginL, y);
     y += simIntro.length * 4 + 4;
 
-    const ambNames = ambientes.map(a => a.tipo === 'Ambiente Personalizado' && a.nomeCustom ? a.nomeCustom : a.tipo);
+    const ambNames = ambientes.map(a => a.nomeCustom?.trim() ? a.nomeCustom : a.tipo);
     const maxOpts = Math.max(...ambientes.map(a => a.materialOptions.length));
 
     const scenarioHead = ['Cenário de Investimento', ...ambNames.map(n => `Subtotal ${n}`), 'Custo Instalação', 'INVESTIMENTO TOTAL'];
@@ -858,7 +858,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
 
   const noInstallAmbs = ambientes.filter(a => a.instalacao.semInstalacao);
   if (noInstallAmbs.length > 0) {
-    const names = noInstallAmbs.map(a => a.tipo === 'Ambiente Personalizado' && a.nomeCustom ? a.nomeCustom : a.tipo);
+    const names = noInstallAmbs.map(a => a.nomeCustom?.trim() ? a.nomeCustom : a.tipo);
     bulletItems.push(`Sem instalação: Os valores para ${names.join(', ')} referem-se apenas à produção. Não incluem custos de instalação.`);
   }
 
