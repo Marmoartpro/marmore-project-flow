@@ -85,8 +85,7 @@ const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Prop
     onUpdate({ ...ambiente, instalacao: { ...ambiente.instalacao, [field]: value } });
   };
 
-  const displayName = ambiente.tipo === 'Ambiente Personalizado' && ambiente.nomeCustom
-    ? ambiente.nomeCustom : ambiente.tipo;
+  const displayName = ambiente.nomeCustom?.trim() ? ambiente.nomeCustom : ambiente.tipo;
 
   return (
     <Card className="border-primary/20">
