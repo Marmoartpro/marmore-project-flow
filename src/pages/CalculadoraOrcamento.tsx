@@ -569,7 +569,7 @@ const CalculadoraOrcamento = () => {
                   <tr className="bg-muted">
                     <th className="text-left px-3 py-2">Cenário</th>
                     {ambientes.map(amb => (
-                      <th key={amb.id} className="text-right px-3 py-2">{amb.tipo === 'Ambiente Personalizado' ? (amb.nomeCustom || 'Personalizado') : amb.tipo}</th>
+                      <th key={amb.id} className="text-right px-3 py-2">{amb.nomeCustom?.trim() || amb.tipo}</th>
                     ))}
                     <th className="text-right px-3 py-2">Instalação</th>
                     <th className="text-right px-3 py-2 font-bold text-primary">Total</th>
