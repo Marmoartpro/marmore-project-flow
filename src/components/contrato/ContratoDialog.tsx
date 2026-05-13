@@ -151,7 +151,7 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
   const buildScope = (): string => {
     if (!d.ambientes) return '';
     return (d.ambientes as Ambiente[]).map(amb => {
-      const name = amb.tipo === 'Ambiente Personalizado' && amb.nomeCustom ? amb.nomeCustom : amb.tipo;
+      const name = amb.nomeCustom?.trim() ? amb.nomeCustom : amb.tipo;
       const area = calcAmbienteArea(amb);
       const pecas = amb.pecas.map(p => {
         const nome = p.nomePeca || p.tipo;
