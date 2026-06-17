@@ -956,6 +956,17 @@ export const calcMetrosLinearesBorda = (p: PecaItem): number => {
   const q = parseInt(p.quantidade) || 1;
   let ml = 0;
 
+  // Borda de Piscina redonda — usa perímetros internos/externos
+  if (isPiscinaRedonda(p)) {
+    const calc = calcBordaPiscinaRedonda(p);
+    const lado = p.piscinaLadoAcabamento || 'agua';
+    if (lado === 'agua') ml = calc.perimetroInternoM;
+    else if (lado === 'piso') ml = calc.perimetroExternoM;
+    else ml = calc.perimetroInternoM + calc.perimetroExternoM;
+    return ceilML(ml * q);
+  }
+
+
   // Soleira/Peitoril usa boleadoLados para definir ml
   if (['Soleira', 'Peitoril'].includes(p.tipo)) {
     const lados = parseInt(p.boleadoLados) || 0;
