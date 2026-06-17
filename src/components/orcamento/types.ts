@@ -127,6 +127,13 @@ export interface PecaItem {
   canaletaMetros: string;
   valorCanaletaMetro: string;
   profundidadeSubmersa: string;
+  // Piscina — formato específico
+  formatoPiscina: 'reta' | 'redonda' | 'oval';
+  piscinaMedidaTipo: 'diametro' | 'raio';
+  piscinaDiametroInterno: string;
+  piscinaRaioInterno: string;
+  desperdicioCurvo: string;
+  piscinaLadoAcabamento: 'agua' | 'piso' | 'ambos';
   // Escada
   alturaEspelho: string;
   frisosAntiderrapante: boolean;
