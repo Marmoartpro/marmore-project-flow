@@ -1,3 +1,4 @@
+import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,13 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
   const areaCompra = calcPecaAreaCompra(peca);
   const mlBorda = calcMetrosLinearesBorda(peca);
 
+  // Auto-set formato piscina redonda quando o tipo for Borda de Piscina Redonda
+  React.useEffect(() => {
+    if (peca.tipo === 'Borda de Piscina Redonda' && peca.formatoPiscina !== 'redonda') {
+      onChange('formatoPiscina', 'redonda');
+    }
+  }, [peca.tipo, peca.formatoPiscina, onChange]);
+
   const is = (...tipos: string[]) => tipos.includes(peca.tipo);
   const showCuba = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Lavatório', 'Lavabo Externo',
     'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla', 'Bancada Tanque', 'Ilha Gourmet', 'Península',
@@ -48,7 +56,7 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
   const showIlhargas = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Bancada de Banheiro',
     'Bancada Suspensa', 'Bancada Tanque', 'Lavatório', 'Lavabo Externo', 'Ilha Gourmet', 'Península',
     'Bancada de Churrasqueira');
-  const isPiscina = is('Borda de Piscina');
+  const isPiscina = is('Borda de Piscina', 'Borda de Piscina Redonda');
   const isEscada = is('Escada/Degrau', 'Espelho de Escada', 'Rodapé Escada');
   const isSoleira = is('Soleira', 'Soleira de Box');
   const isPeitoril = is('Peitoril', 'Calha/Pingadeira');

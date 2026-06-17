@@ -328,7 +328,7 @@ export const PECA_TIPOS: Record<string, string[]> = {
   'Bancada Tanque': ['Bancada Tanque', 'Peça Personalizada'],
   'Lavanderia': ['Bancada', 'Soleira', 'Rodapé/Filete', 'Piso', 'Peça Personalizada'],
   'Área da Piscina': [
-    'Borda de Piscina', 'Escada/Degrau', 'Espelho de Escada', 'Rodapé Escada',
+    'Borda de Piscina', 'Borda de Piscina Redonda', 'Escada/Degrau', 'Espelho de Escada', 'Rodapé Escada',
     'Soleira', 'Piso', 'Peça Personalizada',
   ],
   'Acabamentos (Soleiras e Peitoris)': [
@@ -337,7 +337,7 @@ export const PECA_TIPOS: Record<string, string[]> = {
   'Área Externa': [
     'Bancada', 'Bancada de Churrasqueira', 'Lavabo Externo',
     'Soleira', 'Peitoril', 'Escada/Degrau', 'Espelho de Escada',
-    'Borda de Piscina', 'Piso', 'Revestimento de Parede',
+    'Borda de Piscina', 'Borda de Piscina Redonda', 'Piso', 'Revestimento de Parede',
     'Jardineira/Vaso', 'Peça Personalizada',
   ],
   'Sala / Estar': [
@@ -367,7 +367,7 @@ export const PECA_TIPOS: Record<string, string[]> = {
     'Frontão', 'Frontão de Banheira',
     'Box - Piso', 'Soleira de Box', 'Nicho de Box', 'Prateleira/Canaleta de Box',
     'Soleira', 'Peitoril', 'Rodapé/Filete', 'Calha/Pingadeira',
-    'Borda de Piscina', 'Escada/Degrau', 'Espelho de Escada', 'Rodapé Escada',
+    'Borda de Piscina', 'Borda de Piscina Redonda', 'Escada/Degrau', 'Espelho de Escada', 'Rodapé Escada',
     'Bancada de Churrasqueira', 'Tampo de Grelha', 'Lavabo Externo',
     'Nicho Embutido', 'Bancada Tanque', 'Revestimento de Parede', 'Piso',
     'Tampo de Mesa', 'Mesa de Mármore', 'Lareira',

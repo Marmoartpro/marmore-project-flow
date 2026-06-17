@@ -5,6 +5,7 @@ import {
   calcAmbienteArea, calcAmbienteAreaCompra, calcAmbienteMaterialCost,
   calcAmbienteLaborCost, calcAmbienteInstallCost, calcCubaEsculpida, fmt,
   calcPecaAreaLiquida, calcPecaAreaCompra, calcMetrosLinearesBorda,
+  calcBordaPiscinaRedonda,
 } from './types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -77,13 +78,29 @@ const buildPecaDescricao = (p: any): string => {
   const lines: string[] = [];
   const nome = p.nomePeca || p.tipo;
   lines.push(nome);
-  if (w > 0 && l > 0) lines.push(`Dimensões: ${l} cm (comp.) × ${w} cm (larg.)`);
+
+  // Borda de Piscina Redonda — destaque geométrico claro
+  if (p.tipo === 'Borda de Piscina Redonda') {
+    const calc = calcBordaPiscinaRedonda(p);
+    if (calc.raioInt > 0 && calc.larguraBorda > 0) {
+      lines.push('Forma: coroa circular (anel) — cálculo por circunferência, não por retângulo');
+      lines.push(`Diâmetro interno da piscina: ${fmt(calc.raioInt * 2)} cm (raio ${fmt(calc.raioInt)} cm)`);
+      lines.push(`Diâmetro externo (incluindo borda): ${fmt(calc.raioExt * 2)} cm (raio ${fmt(calc.raioExt)} cm)`);
+      lines.push(`Largura da borda: ${fmt(calc.larguraBorda)} cm`);
+      lines.push(`Perímetro lado da água: ${fmt(calc.perimetroInternoM)} ml`);
+      lines.push(`Perímetro lado do piso: ${fmt(calc.perimetroExternoM)} ml`);
+      lines.push(`Área da coroa circular: ${fmt(calc.areaM2)} m²`);
+    }
+  } else if (w > 0 && l > 0) {
+    lines.push(`Dimensões: ${l} cm (comp.) × ${w} cm (larg.)`);
+  }
+
   if (q > 1) lines.push(`Quantidade: ${q} unidades`);
   // Cálculos reais (já consideram quantidade, formato, deduções e extras)
   const areaLiq = calcPecaAreaLiquida(p);
   const areaCompra = calcPecaAreaCompra(p);
   const mlBorda = calcMetrosLinearesBorda(p);
-  if (areaLiq > 0) lines.push(`Área: ${fmt(areaLiq)} m²`);
+  if (areaLiq > 0) lines.push(`Área total: ${fmt(areaLiq)} m²`);
   if (mlBorda > 0) lines.push(`Acabamento: ${fmt(mlBorda)} ml de borda`);
   if (p.descricao) lines.push(`Obs: ${p.descricao}`);
   return lines.join('\n');
