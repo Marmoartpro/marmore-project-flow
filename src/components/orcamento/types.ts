@@ -715,7 +715,13 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
 
   // Piscina submersa
   if (cm(p.profundidadeSubmersa) > 0) {
-    extraCm2 += cm(p.profundidadeSubmersa) * cm(p.comprimento);
+    if (isPiscinaRedonda(p)) {
+      const calc = calcBordaPiscinaRedonda(p);
+      const areaSubmersaM2 = calc.perimetroInternoM * (cm(p.profundidadeSubmersa) / 100);
+      extraCm2 += areaSubmersaM2 * 10000;
+    } else {
+      extraCm2 += cm(p.profundidadeSubmersa) * cm(p.comprimento);
+    }
   }
 
   // Escada — espelho vertical
