@@ -654,31 +654,140 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
       {isPiscina && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-blue-50 dark:bg-blue-950/20 rounded-md p-2">
           <div className="col-span-full text-[10px] font-medium text-muted-foreground">Detalhes Piscina:</div>
-          <div>
-            <Label className="text-[10px]">Cantos internos (90°)</Label>
-            <Input type="number" min="0" value={peca.cantosInternos}
-              onChange={e => onChange('cantosInternos', e.target.value)} className="h-8 text-xs" />
+
+          {/* Formato da piscina */}
+          <div className="col-span-full">
+            <Label className="text-[10px]">Formato da piscina</Label>
+            <select
+              value={peca.formatoPiscina || 'reta'}
+              onChange={e => onChange('formatoPiscina', e.target.value)}
+              className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
+              <option value="reta">Reta / Retangular</option>
+              <option value="redonda">Redonda</option>
+            </select>
           </div>
-          <div>
-            <Label className="text-[10px]">R$/canto interno</Label>
-            <Input type="number" step="0.01" value={peca.valorCantoInterno}
-              onChange={e => onChange('valorCantoInterno', e.target.value)} className="h-8 text-xs" />
-          </div>
-          <div>
-            <Label className="text-[10px]">Cantos externos (90°)</Label>
-            <Input type="number" min="0" value={peca.cantosExternos}
-              onChange={e => onChange('cantosExternos', e.target.value)} className="h-8 text-xs" />
-          </div>
-          <div>
-            <Label className="text-[10px]">R$/canto externo</Label>
-            <Input type="number" step="0.01" value={peca.valorCantoExterno}
-              onChange={e => onChange('valorCantoExterno', e.target.value)} className="h-8 text-xs" />
-          </div>
-          <div>
-            <Label className="text-[10px]">Prof. submersa (cm)</Label>
-            <Input type="number" step="0.1" value={peca.profundidadeSubmersa}
-              onChange={e => onChange('profundidadeSubmersa', e.target.value)} className="h-8 text-xs" />
-          </div>
+
+          {peca.formatoPiscina === 'redonda' ? (
+            <>
+              <div>
+                <Label className="text-[10px]">Como vai medir</Label>
+                <select
+                  value={peca.piscinaMedidaTipo || 'diametro'}
+                  onChange={e => onChange('piscinaMedidaTipo', e.target.value)}
+                  className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
+                  <option value="diametro">Diâmetro interno (mais fácil)</option>
+                  <option value="raio">Raio interno</option>
+                </select>
+              </div>
+              {peca.piscinaMedidaTipo === 'raio' ? (
+                <div>
+                  <Label className="text-[10px]">Raio interno (cm)</Label>
+                  <Input type="number" step="0.1" value={peca.piscinaRaioInterno}
+                    onChange={e => onChange('piscinaRaioInterno', e.target.value)}
+                    className="h-8 text-xs" placeholder="Ex: 300" />
+                </div>
+              ) : (
+                <div>
+                  <Label className="text-[10px]">Diâmetro interno (cm)</Label>
+                  <Input type="number" step="0.1" value={peca.piscinaDiametroInterno}
+                    onChange={e => onChange('piscinaDiametroInterno', e.target.value)}
+                    className="h-8 text-xs" placeholder="Ex: 600 (piscina de 6 m)" />
+                </div>
+              )}
+              <div>
+                <Label className="text-[10px]">Largura da borda (cm)</Label>
+                <Input type="number" step="0.1" value={peca.largura}
+                  onChange={e => onChange('largura', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Desperdício corte curvo (%)</Label>
+                <Input type="number" step="1" value={peca.desperdicioCurvo}
+                  onChange={e => onChange('desperdicioCurvo', e.target.value)}
+                  className="h-8 text-xs" placeholder="25" />
+                <p className="text-[9px] text-muted-foreground mt-0.5">
+                  Peças curvas geram mais sobra — recomendado 20% a 30%.
+                </p>
+              </div>
+              <div>
+                <Label className="text-[10px]">Lado do acabamento</Label>
+                <select
+                  value={peca.piscinaLadoAcabamento || 'agua'}
+                  onChange={e => onChange('piscinaLadoAcabamento', e.target.value)}
+                  className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs">
+                  <option value="agua">Lado da água (perímetro interno)</option>
+                  <option value="piso">Lado do piso (perímetro externo)</option>
+                  <option value="ambos">Dos dois lados</option>
+                </select>
+              </div>
+              <div>
+                <Label className="text-[10px]">Prof. submersa (cm)</Label>
+                <Input type="number" step="0.1" value={peca.profundidadeSubmersa}
+                  onChange={e => onChange('profundidadeSubmersa', e.target.value)} className="h-8 text-xs" />
+              </div>
+
+              {/* Resumo calculado */}
+              {(() => {
+                const calc = calcBordaPiscinaRedonda(peca);
+                const erros: string[] = [];
+                const avisos: string[] = [];
+                if (calc.raioInt <= 0) erros.push('Informe o diâmetro ou raio interno da piscina antes de continuar.');
+                if (calc.larguraBorda <= 0) erros.push('Informe a largura da borda.');
+                if (calc.raioInt > 0 && calc.raioInt < 50) avisos.push('Raio muito pequeno — confirme se a medida está em centímetros corretos.');
+                if (calc.larguraBorda > calc.raioInt && calc.raioInt > 0) avisos.push('A largura da borda é maior que o raio da piscina — confirme as medidas, isso é incomum.');
+                return (
+                  <div className="col-span-full space-y-1">
+                    {calc.raioInt > 0 && calc.larguraBorda > 0 && (
+                      <div className="text-[10px] bg-background/60 rounded p-2 border border-border">
+                        <div><b>Raio externo:</b> {fmt(calc.raioExt)} cm (diâmetro externo: {fmt(calc.raioExt * 2)} cm)</div>
+                        <div><b>Perímetro lado da água:</b> {fmt(calc.perimetroInternoM)} ml</div>
+                        <div><b>Perímetro lado do piso:</b> {fmt(calc.perimetroExternoM)} ml</div>
+                        <div><b>Área líquida:</b> {fmt(calc.areaM2)} m²</div>
+                        <div><b>Área de compra c/ desperdício:</b> {fmt(calc.areaCompraM2)} m²</div>
+                      </div>
+                    )}
+                    {erros.map((e, i) => (
+                      <div key={`e${i}`} className="text-[10px] text-destructive">⚠ {e}</div>
+                    ))}
+                    {avisos.map((a, i) => (
+                      <div key={`a${i}`} className="text-[10px] text-amber-600 dark:text-amber-400">⚠ {a}</div>
+                    ))}
+                    <div className="text-[10px] text-muted-foreground italic">
+                      Bordas redondas não possuem cantos retos — o anel é contínuo.
+                    </div>
+                  </div>
+                );
+              })()}
+            </>
+          ) : (
+            <>
+              <div>
+                <Label className="text-[10px]">Cantos internos (90°)</Label>
+                <Input type="number" min="0" value={peca.cantosInternos}
+                  onChange={e => onChange('cantosInternos', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">R$/canto interno</Label>
+                <Input type="number" step="0.01" value={peca.valorCantoInterno}
+                  onChange={e => onChange('valorCantoInterno', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Cantos externos (90°)</Label>
+                <Input type="number" min="0" value={peca.cantosExternos}
+                  onChange={e => onChange('cantosExternos', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">R$/canto externo</Label>
+                <Input type="number" step="0.01" value={peca.valorCantoExterno}
+                  onChange={e => onChange('valorCantoExterno', e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Prof. submersa (cm)</Label>
+                <Input type="number" step="0.1" value={peca.profundidadeSubmersa}
+                  onChange={e => onChange('profundidadeSubmersa', e.target.value)} className="h-8 text-xs" />
+              </div>
+            </>
+          )}
+
           <div className="col-span-full flex items-center gap-2">
             <label className="text-[10px] flex items-center gap-1">
               <input type="checkbox" checked={peca.canaletaEscoamento}
@@ -702,6 +811,7 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
           )}
         </div>
       )}
+
 
       {/* ═══ ESCADA ═══ */}
       {isEscada && (
