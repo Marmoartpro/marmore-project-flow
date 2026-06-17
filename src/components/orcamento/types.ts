@@ -834,6 +834,11 @@ export const calcPecaAreaLiquida = (p: PecaItem): number => {
 
 export const calcPecaAreaCompra = (p: PecaItem): number => {
   const liquida = calcPecaAreaLiquida(p);
+  // Borda de Piscina redonda — desperdício específico para corte curvo
+  if (isPiscinaRedonda(p)) {
+    const fator = 1 + ((parseFloat(p.desperdicioCurvo) || 25) / 100);
+    return ceilM2(Math.max(liquida * fator, liquida > 0 ? 0.10 : 0));
+  }
   const wastePercent = (p.padraoPiso === 'espinha' || p.padraoPiso === 'diagonal' || p.padraoPiso === 'xadrez')
     && ['Piso'].includes(p.tipo) ? 0.15 : 0.10;
   const withWaste = liquida * (1 + wastePercent);
