@@ -5,6 +5,7 @@ import {
   calcAmbienteArea, calcAmbienteAreaCompra, calcAmbienteMaterialCost,
   calcAmbienteLaborCost, calcAmbienteInstallCost, calcCubaEsculpida, fmt,
   calcPecaAreaLiquida, calcPecaAreaCompra, calcMetrosLinearesBorda,
+  calcBordaPiscinaRedonda,
 } from './types';
 import { supabase } from '@/integrations/supabase/client';
 
