@@ -48,7 +48,7 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
   const showIlhargas = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Bancada de Banheiro',
     'Bancada Suspensa', 'Bancada Tanque', 'Lavatório', 'Lavabo Externo', 'Ilha Gourmet', 'Península',
     'Bancada de Churrasqueira');
-  const isPiscina = is('Borda de Piscina');
+  const isPiscina = is('Borda de Piscina', 'Borda de Piscina Redonda');
   const isEscada = is('Escada/Degrau', 'Espelho de Escada', 'Rodapé Escada');
   const isSoleira = is('Soleira', 'Soleira de Box');
   const isPeitoril = is('Peitoril', 'Calha/Pingadeira');
