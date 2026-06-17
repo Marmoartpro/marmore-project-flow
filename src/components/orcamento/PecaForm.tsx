@@ -10,7 +10,7 @@ import {
   BORDAS_COM_ACABAMENTO, FUROS_TORNEIRA, FORMATOS_PECA, PADROES_PISO,
   SAIA_OPCOES,
   calcPecaAreaLiquida, calcPecaAreaCompra, calcMetrosLinearesBorda,
-  calcCubaEsculpida, fmt, newAbertura,
+  calcCubaEsculpida, calcBordaPiscinaRedonda, fmt, newAbertura,
 } from './types';
 
 interface Props {
