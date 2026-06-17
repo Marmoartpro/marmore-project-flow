@@ -531,6 +531,36 @@ const cm2toM2 = (cm2: number): number => cm2 / 10000;
 
 /* ─── Area Calculations (all inputs in cm) ─── */
 
+/** Borda de Piscina Redonda — anel circular (coroa) */
+export function calcBordaPiscinaRedonda(p: PecaItem) {
+  const raioInt = p.piscinaMedidaTipo === 'diametro'
+    ? (parseFloat(p.piscinaDiametroInterno) || 0) / 2
+    : (parseFloat(p.piscinaRaioInterno) || 0);
+  const larguraBorda = parseFloat(p.largura) || 0;
+  const raioExt = raioInt + larguraBorda;
+
+  const areaCm2 = Math.PI * (Math.pow(raioExt, 2) - Math.pow(raioInt, 2));
+  const areaM2 = areaCm2 / 10000;
+
+  const fatorDesperdicio = 1 + ((parseFloat(p.desperdicioCurvo) || 25) / 100);
+  const areaCompraM2 = areaM2 * fatorDesperdicio;
+
+  const perimetroInternoM = (2 * Math.PI * raioInt) / 100;
+  const perimetroExternoM = (2 * Math.PI * raioExt) / 100;
+
+  return {
+    raioInt, raioExt, larguraBorda,
+    areaM2: Math.round(areaM2 * 100) / 100,
+    areaCompraM2: Math.round(areaCompraM2 * 100) / 100,
+    perimetroInternoM: Math.round(perimetroInternoM * 100) / 100,
+    perimetroExternoM: Math.round(perimetroExternoM * 100) / 100,
+    diametroExternoM: Math.round((raioExt * 2 / 100) * 100) / 100,
+  };
+}
+
+const isPiscinaRedonda = (p: PecaItem) =>
+  p.tipo === 'Borda de Piscina' && p.formatoPiscina === 'redonda';
+
 export const calcPecaAreaBase = (p: PecaItem): number => {
   const q = parseInt(p.quantidade) || 1;
   // Prateleira/Canaleta de Box: área é totalmente derivada de campos próprios (extras).
