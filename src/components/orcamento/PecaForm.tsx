@@ -27,6 +27,13 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
   const areaCompra = calcPecaAreaCompra(peca);
   const mlBorda = calcMetrosLinearesBorda(peca);
 
+  // Auto-set formato piscina redonda quando o tipo for Borda de Piscina Redonda
+  React.useEffect(() => {
+    if (peca.tipo === 'Borda de Piscina Redonda' && peca.formatoPiscina !== 'redonda') {
+      onChange('formatoPiscina', 'redonda');
+    }
+  }, [peca.tipo, peca.formatoPiscina, onChange]);
+
   const is = (...tipos: string[]) => tipos.includes(peca.tipo);
   const showCuba = is('Bancada', 'Bancada Gourmet', 'Balcão Gourmet 2 Alturas', 'Bancada com Cooktop', 'Lavatório', 'Lavabo Externo',
     'Bancada de Banheiro', 'Bancada Suspensa', 'Tampo Cuba Dupla', 'Bancada Tanque', 'Ilha Gourmet', 'Península',
