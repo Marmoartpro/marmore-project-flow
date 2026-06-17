@@ -337,7 +337,7 @@ export const PECA_TIPOS: Record<string, string[]> = {
   'Área Externa': [
     'Bancada', 'Bancada de Churrasqueira', 'Lavabo Externo',
     'Soleira', 'Peitoril', 'Escada/Degrau', 'Espelho de Escada',
-    'Borda de Piscina', 'Piso', 'Revestimento de Parede',
+    'Borda de Piscina', 'Borda de Piscina Redonda', 'Piso', 'Revestimento de Parede',
     'Jardineira/Vaso', 'Peça Personalizada',
   ],
   'Sala / Estar': [
