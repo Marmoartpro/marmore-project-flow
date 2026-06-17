@@ -328,7 +328,7 @@ export const PECA_TIPOS: Record<string, string[]> = {
   'Bancada Tanque': ['Bancada Tanque', 'Peça Personalizada'],
   'Lavanderia': ['Bancada', 'Soleira', 'Rodapé/Filete', 'Piso', 'Peça Personalizada'],
   'Área da Piscina': [
-    'Borda de Piscina', 'Escada/Degrau', 'Espelho de Escada', 'Rodapé Escada',
+    'Borda de Piscina', 'Borda de Piscina Redonda', 'Escada/Degrau', 'Espelho de Escada', 'Rodapé Escada',
     'Soleira', 'Piso', 'Peça Personalizada',
   ],
   'Acabamentos (Soleiras e Peitoris)': [
