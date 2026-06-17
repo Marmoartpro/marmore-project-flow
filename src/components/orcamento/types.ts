@@ -367,7 +367,7 @@ export const PECA_TIPOS: Record<string, string[]> = {
     'Frontão', 'Frontão de Banheira',
     'Box - Piso', 'Soleira de Box', 'Nicho de Box', 'Prateleira/Canaleta de Box',
     'Soleira', 'Peitoril', 'Rodapé/Filete', 'Calha/Pingadeira',
-    'Borda de Piscina', 'Escada/Degrau', 'Espelho de Escada', 'Rodapé Escada',
+    'Borda de Piscina', 'Borda de Piscina Redonda', 'Escada/Degrau', 'Espelho de Escada', 'Rodapé Escada',
     'Bancada de Churrasqueira', 'Tampo de Grelha', 'Lavabo Externo',
     'Nicho Embutido', 'Bancada Tanque', 'Revestimento de Parede', 'Piso',
     'Tampo de Mesa', 'Mesa de Mármore', 'Lareira',
