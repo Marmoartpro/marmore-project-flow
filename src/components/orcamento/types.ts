@@ -565,6 +565,10 @@ export const calcPecaAreaBase = (p: PecaItem): number => {
   const q = parseInt(p.quantidade) || 1;
   // Prateleira/Canaleta de Box: área é totalmente derivada de campos próprios (extras).
   if (p.tipo === 'Prateleira/Canaleta de Box') return 0;
+  // Borda de Piscina redonda — anel circular (área líquida; desperdício aplicado em calcPecaAreaCompra)
+  if (isPiscinaRedonda(p)) {
+    return calcBordaPiscinaRedonda(p).areaM2 * q;
+  }
   let areaCm2 = 0;
 
   switch (p.formato) {
