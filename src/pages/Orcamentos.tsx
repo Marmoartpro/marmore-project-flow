@@ -58,6 +58,46 @@ const Orcamentos = () => {
   const [negotiatedValue, setNegotiatedValue] = useState('');
   const [pdfHistoryQuote, setPdfHistoryQuote] = useState<any>(null);
   const [pdfHistory, setPdfHistory] = useState<any[]>([]);
+  const [revertTarget, setRevertTarget] = useState<{ quote: any; type: 'budget' | 'quote' } | null>(null);
+  const [revertDeleteProject, setRevertDeleteProject] = useState(false);
+  const [revertLinkedProject, setRevertLinkedProject] = useState<any>(null);
+
+  const openRevert = async (q: any, type: 'budget' | 'quote') => {
+    setRevertTarget({ quote: q, type });
+    setRevertDeleteProject(false);
+    setRevertLinkedProject(null);
+    // Try to find a likely linked project (created from this quote)
+    const { data } = await supabase
+      .from('projects')
+      .select('id, name, created_at, total_value')
+      .eq('client_name', q.client_name)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    const candidate = (data || []).find((p: any) => p.name === `Projeto ${q.client_name}`) || (data || [])[0] || null;
+    setRevertLinkedProject(candidate);
+  };
+
+  const confirmRevert = async () => {
+    if (!revertTarget) return;
+    const { quote: q, type } = revertTarget;
+    if (type === 'budget') {
+      await supabase.from('budget_quotes').update({ status: 'enviado' }).eq('id', q.id);
+      fetchBudgetQuotes();
+    } else {
+      await supabase.from('quotes').update({ status: 'negociando' }).eq('id', q.id);
+      fetchQuotes();
+    }
+    if (revertDeleteProject && revertLinkedProject?.id) {
+      const { error } = await supabase.from('projects').delete().eq('id', revertLinkedProject.id);
+      if (error) toast.error('Status revertido, mas falhou ao excluir o projeto.');
+      else toast.success('Revertido para orçamento e projeto excluído!');
+    } else {
+      toast.success('Revertido para orçamento!');
+    }
+    setRevertTarget(null);
+    setRevertLinkedProject(null);
+    setRevertDeleteProject(false);
+  };
 
   const openPdfHistory = async (bq: any) => {
     setPdfHistoryQuote(bq);
@@ -250,6 +290,9 @@ const Orcamentos = () => {
                 {['rascunho', 'enviado'].includes(bq.status) && (
                   <DropdownMenuItem onClick={() => openNegotiation(bq, 'project', 'budget')}>Converter em projeto</DropdownMenuItem>
                 )}
+                {['aceito', 'aprovado'].includes(bq.status) && (
+                  <DropdownMenuItem onClick={() => openRevert(bq, 'budget')}>Reverter para orçamento</DropdownMenuItem>
+                )}
                 {['enviado', 'aceito', 'aprovado'].includes(bq.status) && (
                   <DropdownMenuItem onClick={() => setContratoQuote(bq)}>
                     <FileSignature className="w-3.5 h-3.5 mr-2" /> Gerar Contrato
@@ -402,6 +445,9 @@ const Orcamentos = () => {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => startEdit(q)}><Edit className="w-3.5 h-3.5 mr-2" /> Editar</DropdownMenuItem>
+                                {q.status === 'aprovado' && (
+                                  <DropdownMenuItem onClick={() => openRevert(q, 'quote')}>Reverter para orçamento</DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem onClick={() => { setDeleteId(q.id); setDeleteType('quote'); }} className="text-destructive">
                                   <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
                                 </DropdownMenuItem>
@@ -437,6 +483,39 @@ const Orcamentos = () => {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDeleteId(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={confirmDelete}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!revertTarget} onOpenChange={(open) => { if (!open) { setRevertTarget(null); setRevertLinkedProject(null); setRevertDeleteProject(false); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Reverter para orçamento</DialogTitle></DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              O orçamento voltará ao status {revertTarget?.type === 'budget' ? '"Enviado"' : '"Negociando"'} e poderá ser editado novamente.
+            </p>
+            {revertLinkedProject ? (
+              <div className="rounded border border-border p-3 space-y-2">
+                <p className="text-xs">
+                  Encontramos um possível projeto vinculado: <span className="font-medium">{revertLinkedProject.name}</span>
+                </p>
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={revertDeleteProject}
+                    onChange={e => setRevertDeleteProject(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-xs">Também excluir esse projeto (não recomendado se já houver fotos, etapas ou pagamentos cadastrados).</span>
+                </label>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Nenhum projeto vinculado encontrado automaticamente. Se quiser apagar o projeto, faça isso pela tela de Projetos.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setRevertTarget(null); setRevertLinkedProject(null); setRevertDeleteProject(false); }}>Cancelar</Button>
+            <Button onClick={confirmRevert}>Reverter</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
