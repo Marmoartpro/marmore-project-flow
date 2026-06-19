@@ -290,6 +290,9 @@ const Orcamentos = () => {
                 {['rascunho', 'enviado'].includes(bq.status) && (
                   <DropdownMenuItem onClick={() => openNegotiation(bq, 'project', 'budget')}>Converter em projeto</DropdownMenuItem>
                 )}
+                {['aceito', 'aprovado'].includes(bq.status) && (
+                  <DropdownMenuItem onClick={() => openRevert(bq, 'budget')}>Reverter para orçamento</DropdownMenuItem>
+                )}
                 {['enviado', 'aceito', 'aprovado'].includes(bq.status) && (
                   <DropdownMenuItem onClick={() => setContratoQuote(bq)}>
                     <FileSignature className="w-3.5 h-3.5 mr-2" /> Gerar Contrato
