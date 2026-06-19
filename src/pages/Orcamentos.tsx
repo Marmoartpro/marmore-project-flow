@@ -58,6 +58,46 @@ const Orcamentos = () => {
   const [negotiatedValue, setNegotiatedValue] = useState('');
   const [pdfHistoryQuote, setPdfHistoryQuote] = useState<any>(null);
   const [pdfHistory, setPdfHistory] = useState<any[]>([]);
+  const [revertTarget, setRevertTarget] = useState<{ quote: any; type: 'budget' | 'quote' } | null>(null);
+  const [revertDeleteProject, setRevertDeleteProject] = useState(false);
+  const [revertLinkedProject, setRevertLinkedProject] = useState<any>(null);
+
+  const openRevert = async (q: any, type: 'budget' | 'quote') => {
+    setRevertTarget({ quote: q, type });
+    setRevertDeleteProject(false);
+    setRevertLinkedProject(null);
+    // Try to find a likely linked project (created from this quote)
+    const { data } = await supabase
+      .from('projects')
+      .select('id, name, created_at, total_value')
+      .eq('client_name', q.client_name)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    const candidate = (data || []).find((p: any) => p.name === `Projeto ${q.client_name}`) || (data || [])[0] || null;
+    setRevertLinkedProject(candidate);
+  };
+
+  const confirmRevert = async () => {
+    if (!revertTarget) return;
+    const { quote: q, type } = revertTarget;
+    if (type === 'budget') {
+      await supabase.from('budget_quotes').update({ status: 'enviado' }).eq('id', q.id);
+      fetchBudgetQuotes();
+    } else {
+      await supabase.from('quotes').update({ status: 'negociando' }).eq('id', q.id);
+      fetchQuotes();
+    }
+    if (revertDeleteProject && revertLinkedProject?.id) {
+      const { error } = await supabase.from('projects').delete().eq('id', revertLinkedProject.id);
+      if (error) toast.error('Status revertido, mas falhou ao excluir o projeto.');
+      else toast.success('Revertido para orçamento e projeto excluído!');
+    } else {
+      toast.success('Revertido para orçamento!');
+    }
+    setRevertTarget(null);
+    setRevertLinkedProject(null);
+    setRevertDeleteProject(false);
+  };
 
   const openPdfHistory = async (bq: any) => {
     setPdfHistoryQuote(bq);
