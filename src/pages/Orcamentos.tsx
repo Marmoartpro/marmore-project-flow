@@ -445,6 +445,9 @@ const Orcamentos = () => {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => startEdit(q)}><Edit className="w-3.5 h-3.5 mr-2" /> Editar</DropdownMenuItem>
+                                {q.status === 'aprovado' && (
+                                  <DropdownMenuItem onClick={() => openRevert(q, 'quote')}>Reverter para orçamento</DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem onClick={() => { setDeleteId(q.id); setDeleteType('quote'); }} className="text-destructive">
                                   <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
                                 </DropdownMenuItem>
