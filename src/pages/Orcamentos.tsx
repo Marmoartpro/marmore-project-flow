@@ -487,6 +487,39 @@ const Orcamentos = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!revertTarget} onOpenChange={(open) => { if (!open) { setRevertTarget(null); setRevertLinkedProject(null); setRevertDeleteProject(false); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Reverter para orçamento</DialogTitle></DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              O orçamento voltará ao status {revertTarget?.type === 'budget' ? '"Enviado"' : '"Negociando"'} e poderá ser editado novamente.
+            </p>
+            {revertLinkedProject ? (
+              <div className="rounded border border-border p-3 space-y-2">
+                <p className="text-xs">
+                  Encontramos um possível projeto vinculado: <span className="font-medium">{revertLinkedProject.name}</span>
+                </p>
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={revertDeleteProject}
+                    onChange={e => setRevertDeleteProject(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-xs">Também excluir esse projeto (não recomendado se já houver fotos, etapas ou pagamentos cadastrados).</span>
+                </label>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Nenhum projeto vinculado encontrado automaticamente. Se quiser apagar o projeto, faça isso pela tela de Projetos.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setRevertTarget(null); setRevertLinkedProject(null); setRevertDeleteProject(false); }}>Cancelar</Button>
+            <Button onClick={confirmRevert}>Reverter</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!negotiation} onOpenChange={() => setNegotiation(null)}>
         <DialogContent>
           <DialogHeader>
