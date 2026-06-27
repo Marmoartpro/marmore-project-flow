@@ -96,6 +96,26 @@ const buildPecaDescricao = (p: any): string => {
   }
 
   if (q > 1) lines.push(`Quantidade: ${q} unidades`);
+
+  // Balcão Gourmet 2 Alturas — descrição clara do nível superior
+  if (p.nivelSuperior) {
+    const nW = parseFloat(p.nivelSuperiorLargura) || 0;
+    const nL = parseFloat(p.nivelSuperiorComprimento) || 0;
+    const nH = parseFloat(p.nivelSuperiorAltura) || 0;
+    lines.push('— Configuração em 2 alturas (balcão tipo bar) —');
+    lines.push(`Nível inferior (bancada): ${l} cm (comp.) × ${w} cm (larg.)`);
+    if (nL > 0 && nW > 0) {
+      lines.push(`Nível superior (bar elevado): ${nL} cm (comp.) × ${nW} cm (larg.)`);
+    }
+    if (nH > 0) lines.push(`Desnível entre os 2 níveis: ${nH} cm de altura`);
+    const fechamentos: string[] = [];
+    if (p.nivelSuperiorComSaia) fechamentos.push('saia/painel frontal entre os níveis');
+    if (p.nivelSuperiorComEspelho) fechamentos.push('espelho/painel traseiro');
+    if (p.nivelSuperiorComLaterais) fechamentos.push('2 tampas laterais fechando os cantos');
+    if (fechamentos.length) lines.push(`Fechamentos: ${fechamentos.join(', ')}`);
+    if (p.nivelSuperiorUniao45) lines.push('Junções em 45° (mitra) entre tampo, saia, laterais e espelho');
+  }
+
   // Cálculos reais (já consideram quantidade, formato, deduções e extras)
   const areaLiq = calcPecaAreaLiquida(p);
   const areaCompra = calcPecaAreaCompra(p);
