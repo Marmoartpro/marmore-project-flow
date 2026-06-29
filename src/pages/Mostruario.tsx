@@ -17,6 +17,8 @@ import { toast } from 'sonner';
 import StoneFilters, { COLOR_TONES, CATEGORIES } from '@/components/mostruario/StoneFilters';
 import StoneCard from '@/components/mostruario/StoneCard';
 import PresentationMode from '@/components/mostruario/PresentationMode';
+import StoneAIImages from '@/components/mostruario/StoneAIImages';
+import BatchAIGenerator from '@/components/mostruario/BatchAIGenerator';
 
 const Mostruario = () => {
   const { user, profile } = useAuth();
@@ -237,6 +239,9 @@ const Mostruario = () => {
               </Button>
             )}
             {isMarmorista && (
+              <BatchAIGenerator stones={stones.filter(s => s.owner_id === user?.id)} onDone={fetchStones} />
+            )}
+            {isMarmorista && (
               <Button size="sm" onClick={() => { resetForm(); setShowForm(true); }}>
                 <Plus className="w-4 h-4 mr-1" /> Nova pedra
               </Button>
@@ -281,10 +286,16 @@ const Mostruario = () => {
                     )}
                   </DialogTitle>
                 </DialogHeader>
+                <StoneAIImages
+                  stone={selected}
+                  canManage={isMarmorista && selected.owner_id === user?.id}
+                  onUpdated={(next) => { setSelected(next); fetchStones(); }}
+                />
                 {selected.photo_url && (
                   <div className="relative">
+                    <p className="text-xs text-muted-foreground mb-1">Foto real (capa)</p>
                     <img src={selected.photo_url} alt="" className="w-full rounded-md" />
-                    <Button size="icon" variant="outline" className="absolute top-2 right-2 h-7 w-7" onClick={() => setFullscreen(true)}>
+                    <Button size="icon" variant="outline" className="absolute top-7 right-2 h-7 w-7" onClick={() => setFullscreen(true)}>
                       <Maximize2 className="w-3 h-3" />
                     </Button>
                   </div>
