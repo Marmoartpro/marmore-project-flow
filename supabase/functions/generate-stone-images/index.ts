@@ -42,10 +42,14 @@ Gere uma fotografia realista de arquitetura de interiores de uma cozinha moderna
 Gere uma fotografia realista de arquitetura de interiores de um banheiro moderno de alto padrão, com BANCADA DE LAVATÓRIO em ${name} — o material da bancada deve ter EXATAMENTE o mesmo padrão de veios e cor da pedra das referências. Cuba de embutir, torneira metálica escovada, espelho grande iluminado, iluminação suave. Sem pessoas, sem texto, sem marca d'água.`;
 }
 
-async function generateImage(prompt: string, model: string): Promise<string> {
+async function generateImage(prompt: string, model: string, referenceUrls: string[] = []): Promise<string> {
+  const content: any[] = [{ type: "text", text: prompt }];
+  for (const url of referenceUrls.slice(0, 4)) {
+    content.push({ type: "image_url", image_url: { url } });
+  }
   const body = {
     model,
-    messages: [{ role: "user", content: prompt }],
+    messages: [{ role: "user", content }],
     modalities: ["image", "text"],
   };
 
