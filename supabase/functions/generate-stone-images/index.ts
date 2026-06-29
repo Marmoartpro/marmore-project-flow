@@ -14,7 +14,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 type Kind = "chapa" | "cozinha" | "banheiro";
 
-function buildPrompt(kind: Kind, stone: any): string {
+function buildPrompt(kind: Kind, stone: any, hasReference: boolean): string {
   const name = stone.name || "pedra natural";
   const category = (stone.category || "pedra").toLowerCase();
   const colors = stone.colors || "tons neutros";
@@ -23,13 +23,23 @@ function buildPrompt(kind: Kind, stone: any): string {
     .join(". ")
     .slice(0, 280);
 
+  const refNote = hasReference
+    ? `IMPORTANTE: as imagens em anexo são fotos REAIS desta pedra (${name}). Reproduza FIELMENTE o padrão de veios, a cor exata, a granulação e o brilho mostrados nas referências. NÃO invente um padrão diferente — copie a textura natural das fotos de referência.`
+    : `A pedra se chama ${name}, categoria ${category}, cor predominante ${colors}. ${desc}`;
+
   if (kind === "chapa") {
-    return `Fotografia profissional de uma chapa de ${category} ${name}, cor predominante ${colors}, padrão de veios e textura natural característicos (${desc}), superfície polida, iluminação de estúdio difusa e uniforme, vista frontal completa da chapa em pé, fundo neutro cinza claro, alta resolução, fotografia comercial de material de construção, sem pessoas, sem texto, sem marca d'água.`;
+    return `${refNote}
+
+Gere uma fotografia profissional comercial de UMA CHAPA INTEIRA de ${name} em pé, vista frontal, superfície polida brilhante, iluminação de estúdio difusa e uniforme, fundo neutro cinza claro liso, alta resolução, estilo catálogo de marmoraria. A chapa deve mostrar o padrão de veios/textura EXATAMENTE como nas fotos de referência. Sem pessoas, sem texto, sem marca d'água, sem moldura.`;
   }
   if (kind === "cozinha") {
-    return `Fotografia de cozinha moderna e sofisticada com bancada em ${name} (${category}) cor ${colors}, armários planejados em tom neutro complementar, cooktop embutido, iluminação natural lateral, estilo contemporâneo brasileiro de alto padrão, ângulo de 45 graus mostrando a bancada e o cooktop, fotografia de arquitetura de interiores realista, sem pessoas, sem texto.`;
+    return `${refNote}
+
+Gere uma fotografia realista de arquitetura de interiores de uma cozinha moderna brasileira de alto padrão, com BANCADA em ${name} — o material da bancada deve ter EXATAMENTE o mesmo padrão de veios e cor da pedra mostrada nas referências. Armários planejados em tom neutro complementar, cooktop embutido na bancada, iluminação natural lateral, ângulo de 45° destacando a bancada. Sem pessoas, sem texto, sem marca d'água.`;
   }
-  return `Fotografia de banheiro moderno e elegante com bancada de lavatório em ${name} (${category}) cor ${colors}, cuba de embutir, torneira metálica escovada, espelho grande iluminado, iluminação suave, estilo contemporâneo de alto padrão, fotografia de arquitetura de interiores realista, sem pessoas, sem texto.`;
+  return `${refNote}
+
+Gere uma fotografia realista de arquitetura de interiores de um banheiro moderno de alto padrão, com BANCADA DE LAVATÓRIO em ${name} — o material da bancada deve ter EXATAMENTE o mesmo padrão de veios e cor da pedra das referências. Cuba de embutir, torneira metálica escovada, espelho grande iluminado, iluminação suave. Sem pessoas, sem texto, sem marca d'água.`;
 }
 
 async function generateImage(prompt: string, model: string): Promise<string> {
