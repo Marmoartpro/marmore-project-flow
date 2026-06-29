@@ -47,6 +47,47 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_image_generations: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          kind: string
+          model: string | null
+          owner_id: string
+          prompt: string | null
+          stone_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          kind: string
+          model?: string | null
+          owner_id: string
+          prompt?: string | null
+          stone_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          kind?: string
+          model?: string | null
+          owner_id?: string
+          prompt?: string | null
+          stone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_image_generations_stone_id_fkey"
+            columns: ["stone_id"]
+            isOneToOne: false
+            referencedRelation: "stones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           all_day: boolean
@@ -916,6 +957,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_image_monthly_limit: number
           avatar_url: string | null
           cau: string | null
           city: string | null
@@ -936,6 +978,7 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          ai_image_monthly_limit?: number
           avatar_url?: string | null
           cau?: string | null
           city?: string | null
@@ -956,6 +999,7 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          ai_image_monthly_limit?: number
           avatar_url?: string | null
           cau?: string | null
           city?: string | null
@@ -1436,6 +1480,10 @@ export type Database = {
           featured: boolean | null
           finishes: string | null
           id: string
+          imagem_banheiro_ia: string | null
+          imagem_chapa_ia: string | null
+          imagem_cozinha_ia: string | null
+          imagens_geradas_por_ia: Json
           in_stock: boolean | null
           is_global: boolean | null
           name: string
@@ -1458,6 +1506,10 @@ export type Database = {
           featured?: boolean | null
           finishes?: string | null
           id?: string
+          imagem_banheiro_ia?: string | null
+          imagem_chapa_ia?: string | null
+          imagem_cozinha_ia?: string | null
+          imagens_geradas_por_ia?: Json
           in_stock?: boolean | null
           is_global?: boolean | null
           name: string
@@ -1480,6 +1532,10 @@ export type Database = {
           featured?: boolean | null
           finishes?: string | null
           id?: string
+          imagem_banheiro_ia?: string | null
+          imagem_chapa_ia?: string | null
+          imagem_cozinha_ia?: string | null
+          imagens_geradas_por_ia?: Json
           in_stock?: boolean | null
           is_global?: boolean | null
           name?: string
