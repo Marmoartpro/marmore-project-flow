@@ -60,7 +60,8 @@ const StoneAIImages = ({ stone, canManage, onUpdated }: Props) => {
   };
 
   const pickFromHistory = async (kind: Kind, url: string) => {
-    await supabase.from('stones').update({ [FIELDS[kind]]: url }).eq('id', stone.id);
+    const patch: any = { [FIELDS[kind]]: url };
+    await supabase.from('stones').update(patch).eq('id', stone.id);
     const { data: fresh } = await supabase.from('stones').select('*').eq('id', stone.id).single();
     if (fresh) onUpdated?.(fresh);
     toast.success('Versão selecionada');
