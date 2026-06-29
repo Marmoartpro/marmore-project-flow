@@ -161,10 +161,18 @@ Deno.serve(async (req) => {
     const errors: Record<string, string> = {};
     const updates: any = { imagens_geradas_por_ia: { ...(stone.imagens_geradas_por_ia || {}) } };
 
+    // Collect REAL reference photos of this stone to ground the generation
+    const refUrls: string[] = [];
+    if (stone.photo_url) refUrls.push(stone.photo_url);
+    const { data: galleryPhotos } = await admin
+      .from("stone_photos").select("photo_url").eq("stone_id", stone.id).limit(3);
+    if (galleryPhotos) for (const g of galleryPhotos) if (g.photo_url && !refUrls.includes(g.photo_url)) refUrls.push(g.photo_url);
+    const hasReference = refUrls.length > 0;
+
     for (const kind of requested) {
       try {
-        const prompt = buildPrompt(kind, stone);
-        const b64 = await generateImage(prompt, useModel);
+        const prompt = buildPrompt(kind, stone, hasReference);
+        const b64 = await generateImage(prompt, useModel, refUrls);
         const bytes = b64ToBytes(b64);
         const path = `${stone.id}/${kind}-${Date.now()}.png`;
         const { error: upErr } = await admin.storage.from("mostruario").upload(path, bytes, {
