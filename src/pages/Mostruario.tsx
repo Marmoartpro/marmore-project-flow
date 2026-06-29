@@ -239,7 +239,7 @@ const Mostruario = () => {
               </Button>
             )}
             {isMarmorista && (
-              <BatchAIGenerator stones={stones.filter(s => s.owner_id === user?.id)} onDone={fetchStones} />
+              <BatchAIGenerator stones={stones} onDone={fetchStones} />
             )}
             {isMarmorista && (
               <Button size="sm" onClick={() => { resetForm(); setShowForm(true); }}>
@@ -288,9 +288,10 @@ const Mostruario = () => {
                 </DialogHeader>
                 <StoneAIImages
                   stone={selected}
-                  canManage={isMarmorista && selected.owner_id === user?.id}
+                  canManage={isMarmorista}
                   onUpdated={(next) => { setSelected(next); fetchStones(); }}
                 />
+
                 {selected.photo_url && (
                   <div className="relative">
                     <p className="text-xs text-muted-foreground mb-1">Foto real (capa)</p>

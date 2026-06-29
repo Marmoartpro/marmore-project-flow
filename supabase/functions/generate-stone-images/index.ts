@@ -94,14 +94,35 @@ Deno.serve(async (req) => {
     const useModel = model || "google/gemini-3-pro-image";
 
     // load stone
-    const { data: stone, error: stoneErr } = await admin.from("stones").select("*").eq("id", stone_id).single();
+    let { data: stone, error: stoneErr } = await admin.from("stones").select("*").eq("id", stone_id).single();
     if (stoneErr || !stone) throw new Error("Pedra não encontrada");
 
-    // ownership: if not owner, clone first (mirror saveStone flow). Here we require ownership.
+    let cloned = false;
+    let originalId: string | null = null;
+    // ownership: if not owner, clone the stone (and its gallery photos) for this user, then generate on the clone.
     if (stone.owner_id !== user.id) {
-      return new Response(JSON.stringify({ error: "Você só pode gerar imagens para suas próprias pedras. Edite a pedra para personalizá-la primeiro." }), {
-        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      originalId = stone.id;
+      const { id, created_at, updated_at, ...rest } = stone as any;
+      const cloneData = {
+        ...rest,
+        owner_id: user.id,
+        is_global: false,
+        imagem_chapa_ia: null,
+        imagem_cozinha_ia: null,
+        imagem_banheiro_ia: null,
+        imagens_geradas_por_ia: {},
+      };
+      const { data: newStone, error: cloneErr } = await admin.from("stones").insert(cloneData).select().single();
+      if (cloneErr || !newStone) throw new Error("Falha ao clonar pedra: " + (cloneErr?.message || "desconhecido"));
+      // copy gallery photos
+      const { data: gallery } = await admin.from("stone_photos").select("photo_url").eq("stone_id", originalId);
+      if (gallery && gallery.length > 0) {
+        await admin.from("stone_photos").insert(
+          gallery.map((g: any) => ({ stone_id: newStone.id, owner_id: user.id, photo_url: g.photo_url }))
+        );
+      }
+      stone = newStone;
+      cloned = true;
     }
 
     // check monthly limit
@@ -165,6 +186,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       results, errors, used: usedAfter, limit, remaining: Math.max(0, limit - (usedAfter || 0)),
+      stone_id: stone.id, cloned, original_id: originalId,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e.message || String(e) }), {
