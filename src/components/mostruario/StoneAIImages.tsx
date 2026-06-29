@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Sparkles, RefreshCw, History, Upload } from 'lucide-react';
+import { Sparkles, RefreshCw, History, ImageIcon, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 type Kind = 'chapa' | 'cozinha' | 'banheiro';
@@ -22,6 +21,7 @@ const StoneAIImages = ({ stone, canManage, onUpdated }: Props) => {
   const [busy, setBusy] = useState<Kind | 'all' | null>(null);
   const [historyOpen, setHistoryOpen] = useState<Kind | null>(null);
   const [history, setHistory] = useState<any[]>([]);
+  const [settingCover, setSettingCover] = useState<Kind | null>(null);
   const aiFlags = stone.imagens_geradas_por_ia || {};
 
   const generate = async (kinds: Kind[]) => {
@@ -35,10 +35,14 @@ const StoneAIImages = ({ stone, canManage, onUpdated }: Props) => {
       const errs = data?.errors || {};
       const okCount = Object.keys(data?.results || {}).length;
       const failCount = Object.keys(errs).length;
+      if (data?.cloned) {
+        toast.success('Pedra personalizada para sua conta antes de gerar.');
+      }
       if (okCount) toast.success(`${okCount} imagem(ns) gerada(s). ${data.remaining} restantes este mês.`);
       if (failCount) toast.error(`${failCount} falha(s): ${Object.values(errs)[0]}`);
-      // refresh stone
-      const { data: fresh } = await supabase.from('stones').select('*').eq('id', stone.id).single();
+      // refresh stone — use the (possibly cloned) returned id
+      const refreshId = data?.stone_id || stone.id;
+      const { data: fresh } = await supabase.from('stones').select('*').eq('id', refreshId).single();
       if (fresh) onUpdated?.(fresh);
     } catch (e: any) {
       toast.error(e.message || 'Falha ao gerar imagens');
@@ -68,9 +72,27 @@ const StoneAIImages = ({ stone, canManage, onUpdated }: Props) => {
     setHistoryOpen(null);
   };
 
+  const setAsCover = async (kind: Kind) => {
+    const url = stone[FIELDS[kind]];
+    if (!url) return;
+    setSettingCover(kind);
+    try {
+      const { error } = await supabase.from('stones').update({ photo_url: url }).eq('id', stone.id);
+      if (error) throw error;
+      const { data: fresh } = await supabase.from('stones').select('*').eq('id', stone.id).single();
+      if (fresh) onUpdated?.(fresh);
+      toast.success('Imagem definida como foto de capa!');
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao definir capa');
+    } finally {
+      setSettingCover(null);
+    }
+  };
+
   const renderImage = (kind: Kind) => {
     const url = stone[FIELDS[kind]];
     const isAI = !!aiFlags?.[kind];
+    const isCurrentCover = url && stone.photo_url === url;
     return (
       <div className="space-y-2">
         {url ? (
@@ -79,6 +101,11 @@ const StoneAIImages = ({ stone, canManage, onUpdated }: Props) => {
             {isAI && (
               <span className="absolute bottom-2 left-2 text-[10px] bg-black/60 text-white/80 px-2 py-0.5 rounded">
                 Imagem ilustrativa gerada por IA
+              </span>
+            )}
+            {isCurrentCover && (
+              <span className="absolute top-2 right-2 text-[10px] bg-primary text-primary-foreground px-2 py-0.5 rounded flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> Capa atual
               </span>
             )}
           </div>
@@ -93,6 +120,21 @@ const StoneAIImages = ({ stone, canManage, onUpdated }: Props) => {
               {busy === kind ? <RefreshCw className="w-3 h-3 animate-spin mr-1" /> : <Sparkles className="w-3 h-3 mr-1" />}
               {url ? 'Gerar nova versão' : 'Gerar com IA'}
             </Button>
+            {url && !isCurrentCover && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setAsCover(kind)}
+                disabled={settingCover !== null}
+              >
+                {settingCover === kind ? (
+                  <RefreshCw className="w-3 h-3 animate-spin mr-1" />
+                ) : (
+                  <ImageIcon className="w-3 h-3 mr-1" />
+                )}
+                Usar como foto de capa
+              </Button>
+            )}
             <Button size="sm" variant="ghost" onClick={() => openHistory(kind)}>
               <History className="w-3 h-3 mr-1" /> Histórico
             </Button>
