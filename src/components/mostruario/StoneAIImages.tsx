@@ -147,11 +147,18 @@ const StoneAIImages = ({ stone, canManage, onUpdated }: Props) => {
   return (
     <div className="space-y-3">
       {canManage && (
-        <div className="flex justify-end">
-          <Button size="sm" onClick={() => generate(['chapa', 'cozinha', 'banheiro'])} disabled={busy !== null}>
-            {busy === 'all' ? <RefreshCw className="w-3 h-3 animate-spin mr-1" /> : <Sparkles className="w-3 h-3 mr-1" />}
-            Gerar 3 imagens IA
-          </Button>
+        <div className="flex flex-col gap-2">
+          {!stone.photo_url && (
+            <p className="text-[11px] text-amber-500 bg-amber-500/10 border border-amber-500/30 rounded p-2">
+              ⚠️ Esta pedra não tem foto real cadastrada. A IA vai gerar baseada apenas no nome/cor e o resultado pode não bater com a pedra real. Recomendamos enviar uma foto da chapa antes de gerar.
+            </p>
+          )}
+          <div className="flex justify-end">
+            <Button size="sm" onClick={() => generate(['chapa', 'cozinha', 'banheiro'])} disabled={busy !== null}>
+              {busy === 'all' ? <RefreshCw className="w-3 h-3 animate-spin mr-1" /> : <Sparkles className="w-3 h-3 mr-1" />}
+              Gerar 3 imagens IA
+            </Button>
+          </div>
         </div>
       )}
       <Tabs defaultValue="chapa">
