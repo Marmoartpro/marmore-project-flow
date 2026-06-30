@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
     const requested: Kind[] = Array.isArray(kinds) && kinds.length
       ? kinds.filter((k: string) => ["chapa", "cozinha", "banheiro"].includes(k))
       : ["chapa", "cozinha", "banheiro"];
-    const useModel = model || "google/gemini-3-pro-image";
+    const useModel = model || "google/gemini-3.1-flash-image";
 
     // load stone
     let { data: stone, error: stoneErr } = await admin.from("stones").select("*").eq("id", stone_id).single();
