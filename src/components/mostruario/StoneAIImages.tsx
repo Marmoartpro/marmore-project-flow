@@ -150,7 +150,7 @@ const StoneAIImages = ({ stone, canManage, onUpdated }: Props) => {
         <div className="flex flex-col gap-2">
           {!stone.photo_url && (
             <p className="text-[11px] text-amber-500 bg-amber-500/10 border border-amber-500/30 rounded p-2">
-              ⚠️ Esta pedra não tem foto real cadastrada. A IA vai gerar baseada apenas no nome/cor e o resultado pode não bater com a pedra real. Recomendamos enviar uma foto da chapa antes de gerar.
+              ⚠️ Esta pedra não tem foto real cadastrada. A IA vai buscar referências visuais desta pedra na web (Google/Bing Images) para guiar a geração. Para resultado mais fiel ao seu estoque, envie fotos reais da chapa.
             </p>
           )}
           <div className="flex justify-end">
