@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
 
     for (const kind of requested) {
       try {
-        const prompt = buildPrompt(kind, stone, hasReference);
+        const prompt = buildPrompt(kind, stone, hasReference, webReference);
         const b64 = await generateImage(prompt, useModel, refUrls);
         const bytes = b64ToBytes(b64);
         const path = `${stone.id}/${kind}-${Date.now()}.png`;
