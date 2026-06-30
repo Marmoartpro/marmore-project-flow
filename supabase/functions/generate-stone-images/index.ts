@@ -14,7 +14,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 type Kind = "chapa" | "cozinha" | "banheiro";
 
-function buildPrompt(kind: Kind, stone: any, hasReference: boolean): string {
+function buildPrompt(kind: Kind, stone: any, hasReference: boolean, webReference = false): string {
   const name = stone.name || "pedra natural";
   const category = (stone.category || "pedra").toLowerCase();
   const colors = stone.colors || "tons neutros";
@@ -23,9 +23,11 @@ function buildPrompt(kind: Kind, stone: any, hasReference: boolean): string {
     .join(". ")
     .slice(0, 280);
 
-  const refNote = hasReference
-    ? `IMPORTANTE: as imagens em anexo são fotos REAIS desta pedra (${name}). Reproduza FIELMENTE o padrão de veios, a cor exata, a granulação e o brilho mostrados nas referências. NÃO invente um padrão diferente — copie a textura natural das fotos de referência.`
-    : `A pedra se chama ${name}, categoria ${category}, cor predominante ${colors}. ${desc}`;
+  const refNote = !hasReference
+    ? `A pedra se chama ${name}, categoria ${category}, cor predominante ${colors}. ${desc}`
+    : webReference
+      ? `IMPORTANTE: as imagens em anexo são REFERÊNCIAS VISUAIS de ${name} encontradas na web (podem incluir variações). Use-as como base para reproduzir o padrão típico de veios, a cor predominante, a granulação e o brilho característicos desta pedra. Seja fiel ao aspecto geral mostrado nas referências.`
+      : `IMPORTANTE: as imagens em anexo são fotos REAIS desta pedra (${name}). Reproduza FIELMENTE o padrão de veios, a cor exata, a granulação e o brilho mostrados nas referências. NÃO invente um padrão diferente — copie a textura natural das fotos de referência.`;
 
   if (kind === "chapa") {
     return `${refNote}
