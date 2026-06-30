@@ -193,7 +193,17 @@ Deno.serve(async (req) => {
     const { data: galleryPhotos } = await admin
       .from("stone_photos").select("photo_url").eq("stone_id", stone.id).limit(3);
     if (galleryPhotos) for (const g of galleryPhotos) if (g.photo_url && !refUrls.includes(g.photo_url)) refUrls.push(g.photo_url);
-    const hasReference = refUrls.length > 0;
+    let hasReference = refUrls.length > 0;
+    let webReference = false;
+    // Fallback: if no real user photos, search the web for visual references of this stone
+    if (!hasReference) {
+      const webUrls = await fetchWebReferenceImages(stone, 3);
+      if (webUrls.length > 0) {
+        for (const u of webUrls) refUrls.push(u);
+        hasReference = true;
+        webReference = true;
+      }
+    }
 
     for (const kind of requested) {
       try {
