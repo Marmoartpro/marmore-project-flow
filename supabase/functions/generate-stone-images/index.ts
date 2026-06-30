@@ -14,7 +14,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 type Kind = "chapa" | "cozinha" | "banheiro";
 
-function buildPrompt(kind: Kind, stone: any, hasReference: boolean): string {
+function buildPrompt(kind: Kind, stone: any, hasReference: boolean, webReference = false): string {
   const name = stone.name || "pedra natural";
   const category = (stone.category || "pedra").toLowerCase();
   const colors = stone.colors || "tons neutros";
@@ -23,9 +23,11 @@ function buildPrompt(kind: Kind, stone: any, hasReference: boolean): string {
     .join(". ")
     .slice(0, 280);
 
-  const refNote = hasReference
-    ? `IMPORTANTE: as imagens em anexo são fotos REAIS desta pedra (${name}). Reproduza FIELMENTE o padrão de veios, a cor exata, a granulação e o brilho mostrados nas referências. NÃO invente um padrão diferente — copie a textura natural das fotos de referência.`
-    : `A pedra se chama ${name}, categoria ${category}, cor predominante ${colors}. ${desc}`;
+  const refNote = !hasReference
+    ? `A pedra se chama ${name}, categoria ${category}, cor predominante ${colors}. ${desc}`
+    : webReference
+      ? `IMPORTANTE: as imagens em anexo são REFERÊNCIAS VISUAIS de ${name} encontradas na web (podem incluir variações). Use-as como base para reproduzir o padrão típico de veios, a cor predominante, a granulação e o brilho característicos desta pedra. Seja fiel ao aspecto geral mostrado nas referências.`
+      : `IMPORTANTE: as imagens em anexo são fotos REAIS desta pedra (${name}). Reproduza FIELMENTE o padrão de veios, a cor exata, a granulação e o brilho mostrados nas referências. NÃO invente um padrão diferente — copie a textura natural das fotos de referência.`;
 
   if (kind === "chapa") {
     return `${refNote}
@@ -70,6 +72,32 @@ async function generateImage(prompt: string, model: string, referenceUrls: strin
   const b64 = json?.data?.[0]?.b64_json;
   if (!b64) throw new Error("Resposta sem b64_json");
   return b64;
+}
+
+async function fetchWebReferenceImages(stone: any, max = 3): Promise<string[]> {
+  try {
+    const query = encodeURIComponent(
+      `${stone.name || "pedra natural"} ${stone.category || "marmore granito"} chapa polida textura`
+    );
+    const res = await fetch(`https://www.bing.com/images/search?q=${query}&form=HDRSC2&first=1`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+      },
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+    const urls: string[] = [];
+    const re = /"murl":"(https?:\\?\/\\?\/[^"]+?\.(?:jpg|jpeg|png|webp))"/gi;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(html)) !== null && urls.length < max) {
+      const u = m[1].replace(/\\\//g, "/");
+      if (!urls.includes(u)) urls.push(u);
+    }
+    return urls;
+  } catch (_e) {
+    return [];
+  }
 }
 
 function b64ToBytes(b64: string): Uint8Array {
@@ -167,11 +195,21 @@ Deno.serve(async (req) => {
     const { data: galleryPhotos } = await admin
       .from("stone_photos").select("photo_url").eq("stone_id", stone.id).limit(3);
     if (galleryPhotos) for (const g of galleryPhotos) if (g.photo_url && !refUrls.includes(g.photo_url)) refUrls.push(g.photo_url);
-    const hasReference = refUrls.length > 0;
+    let hasReference = refUrls.length > 0;
+    let webReference = false;
+    // Fallback: if no real user photos, search the web for visual references of this stone
+    if (!hasReference) {
+      const webUrls = await fetchWebReferenceImages(stone, 3);
+      if (webUrls.length > 0) {
+        for (const u of webUrls) refUrls.push(u);
+        hasReference = true;
+        webReference = true;
+      }
+    }
 
     for (const kind of requested) {
       try {
-        const prompt = buildPrompt(kind, stone, hasReference);
+        const prompt = buildPrompt(kind, stone, hasReference, webReference);
         const b64 = await generateImage(prompt, useModel, refUrls);
         const bytes = b64ToBytes(b64);
         const path = `${stone.id}/${kind}-${Date.now()}.png`;
