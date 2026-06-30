@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ALTER COLUMN ai_image_monthly_limit SET DEFAULT 200;
