@@ -72,6 +72,32 @@ async function generateImage(prompt: string, model: string, referenceUrls: strin
   return b64;
 }
 
+async function fetchWebReferenceImages(stone: any, max = 3): Promise<string[]> {
+  try {
+    const query = encodeURIComponent(
+      `${stone.name || "pedra natural"} ${stone.category || "marmore granito"} chapa polida textura`
+    );
+    const res = await fetch(`https://www.bing.com/images/search?q=${query}&form=HDRSC2&first=1`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+      },
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+    const urls: string[] = [];
+    const re = /"murl":"(https?:\\?\/\\?\/[^"]+?\.(?:jpg|jpeg|png|webp))"/gi;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(html)) !== null && urls.length < max) {
+      const u = m[1].replace(/\\\//g, "/");
+      if (!urls.includes(u)) urls.push(u);
+    }
+    return urls;
+  } catch (_e) {
+    return [];
+  }
+}
+
 function b64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);
   const out = new Uint8Array(bin.length);
