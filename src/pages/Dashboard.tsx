@@ -188,28 +188,36 @@ const Dashboard = () => {
 
   if (loading) return <AppLayout><div className="flex items-center justify-center h-64 text-muted-foreground">Carregando...</div></AppLayout>;
 
-  const renderProjectCard = (p: any, showActions = true) => {
+  const renderProjectCard = (p: any, showActions = true, i = 0) => {
     const status = getPaymentStatus(p.id);
     const progress = getProjectProgress(p.id);
     const urgency = getUrgencyScore(p);
-    const urgencyBadge = urgency >= 80 ? { label: 'Urgente', color: 'bg-destructive text-destructive-foreground' }
-      : urgency >= 40 ? { label: 'Atenção', color: 'bg-warning text-warning-foreground' }
+    const urgencyBadge = urgency >= 80 ? { label: 'Urgente', variant: 'destructive' as const }
+      : urgency >= 40 ? { label: 'Atenção', variant: 'warning' as const }
       : null;
+    const leftBorder = urgency >= 80 ? 'border-l-destructive'
+      : urgency >= 40 ? 'border-l-warning'
+      : 'border-l-primary/60';
+    const statusVariant = status.label === 'Atrasado' ? 'destructive' : 'success';
     return (
-      <Card key={p.id} className="hover:border-primary/40 transition-colors">
+      <Card
+        key={p.id}
+        className={`group border-l-4 ${leftBorder} animate-fade-in transition-all duration-300 ease-out-expo hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elev-md`}
+        style={{ animationDelay: `${Math.min(i, 12) * 40}ms`, animationFillMode: 'backwards' }}
+      >
         <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="cursor-pointer flex-1" onClick={() => navigate(`/projeto/${p.id}`)}>
-              <p className="font-medium text-sm">{p.name}</p>
-              <p className="text-xs text-muted-foreground">{p.client_name || 'Sem cliente'}</p>
+          <div className="flex items-center justify-between mb-2 gap-2">
+            <div className="cursor-pointer flex-1 min-w-0" onClick={() => navigate(`/projeto/${p.id}`)}>
+              <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">{p.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{p.client_name || 'Sem cliente'}</p>
             </div>
-            <div className="flex items-center gap-1">
-              {urgencyBadge && <Badge className={urgencyBadge.color + ' text-[10px]'}>{urgencyBadge.label}</Badge>}
-              <Badge className={status.color + ' text-[10px]'}>{status.label}</Badge>
+            <div className="flex items-center gap-1 shrink-0">
+              {urgencyBadge && <Badge variant={urgencyBadge.variant} className="text-[10px]">{urgencyBadge.label}</Badge>}
+              <Badge variant={statusVariant as any} className="text-[10px]">{status.label}</Badge>
               {showActions && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-7 w-7">
+                    <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Ações do projeto">
                       <MoreVertical className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -231,7 +239,10 @@ const Dashboard = () => {
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
+                <div
+                  className="h-full bg-gradient-primary rounded-full transition-[width] duration-500 ease-out-expo"
+                  style={{ width: `${progress}%` }}
+                />
               </div>
             </div>
             <span className="text-[11px] text-muted-foreground whitespace-nowrap">{projectStageMap[p.id]}</span>
