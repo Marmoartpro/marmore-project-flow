@@ -215,10 +215,13 @@ const Mostruario = () => {
     }
   };
 
-  const openDetail = async (s: any) => {
+  const openDetail = useCallback((s: any) => {
     setSelected(s);
     fetchGalleryPhotos(s.id);
-  };
+  }, []);
+
+  const handleUploadPhoto = useCallback((stone: any) => { openEdit(stone); }, []);
+
 
   const shareStone = (s: any) => {
     const url = `${window.location.origin}/mostruario?pedra=${s.id}`;
