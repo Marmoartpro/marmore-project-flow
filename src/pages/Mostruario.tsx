@@ -251,8 +251,8 @@ const Mostruario = () => {
               <BatchAIGenerator stones={stones} onDone={fetchStones} />
             )}
             {isMarmorista && (
-              <Button size="sm" onClick={() => { resetForm(); setShowForm(true); }}>
-                <Plus className="w-4 h-4 mr-1" /> Nova pedra
+              <Button size="sm" variant="premium" onClick={() => { resetForm(); setShowForm(true); }} className="group">
+                <Plus className="w-4 h-4 mr-1 transition-transform group-hover:rotate-90" /> Nova pedra
               </Button>
             )}
           </div>
