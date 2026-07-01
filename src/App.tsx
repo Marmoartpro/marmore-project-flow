@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, HashRouter, Route, Routes, Navigate } from "react-router-dom";
 
@@ -8,35 +9,50 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { usePermissions, PermissionKey } from "@/hooks/usePermissions";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import ArchitectDashboard from "./pages/ArchitectDashboard";
-import NewProject from "./pages/NewProject";
-import ProjectDetail from "./pages/ProjectDetail";
-import InviteAccept from "./pages/InviteAccept";
-import TeamInviteAccept from "./pages/TeamInviteAccept";
-import Financeiro from "./pages/Financeiro";
-import Orcamentos from "./pages/Orcamentos";
-import Clientes from "./pages/Clientes";
-import Mostruario from "./pages/Mostruario";
-import Fornecedores from "./pages/Fornecedores";
-import CalculadoraOrcamento from "./pages/CalculadoraOrcamento";
-import Portfolio from "./pages/Portfolio";
-import Relatorios from "./pages/Relatorios";
-import Contratos from "./pages/Contratos";
-import AssinaturaPublica from "./pages/AssinaturaPublica";
-import StonePage from "./pages/StonePage";
-import Equipe from "./pages/Equipe";
-import Agenda from "./pages/Agenda";
-import ClientePortal from "./pages/ClientePortal";
-import InstaladorPortal from "./pages/InstaladorPortal";
-import VendedorPortal from "./pages/VendedorPortal";
-import RhPortal from "./pages/RhPortal";
-import Unauthorized from "./pages/Unauthorized";
-import NotificationPreferences from "./pages/NotificationPreferences";
-import Unsubscribe from "./pages/Unsubscribe";
-import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// Route-level code splitting: cada página vira um chunk sob demanda.
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const ArchitectDashboard = lazy(() => import("./pages/ArchitectDashboard"));
+const NewProject = lazy(() => import("./pages/NewProject"));
+const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
+const InviteAccept = lazy(() => import("./pages/InviteAccept"));
+const TeamInviteAccept = lazy(() => import("./pages/TeamInviteAccept"));
+const Financeiro = lazy(() => import("./pages/Financeiro"));
+const Orcamentos = lazy(() => import("./pages/Orcamentos"));
+const Clientes = lazy(() => import("./pages/Clientes"));
+const Mostruario = lazy(() => import("./pages/Mostruario"));
+const Fornecedores = lazy(() => import("./pages/Fornecedores"));
+const CalculadoraOrcamento = lazy(() => import("./pages/CalculadoraOrcamento"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const Relatorios = lazy(() => import("./pages/Relatorios"));
+const Contratos = lazy(() => import("./pages/Contratos"));
+const AssinaturaPublica = lazy(() => import("./pages/AssinaturaPublica"));
+const StonePage = lazy(() => import("./pages/StonePage"));
+const Equipe = lazy(() => import("./pages/Equipe"));
+const Agenda = lazy(() => import("./pages/Agenda"));
+const ClientePortal = lazy(() => import("./pages/ClientePortal"));
+const InstaladorPortal = lazy(() => import("./pages/InstaladorPortal"));
+const VendedorPortal = lazy(() => import("./pages/VendedorPortal"));
+const RhPortal = lazy(() => import("./pages/RhPortal"));
+const Unauthorized = lazy(() => import("./pages/Unauthorized"));
+const NotificationPreferences = lazy(() => import("./pages/NotificationPreferences"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
+const RouteFallback = () => (
+  <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>
+);
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
