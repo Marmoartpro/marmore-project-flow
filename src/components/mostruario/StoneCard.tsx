@@ -53,4 +53,13 @@ const StoneCard = ({ stone: s, isMarmorista, onDetail, onUploadPhoto }: StoneCar
   );
 };
 
-export default StoneCard;
+export default memo(StoneCard, (prev, next) =>
+  prev.stone.id === next.stone.id &&
+  prev.stone.photo_url === next.stone.photo_url &&
+  prev.stone.name === next.stone.name &&
+  prev.stone.price_per_m2 === next.stone.price_per_m2 &&
+  prev.stone.in_stock === next.stone.in_stock &&
+  prev.stone.featured === next.stone.featured &&
+  prev.stone.promo_active === next.stone.promo_active &&
+  prev.isMarmorista === next.isMarmorista
+);
