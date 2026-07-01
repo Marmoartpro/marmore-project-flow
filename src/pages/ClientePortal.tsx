@@ -26,40 +26,23 @@ const ClientePortal = () => {
 
   const fetchData = async () => {
     if (!token) return;
-    // FIX #1: Use client_access_token instead of project id
-    const { data: proj } = await (supabase as any).from('projects').select('*').eq('client_access_token', token).maybeSingle();
-    if (!proj) { setLoading(false); return; }
-    setProject(proj);
-
-    const [stRes, payRes, conRes] = await Promise.all([
-      supabase.from('project_stages').select('*').eq('project_id', proj.id).order('stage_number'),
-      supabase.from('payments').select('*').eq('project_id', proj.id).order('due_date'),
-      supabase.from('contracts').select('*').eq('owner_id', proj.owner_id).limit(1),
-    ]);
-    setStages(stRes.data || []);
-    setPayments(payRes.data || []);
-    if (conRes.data?.[0]) setContract(conRes.data[0]);
-
-    // Fetch photos for stages
-    const stageIds = (stRes.data || []).map((s: any) => s.id);
-    if (stageIds.length > 0) {
-      const { data: ph } = await supabase.from('stage_photos').select('*, project_stages(name)').in('stage_id', stageIds);
-      setPhotos(ph || []);
-    }
-
-    // Fetch messages
-    const { data: msgs } = await supabase.from('messages').select('*').eq('project_id', proj.id).order('created_at');
-    setMessages(msgs || []);
-
+    // Secure: single RPC validates the token server-side and returns only this project's data
+    const { data, error } = await (supabase as any).rpc('get_client_portal', { _token: token });
+    if (error || !data) { setLoading(false); return; }
+    setProject(data.project);
+    setStages(data.stages || []);
+    setPayments(data.payments || []);
+    setPhotos(data.photos || []);
+    setMessages(data.messages || []);
+    if (data.contract) setContract(data.contract);
     setLoading(false);
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !project) return;
-    const { error } = await supabase.from('messages').insert({
-      project_id: project.id,
-      sender_id: project.owner_id, // anon insert; tag content with [Cliente] prefix to identify
-      content: `[Cliente] ${newMessage.trim()}`,
+    if (!newMessage.trim() || !token) return;
+    const { error } = await (supabase as any).rpc('post_client_message', {
+      _token: token,
+      _content: newMessage.trim(),
     });
     if (error) {
       toast.error('Não foi possível enviar a mensagem.');
@@ -67,8 +50,7 @@ const ClientePortal = () => {
     }
     setNewMessage('');
     toast.success('Mensagem enviada!');
-    const { data: msgs } = await supabase.from('messages').select('*').eq('project_id', project.id).order('created_at');
-    setMessages(msgs || []);
+    fetchData();
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
@@ -87,7 +69,6 @@ const ClientePortal = () => {
       </header>
 
       <div className="p-4 space-y-6 max-w-2xl mx-auto">
-        {/* Progress */}
         <Card>
           <CardHeader><CardTitle className="text-base flex items-center gap-2"><Clock className="w-4 h-4" /> Progresso</CardTitle></CardHeader>
           <CardContent className="space-y-4">
@@ -107,7 +88,6 @@ const ClientePortal = () => {
           </CardContent>
         </Card>
 
-        {/* Photos */}
         {photos.length > 0 && (
           <Card>
             <CardHeader><CardTitle className="text-base">Fotos da Obra</CardTitle></CardHeader>
@@ -123,18 +103,14 @@ const ClientePortal = () => {
           </Card>
         )}
 
-        {/* Antes & Depois */}
         <BeforeAfterSlider projectId={project.id} />
 
-        {/* NPS — aparece após 7 dias do acabamento */}
         <NPSWidget
-          projectId={project.id}
-          ownerId={project.owner_id}
+          token={token!}
           stages={stages}
           googleReviewUrl={null}
         />
 
-        {/* Payments */}
         <Card>
           <CardHeader><CardTitle className="text-base flex items-center gap-2"><DollarSign className="w-4 h-4" /> Pagamentos</CardTitle></CardHeader>
           <CardContent className="space-y-3">
@@ -163,7 +139,6 @@ const ClientePortal = () => {
           </CardContent>
         </Card>
 
-        {/* Contract */}
         {contract?.signed_pdf_url && (
           <Card>
             <CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="w-4 h-4" /> Contrato</CardTitle></CardHeader>
@@ -175,7 +150,6 @@ const ClientePortal = () => {
           </Card>
         )}
 
-        {/* Messages - FIX #10 */}
         <Card>
           <CardHeader><CardTitle className="text-base flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Recados</CardTitle></CardHeader>
           <CardContent className="space-y-3">
