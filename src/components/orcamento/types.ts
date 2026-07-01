@@ -1417,3 +1417,90 @@ export const calcResumoConsumo = (
 
   return Array.from(map.values());
 };
+
+/* ─────────────────────────────────────────────────────────────
+   Constantes de cálculo (extraídas para eliminar valores mágicos)
+   ───────────────────────────────────────────────────────────── */
+
+/** % do footprint da cuba sobreposta que é efetivamente recortada da bancada. */
+export const CUBA_SOBREPOSTA_DEDUCAO_PCT = 0.8;
+
+/** Área mínima cobrável por AMBIENTE (nunca por peça). */
+export const MIN_AREA_M2_AMBIENTE = 0.10;
+
+/** Padrão de m² por chapa (usado no resumo de consumo). */
+export const M2_POR_CHAPA_DEFAULT = 6;
+
+/** Divisão sugerida de parcelamento (40% entrada, 30% intermediária, 30% saldo). */
+export const PARCELAMENTO_DEFAULT = {
+  entrada: 0.4,
+  parcela: 0.3,
+  saldo: 0.3,
+} as const;
+
+/* ─────────────────────────────────────────────────────────────
+   Cálculo unificado de totais (fonte única para TotaisSection + ResumoConsumo)
+   ───────────────────────────────────────────────────────────── */
+
+export interface TotaisSubtotais {
+  materials: number;
+  labor: number;
+  accessories: number;
+  installation: number;
+}
+export interface TotaisMargens {
+  material: number;   // %
+  servicos: number;   // %
+  acessorios: number; // %
+  instalacao: number; // %
+}
+export interface TotaisDesconto {
+  valor: string;
+  tipo: 'percent' | 'reais';
+}
+export interface TotaisCalculados {
+  materialComMargem: number;
+  servicosComMargem: number;
+  acessoriosComMargem: number;
+  instalacaoComMargem: number;
+  totalBruto: number;
+  desconto: number;
+  totalFinal: number;
+  totalMargem: number;
+  parcelas: { entrada: number; parcela: number; saldo: number };
+}
+
+export const calcTotais = (
+  subtotais: TotaisSubtotais,
+  margens: TotaisMargens,
+  desconto: TotaisDesconto,
+): TotaisCalculados => {
+  const materialComMargem = subtotais.materials * (1 + margens.material / 100);
+  const servicosComMargem = subtotais.labor * (1 + margens.servicos / 100);
+  const acessoriosComMargem = subtotais.accessories * (1 + margens.acessorios / 100);
+  const instalacaoComMargem = subtotais.installation * (1 + margens.instalacao / 100);
+
+  const totalBruto = materialComMargem + servicosComMargem + acessoriosComMargem + instalacaoComMargem;
+
+  const rawDesc = parseFloat(desconto.valor) || 0;
+  const descontoVal = desconto.tipo === 'percent'
+    ? totalBruto * (rawDesc / 100)
+    : rawDesc;
+  const totalFinal = Math.max(0, totalBruto - descontoVal);
+
+  const totalMargem =
+    subtotais.materials * (margens.material / 100) +
+    subtotais.labor * (margens.servicos / 100) +
+    subtotais.accessories * (margens.acessorios / 100) +
+    subtotais.installation * (margens.instalacao / 100);
+
+  return {
+    materialComMargem, servicosComMargem, acessoriosComMargem, instalacaoComMargem,
+    totalBruto, desconto: descontoVal, totalFinal, totalMargem,
+    parcelas: {
+      entrada: totalFinal * PARCELAMENTO_DEFAULT.entrada,
+      parcela: totalFinal * PARCELAMENTO_DEFAULT.parcela,
+      saldo: totalFinal * PARCELAMENTO_DEFAULT.saldo,
+    },
+  };
+};
