@@ -94,6 +94,7 @@ const HomeRedirect = () => {
 };
 
 const AppRoutes = () => (
+  <Suspense fallback={<RouteFallback />}>
   <Routes>
     <Route path="/" element={<HomeRedirect />} />
     <Route path="/login" element={<Login />} />
