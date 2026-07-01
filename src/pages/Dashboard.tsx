@@ -351,7 +351,7 @@ const Dashboard = () => {
           <TabsContent value="active" className="space-y-2 mt-3">
             {activeProjects.length === 0 ? (
               <p className="text-muted-foreground text-sm">Nenhum projeto ativo.</p>
-            ) : activeProjects.map(p => renderProjectCard(p))}
+            ) : activeProjects.map((p, i) => renderProjectCard(p, true, i))}
           </TabsContent>
           <TabsContent value="archived" className="space-y-2 mt-3">
             {archivedProjects.length === 0 ? (
