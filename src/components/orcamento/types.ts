@@ -1059,11 +1059,15 @@ export const calcMetrosLinearesBorda = (p: PecaItem): number => {
 /* ─── Ambiente-level calculations ─── */
 
 export const calcAmbienteArea = (amb: Ambiente): number => {
-  return amb.pecas.reduce((sum, p) => sum + calcPecaAreaLiquida(p), 0);
+  const raw = amb.pecas.reduce((sum, p) => sum + calcPecaAreaLiquida(p), 0);
+  return raw > 0 ? ceilM2(raw) : 0;
 };
 
 export const calcAmbienteAreaCompra = (amb: Ambiente): number => {
-  return amb.pecas.reduce((sum, p) => sum + calcPecaAreaCompra(p), 0);
+  const raw = amb.pecas.reduce((sum, p) => sum + calcPecaAreaCompra(p), 0);
+  if (raw <= 0) return 0;
+  // Piso mínimo aplicado UMA vez por ambiente (não por peça — evita superfaturamento).
+  return ceilM2(Math.max(raw, MIN_AREA_M2_AMBIENTE));
 };
 
 export const calcAmbienteMaterialCost = (amb: Ambiente, optionIndex: number): number => {
@@ -1254,7 +1258,11 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
     }
 
     // Extras
-    (p.extras || []).forEach(e => { total += (e.valor || 0) * q; });
+    // Extras da peça — porQuantidade (default true) multiplica pelo nº de peças
+    (p.extras || []).forEach(e => {
+      const escalaComQ = e.porQuantidade !== false;
+      total += (e.valor || 0) * (escalaComQ ? q : 1);
+    });
   });
 
   // Serviços customizados
