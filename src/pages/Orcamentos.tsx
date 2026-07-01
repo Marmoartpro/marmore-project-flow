@@ -396,7 +396,7 @@ const Orcamentos = () => {
                     Nenhum orçamento em andamento. <button onClick={() => navigate('/calculadora')} className="text-primary underline">Criar novo</button>
                   </CardContent></Card>
                 )}
-                {bqEmAndamento.map(bq => <BudgetCard key={bq.id} bq={bq} />)}
+                {bqEmAndamento.map((bq, i) => <BudgetCard key={bq.id} bq={bq} index={i} />)}
               </TabsContent>
               <TabsContent value="finalizados" className="space-y-3 mt-3">
                 {bqFinalizados.length === 0 && (
@@ -404,7 +404,7 @@ const Orcamentos = () => {
                     Nenhum orçamento finalizado ainda.
                   </CardContent></Card>
                 )}
-                {bqFinalizados.map(bq => <BudgetCard key={bq.id} bq={bq} />)}
+                {bqFinalizados.map((bq, i) => <BudgetCard key={bq.id} bq={bq} index={i} />)}
               </TabsContent>
             </Tabs>
           </TabsContent>
