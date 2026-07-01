@@ -19,6 +19,7 @@ import StoneCard from '@/components/mostruario/StoneCard';
 import PresentationMode from '@/components/mostruario/PresentationMode';
 import StoneAIImages from '@/components/mostruario/StoneAIImages';
 import BatchAIGenerator from '@/components/mostruario/BatchAIGenerator';
+import VirtualStoneGrid from '@/components/mostruario/VirtualStoneGrid';
 
 const Mostruario = () => {
   const { user, profile } = useAuth();
