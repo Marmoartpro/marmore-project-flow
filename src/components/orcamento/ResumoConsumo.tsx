@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Package, TrendingUp, DollarSign } from 'lucide-react';
 import type { Ambiente, ResumoMaterial } from './types';
-import { calcResumoConsumo, calcAmbienteLaborCost, calcAmbienteInstallCost, fmt, ceilMoney } from './types';
+import { calcResumoConsumo, fmt, calcTotais } from './types';
 
 interface Props {
   ambientes: Ambiente[];
@@ -31,11 +31,12 @@ const ResumoConsumo = ({
   const custoTotalInstalacao = subtotalInstallation;
   const custoTotal = custoTotalMaterial + custoTotalServicos + custoTotalAcessorios + custoTotalInstalacao;
 
-  const margemTotalMat = subtotalMaterials * (margemMaterial / 100);
-  const margemTotalServ = subtotalLabor * (margemServicos / 100);
-  const margemTotalAcc = subtotalAccessories * (margemAcessorios / 100);
-  const margemTotalInst = subtotalInstallation * (margemInstalacao / 100);
-  const lucroEstimado = margemTotalMat + margemTotalServ + margemTotalAcc + margemTotalInst;
+  const t = calcTotais(
+    { materials: subtotalMaterials, labor: subtotalLabor, accessories: subtotalAccessories, installation: subtotalInstallation },
+    { material: margemMaterial, servicos: margemServicos, acessorios: margemAcessorios, instalacao: margemInstalacao },
+    { valor: '0', tipo: 'reais' },
+  );
+  const lucroEstimado = t.totalMargem;
 
   return (
     <Card className="border-orange-500/30 bg-orange-50/50 dark:bg-orange-950/10">
