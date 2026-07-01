@@ -41,6 +41,10 @@ const Mostruario = () => {
   const [presentationStart, setPresentationStart] = useState(0);
   const [arStone, setArStone] = useState<any>(null);
   const [vizStone, setVizStone] = useState<any>(null);
+  const [pageSize, setPageSize] = useState<number>(() => {
+    const saved = Number(localStorage.getItem('mostruario_page_size'));
+    return [24, 48, 96, 200, 0].includes(saved) ? saved : 48;
+  });
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
