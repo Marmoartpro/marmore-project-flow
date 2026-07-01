@@ -798,14 +798,18 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
     }
   }
 
-  // Revestimento — deduct aberturas
+  // Extras "por peça" — escalam com q (nicho, banco, prateleira, saia, etc já contados acima)
+  let result = cm2toM2(extraCm2) * q;
+
+  // Revestimento — aberturas (janelas, portas físicas do ambiente) são deduzidas UMA vez,
+  // não escalam com q. Um mesmo ambiente com q=3 painéis idênticos ainda tem só as mesmas janelas.
   if (p.aberturas && p.aberturas.length > 0) {
-    p.aberturas.forEach(ab => {
-      extraCm2 -= cm(ab.largura) * cm(ab.altura);
-    });
+    let aberturasCm2 = 0;
+    p.aberturas.forEach(ab => { aberturasCm2 += cm(ab.largura) * cm(ab.altura); });
+    result -= cm2toM2(aberturasCm2);
   }
 
-  return cm2toM2(extraCm2) * q;
+  return result;
 };
 
 /** Nicho embutido standalone — 5 faces internas + prateleiras
@@ -848,17 +852,23 @@ export const calcPecaAreaLiquida = (p: PecaItem): number => {
   return Math.max(0, base - deductions + extras);
 };
 
+/**
+ * Área de compra por peça — SEM arredondamento e SEM piso mínimo.
+ * O arredondamento (ceilM2) e o piso mínimo (MIN_AREA_M2_AMBIENTE) devem ser
+ * aplicados no NÍVEL DO AMBIENTE (calcAmbienteAreaCompra) para evitar
+ * superfaturamento quando um ambiente tem várias peças pequenas.
+ */
 export const calcPecaAreaCompra = (p: PecaItem): number => {
   const liquida = calcPecaAreaLiquida(p);
+  if (liquida <= 0) return 0;
   // Borda de Piscina redonda — desperdício específico para corte curvo
   if (isPiscinaRedonda(p)) {
     const fator = 1 + ((parseFloat(p.desperdicioCurvo) || 25) / 100);
-    return ceilM2(Math.max(liquida * fator, liquida > 0 ? 0.10 : 0));
+    return liquida * fator;
   }
   const wastePercent = (p.padraoPiso === 'espinha' || p.padraoPiso === 'diagonal' || p.padraoPiso === 'xadrez')
     && ['Piso'].includes(p.tipo) ? 0.15 : 0.10;
-  const withWaste = liquida * (1 + wastePercent);
-  return ceilM2(Math.max(withWaste, liquida > 0 ? 0.10 : 0));
+  return liquida * (1 + wastePercent);
 };
 
 export const calcPecaArea = calcPecaAreaLiquida;
