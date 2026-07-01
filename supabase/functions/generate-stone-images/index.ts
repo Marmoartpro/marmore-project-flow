@@ -144,27 +144,39 @@ Deno.serve(async (req) => {
     // ownership: if not owner, clone the stone (and its gallery photos) for this user, then generate on the clone.
     if (stone.owner_id !== user.id) {
       originalId = stone.id;
-      const { id, created_at, updated_at, ...rest } = stone as any;
-      const cloneData = {
-        ...rest,
-        owner_id: user.id,
-        is_global: false,
-        imagem_chapa_ia: null,
-        imagem_cozinha_ia: null,
-        imagem_banheiro_ia: null,
-        imagens_geradas_por_ia: {},
-      };
-      const { data: newStone, error: cloneErr } = await admin.from("stones").insert(cloneData).select().single();
-      if (cloneErr || !newStone) throw new Error("Falha ao clonar pedra: " + (cloneErr?.message || "desconhecido"));
-      // copy gallery photos
-      const { data: gallery } = await admin.from("stone_photos").select("photo_url").eq("stone_id", originalId);
-      if (gallery && gallery.length > 0) {
-        await admin.from("stone_photos").insert(
-          gallery.map((g: any) => ({ stone_id: newStone.id, owner_id: user.id, photo_url: g.photo_url }))
-        );
+      // Reuse existing clone if user already has one with the same name
+      const { data: existing } = await admin
+        .from("stones")
+        .select("*")
+        .eq("owner_id", user.id)
+        .eq("name", stone.name)
+        .maybeSingle();
+      if (existing) {
+        stone = existing;
+        cloned = true;
+      } else {
+        const { id, created_at, updated_at, ...rest } = stone as any;
+        const cloneData = {
+          ...rest,
+          owner_id: user.id,
+          is_global: false,
+          imagem_chapa_ia: null,
+          imagem_cozinha_ia: null,
+          imagem_banheiro_ia: null,
+          imagens_geradas_por_ia: {},
+        };
+        const { data: newStone, error: cloneErr } = await admin.from("stones").insert(cloneData).select().single();
+        if (cloneErr || !newStone) throw new Error("Falha ao clonar pedra: " + (cloneErr?.message || "desconhecido"));
+        // copy gallery photos
+        const { data: gallery } = await admin.from("stone_photos").select("photo_url").eq("stone_id", originalId);
+        if (gallery && gallery.length > 0) {
+          await admin.from("stone_photos").insert(
+            gallery.map((g: any) => ({ stone_id: newStone.id, owner_id: user.id, photo_url: g.photo_url }))
+          );
+        }
+        stone = newStone;
+        cloned = true;
       }
-      stone = newStone;
-      cloned = true;
     }
 
     // check monthly limit
