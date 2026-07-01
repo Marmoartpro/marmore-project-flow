@@ -266,12 +266,35 @@ const Mostruario = () => {
           stockFilter={stockFilter} setStockFilter={setStockFilter}
         />
 
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>{filtered.length} pedra{filtered.length === 1 ? '' : 's'}{pageSize > 0 && filtered.length > pageSize ? ` — mostrando ${pageSize}` : ''}</span>
+          <label className="flex items-center gap-2">
+            Ver por página:
+            <select
+              className="bg-background border border-border rounded px-2 py-1 text-xs"
+              value={pageSize}
+              onChange={e => {
+                const v = Number(e.target.value);
+                setPageSize(v);
+                localStorage.setItem('mostruario_page_size', String(v));
+              }}
+            >
+              <option value={24}>24</option>
+              <option value={48}>48</option>
+              <option value={96}>96</option>
+              <option value={200}>200</option>
+              <option value={0}>Todas</option>
+            </select>
+          </label>
+        </div>
+
         <VirtualStoneGrid
-          stones={filtered}
+          stones={pageSize > 0 ? filtered.slice(0, pageSize) : filtered}
           isMarmorista={isMarmorista}
           onDetail={openDetail}
           onUploadPhoto={handleUploadPhoto}
         />
+
 
 
         {filtered.length === 0 && <p className="text-center text-muted-foreground text-sm py-8">Nenhuma pedra encontrada.</p>}
