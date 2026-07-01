@@ -35,22 +35,23 @@ const AssinaturaPublica = () => {
 
   const loadSignature = async () => {
     setLoading(true);
-    const { data: sig } = await supabase
-      .from('digital_signatures')
-      .select('*')
-      .eq('sign_token', token)
-      .single();
+    // Secure: token-scoped RPC returns signature + document only if token matches
+    const { data: payload, error: rpcErr } = await (supabase as any)
+      .rpc('get_signature_for_signing', { _token: token });
 
-    if (!sig) {
+    if (rpcErr || !payload) {
       setError('Link de assinatura inválido ou expirado.');
       setLoading(false);
       return;
     }
 
+    const sig = payload.signature;
+    const doc = payload.document;
+
     if (sig.status === 'assinado') {
       setSigned(true);
       setSignature(sig);
-      setSignedPdfUrl((sig as any).signed_pdf_url || '');
+      setSignedPdfUrl(sig.signed_pdf_url || '');
       setLoading(false);
       return;
     }
@@ -62,15 +63,10 @@ const AssinaturaPublica = () => {
     }
 
     setSignature(sig);
-
-    // Load document
-    const table = sig.document_type === 'contrato' ? 'contracts' : 'budget_quotes';
-    const { data: doc } = await supabase.from(table).select('*').eq('id', sig.document_id).single();
     setDocument(doc);
 
-    // Load contract text if it's a contract
     if (sig.document_type === 'contrato' && doc) {
-      setContractText((doc as any).contract_text || '');
+      setContractText(doc.contract_text || '');
     }
 
     setLoading(false);
@@ -247,27 +243,16 @@ const AssinaturaPublica = () => {
         if (url) pdfUrl = url;
       }
 
-      await supabase
-        .from('digital_signatures')
-        .update({
-          signer_name: signerName,
-          signer_ip: ip,
-          signer_location: location,
-          signature_image: signatureImage,
-          signed_at: new Date().toISOString(),
-          status: 'assinado',
-          ...(pdfUrl ? { signed_pdf_url: pdfUrl } : {}),
-        } as any)
-        .eq('sign_token', token);
-
-      // Update document status
-      if (isContract) {
-        const updatePayload: any = { status: 'assinado' };
-        if (pdfUrl) updatePayload.signed_pdf_url = pdfUrl;
-        await supabase.from('contracts').update(updatePayload).eq('id', signature.document_id);
-      } else {
-        await supabase.from('budget_quotes').update({ status: 'aceito' }).eq('id', signature.document_id);
-      }
+      // Secure: single RPC validates token, updates signature + document atomically
+      const { error: signErr } = await (supabase as any).rpc('sign_document', {
+        _token: token,
+        _signer_name: signerName,
+        _signature_image: signatureImage,
+        _signer_ip: ip,
+        _signer_location: location,
+        _signed_pdf_url: pdfUrl || null,
+      });
+      if (signErr) throw signErr;
 
       setSignedPdfUrl(pdfUrl);
       setSigned(true);

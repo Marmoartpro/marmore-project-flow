@@ -7,18 +7,18 @@ import { Star, ExternalLink, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Props {
-  projectId: string;
-  ownerId: string;
+  token: string;
   stages: any[];
   googleReviewUrl?: string | null;
 }
 
-// Show NPS only if the last stage was completed at least 7 days ago
-const NPSWidget = ({ projectId, ownerId, stages, googleReviewUrl }: Props) => {
+// Show NPS only if the last stage was completed at least 7 days ago.
+// Uses token-scoped RPCs — no direct table access from anon.
+const NPSWidget = ({ token, stages, googleReviewUrl }: Props) => {
+  const STORAGE_KEY = `nps:${token}`;
   const [score, setScore] = useState<number | null>(null);
   const [comment, setComment] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [existingId, setExistingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const lastStage = stages[stages.length - 1];
@@ -28,46 +28,42 @@ const NPSWidget = ({ projectId, ownerId, stages, googleReviewUrl }: Props) => {
 
   useEffect(() => {
     if (!eligible) { setLoading(false); return; }
-    (async () => {
-      const { data } = await (supabase as any)
-        .from('nps_responses')
-        .select('id, score')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (data) {
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
         setSubmitted(true);
-        setScore(data.score);
-        setExistingId(data.id);
+        setScore(parsed.score);
       }
-      setLoading(false);
-    })();
-  }, [projectId, eligible]);
+    } catch {}
+    setLoading(false);
+  }, [eligible, STORAGE_KEY]);
 
   if (loading || !eligible) return null;
 
   const submit = async () => {
     if (score == null) return;
-    const { data, error } = await (supabase as any).from('nps_responses').insert({
-      project_id: projectId,
-      owner_id: ownerId,
-      score,
-      comment: comment.trim() || null,
-      would_recommend: score >= 9,
-    }).select('id').single();
+    const { error } = await (supabase as any).rpc('submit_nps', {
+      _token: token,
+      _score: score,
+      _comment: comment.trim() || null,
+    });
     if (error) {
       toast.error('Não foi possível enviar a avaliação.');
       return;
     }
-    setExistingId(data?.id || null);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ score })); } catch {}
     setSubmitted(true);
     toast.success('Obrigado pela avaliação!');
   };
 
   const trackGoogleClick = async () => {
-    if (!existingId) return;
-    await (supabase as any).from('nps_responses').update({ google_review_clicked: true }).eq('id', existingId);
+    await (supabase as any).rpc('submit_nps', {
+      _token: token,
+      _score: score,
+      _comment: comment.trim() || null,
+      _google_reviewed: true,
+    });
   };
 
   if (submitted) {
