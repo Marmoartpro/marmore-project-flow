@@ -262,17 +262,13 @@ const Mostruario = () => {
           stockFilter={stockFilter} setStockFilter={setStockFilter}
         />
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {filtered.map(s => (
-            <StoneCard
-              key={s.id}
-              stone={s}
-              isMarmorista={isMarmorista}
-              onDetail={openDetail}
-              onUploadPhoto={(stone) => { openEdit(stone); }}
-            />
-          ))}
-        </div>
+        <VirtualStoneGrid
+          stones={filtered}
+          isMarmorista={isMarmorista}
+          onDetail={openDetail}
+          onUploadPhoto={handleUploadPhoto}
+        />
+
 
         {filtered.length === 0 && <p className="text-center text-muted-foreground text-sm py-8">Nenhuma pedra encontrada.</p>}
 
