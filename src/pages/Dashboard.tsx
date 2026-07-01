@@ -247,11 +247,36 @@ const Dashboard = () => {
         <h2 className="text-xl font-display font-bold">Olá, {profile?.full_name || 'Usuário'}</h2>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <Card><CardContent className="p-4 flex items-center gap-3"><div className="p-2.5 rounded-lg bg-primary/20"><DollarSign className="w-5 h-5 text-primary" /></div><div><p className="text-[11px] text-muted-foreground">Total a receber</p><p className="text-lg font-bold font-display">R$ {fmt(totalReceivable)}</p></div></CardContent></Card>
-          <Card><CardContent className="p-4 flex items-center gap-3"><div className="p-2.5 rounded-lg bg-success/20"><TrendingUp className="w-5 h-5 text-success" /></div><div><p className="text-[11px] text-muted-foreground">Recebido no mês</p><p className="text-lg font-bold font-display">R$ {fmt(receivedThisMonth)}</p></div></CardContent></Card>
-          <Card><CardContent className="p-4 flex items-center gap-3"><div className="p-2.5 rounded-lg bg-destructive/20"><AlertTriangle className="w-5 h-5 text-destructive" /></div><div><p className="text-[11px] text-muted-foreground">Em atraso</p><p className="text-lg font-bold font-display">R$ {fmt(overdueTotal)}</p></div></CardContent></Card>
-          <Card><CardContent className="p-4 flex items-center gap-3"><div className="p-2.5 rounded-lg bg-primary/20"><FileText className="w-5 h-5 text-primary" /></div><div><p className="text-[11px] text-muted-foreground">Orçamentos abertos</p><p className="text-lg font-bold font-display">{openQuotes.length} <span className="text-sm font-normal text-muted-foreground">({fmt(openQuotesValue)})</span></p></div></CardContent></Card>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          {[
+            { label: 'Total a receber', value: `R$ ${fmt(totalReceivable)}`, icon: DollarSign, tone: 'primary' as const },
+            { label: 'Recebido no mês', value: `R$ ${fmt(receivedThisMonth)}`, icon: TrendingUp, tone: 'success' as const },
+            { label: 'Em atraso', value: `R$ ${fmt(overdueTotal)}`, icon: AlertTriangle, tone: 'destructive' as const },
+            { label: 'Orçamentos abertos', value: `${openQuotes.length}`, subValue: `(${fmt(openQuotesValue)})`, icon: FileText, tone: 'primary' as const },
+          ].map((kpi, i) => {
+            const Icon = kpi.icon;
+            const toneBg = kpi.tone === 'success' ? 'bg-success/15 text-success' : kpi.tone === 'destructive' ? 'bg-destructive/15 text-destructive' : 'bg-primary/15 text-primary';
+            return (
+              <Card
+                key={kpi.label}
+                className="group animate-fade-in hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elev-md transition-all duration-300 ease-out-expo"
+                style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'backwards' }}
+              >
+                <CardContent className="p-4 md:p-5 flex items-center gap-3">
+                  <div className={`shrink-0 grid place-items-center size-10 rounded-lg ${toneBg} transition-transform duration-300 group-hover:scale-110`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider">{kpi.label}</p>
+                    <p className="text-lg md:text-xl font-bold font-display leading-tight truncate">
+                      {kpi.value}
+                      {kpi.subValue && <span className="text-sm font-normal text-muted-foreground ml-1">{kpi.subValue}</span>}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Alerts */}
