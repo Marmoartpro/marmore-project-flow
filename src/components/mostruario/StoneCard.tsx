@@ -18,7 +18,7 @@ const StoneCard = ({ stone: s, isMarmorista, onDetail, onUploadPhoto }: StoneCar
     <Card className="cursor-pointer hover:border-primary/40 transition-colors overflow-hidden group" onClick={() => onDetail(s)}>
       <div className="aspect-[4/3] bg-muted relative overflow-hidden">
         {s.photo_url ? (
-          <img src={s.photo_url} alt={s.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />)
+          <img src={s.photo_url} alt={s.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-3">
             <Package className="w-8 h-8 text-muted-foreground" />
