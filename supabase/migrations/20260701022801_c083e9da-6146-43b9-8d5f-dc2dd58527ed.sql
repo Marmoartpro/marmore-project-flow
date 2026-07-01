@@ -1,0 +1,20 @@
+
+CREATE INDEX IF NOT EXISTS idx_budget_quotes_owner_created ON public.budget_quotes (owner_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_budget_quotes_created_at ON public.budget_quotes (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_stones_name ON public.stones (name);
+CREATE INDEX IF NOT EXISTS idx_stones_owner ON public.stones (owner_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_read_created ON public.notifications (user_id, read, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_created ON public.notifications (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_quotes_owner ON public.quotes (owner_id);
+CREATE INDEX IF NOT EXISTS idx_project_stages_project ON public.project_stages (project_id, stage_number);
+CREATE INDEX IF NOT EXISTS idx_stage_photos_stage ON public.stage_photos (stage_id);
+CREATE INDEX IF NOT EXISTS idx_stone_photos_stone ON public.stone_photos (stone_id);
+CREATE INDEX IF NOT EXISTS idx_project_invites_project ON public.project_invites (project_id);
+CREATE INDEX IF NOT EXISTS idx_project_invites_token ON public.project_invites (invite_token);
+CREATE INDEX IF NOT EXISTS idx_team_members_owner ON public.team_members (owner_id);
+CREATE INDEX IF NOT EXISTS idx_team_members_token ON public.team_members (invite_token);
+CREATE INDEX IF NOT EXISTS idx_messages_project_created ON public.messages (project_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_payments_project ON public.payments (project_id);
+CREATE INDEX IF NOT EXISTS idx_clients_owner ON public.clients (owner_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_owner_start ON public.appointments (owner_id, start_at);
+CREATE INDEX IF NOT EXISTS idx_ai_image_generations_owner_created ON public.ai_image_generations (owner_id, created_at DESC);
