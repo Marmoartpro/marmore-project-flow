@@ -363,8 +363,8 @@ const Orcamentos = () => {
             <Button size="sm" variant="outline" onClick={() => navigate('/calculadora')}>
               <Calculator className="w-4 h-4 mr-1" /> Calculadora
             </Button>
-            <Button size="sm" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true); setMainTab('rapidos'); }}>
-              <Plus className="w-4 h-4 mr-1" /> Rápido
+            <Button size="sm" variant="premium" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true); setMainTab('rapidos'); }} className="group">
+              <Plus className="w-4 h-4 mr-1 transition-transform group-hover:rotate-90" /> Rápido
             </Button>
           </div>
         </div>
