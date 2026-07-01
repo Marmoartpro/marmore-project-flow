@@ -63,7 +63,7 @@ const Mostruario = () => {
     setGalleryPhotos(data || []);
   };
 
-  const filtered = stones.filter(s => {
+  const filtered = useMemo(() => stones.filter(s => {
     if (category !== 'Todos' && s.category !== category) return false;
     if (search && !s.name.toLowerCase().includes(search.toLowerCase())) return false;
     if (colorTone) {
@@ -80,7 +80,8 @@ const Mostruario = () => {
     if (stockFilter === 'in_stock' && !s.in_stock) return false;
     if (stockFilter === 'consulta' && s.in_stock) return false;
     return true;
-  });
+  }), [stones, category, search, colorTone, usageFilter, stockFilter]);
+
 
   const resetForm = () => {
     setForm({ name: '', category: 'Granito', origin: '', colors: '', thicknesses: '', finishes: '',
