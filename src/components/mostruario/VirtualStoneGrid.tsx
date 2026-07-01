@@ -39,9 +39,9 @@ const VirtualStoneGrid = ({ stones, isMarmorista, onDetail, onUploadPhoto }: Pro
   // Fallback: for short lists, render plain grid (no virtualization overhead).
   if (stones.length <= 40) {
     return (
-      <div ref={wrapRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        {stones.map(s => (
-          <StoneCard key={s.id} stone={s} isMarmorista={isMarmorista} onDetail={onDetail} onUploadPhoto={onUploadPhoto} />
+      <div ref={wrapRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+        {stones.map((s, i) => (
+          <StoneCard key={s.id} stone={s} isMarmorista={isMarmorista} onDetail={onDetail} onUploadPhoto={onUploadPhoto} index={i} />
         ))}
       </div>
     );
@@ -78,7 +78,7 @@ const Cell = ({ columnIndex, rowIndex, style, stones, cols, isMarmorista, onDeta
   if (!s) return <div style={style} />;
   return (
     <div style={{ ...style, paddingRight: columnIndex < cols - 1 ? GAP : 0, paddingBottom: GAP }}>
-      <StoneCard stone={s} isMarmorista={isMarmorista} onDetail={onDetail} onUploadPhoto={onUploadPhoto} />
+      <StoneCard stone={s} isMarmorista={isMarmorista} onDetail={onDetail} onUploadPhoto={onUploadPhoto} index={idx} />
     </div>
   );
 };
