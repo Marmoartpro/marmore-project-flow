@@ -261,12 +261,27 @@ const Orcamentos = () => {
     window.open(url, '_blank');
   };
 
-  const BudgetCard = ({ bq }: { bq: any }) => (
-    <Card key={bq.id}>
+  const statusLeftBorder: Record<string, string> = {
+    rascunho: 'border-l-warning',
+    aguardando: 'border-l-muted-foreground/40',
+    negociando: 'border-l-primary/60',
+    enviado: 'border-l-primary/60',
+    aprovado: 'border-l-success',
+    aceito: 'border-l-success',
+    perdido: 'border-l-destructive',
+    recusado: 'border-l-destructive',
+  };
+
+  const BudgetCard = ({ bq, index = 0 }: { bq: any; index?: number }) => (
+    <Card
+      key={bq.id}
+      className={`group border-l-4 ${statusLeftBorder[bq.status] || 'border-l-border'} animate-fade-in transition-all duration-300 ease-out-expo hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elev-md`}
+      style={{ animationDelay: `${Math.min(index, 12) * 40}ms`, animationFillMode: 'backwards' }}
+    >
       <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-1 gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <p className="font-medium text-sm truncate">{bq.client_name || 'Sem cliente'}</p>
+            <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">{bq.client_name || 'Sem cliente'}</p>
             <Badge variant="outline" className="text-[10px] shrink-0">{bq.quote_number}</Badge>
           </div>
           <div className="flex items-center gap-1 shrink-0">
@@ -275,7 +290,7 @@ const Orcamentos = () => {
             </Badge>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="icon" variant="ghost" className="h-7 w-7"><MoreVertical className="w-4 h-4" /></Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Ações do orçamento"><MoreVertical className="w-4 h-4" /></Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => navigate(`/calculadora/${bq.id}`)}>
@@ -316,19 +331,21 @@ const Orcamentos = () => {
             </DropdownMenu>
           </div>
         </div>
-        <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
-          <span className="font-semibold text-foreground">R$ {fmt(Number(bq.total || 0))}</span>
-          {bq.environment_type && <span>• {bq.environment_type}</span>}
-          <span>• {daysSince(bq.created_at)} dias atrás</span>
-          <span>• V{bq.version}</span>
+        <div className="flex items-baseline gap-3 flex-wrap mt-1">
+          <span className="text-xl md:text-2xl font-semibold font-display text-foreground">R$ {fmt(Number(bq.total || 0))}</span>
+          <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
+            {bq.environment_type && <span>{bq.environment_type}</span>}
+            <span>{daysSince(bq.created_at)} dias atrás</span>
+            <span>V{bq.version}</span>
+          </div>
         </div>
         {bq.status === 'rascunho' && (
-          <Button size="sm" variant="outline" className="text-xs h-7 mt-2" onClick={() => navigate(`/calculadora/${bq.id}`)}>
+          <Button size="sm" variant="outline" className="text-xs h-7 mt-3" onClick={() => navigate(`/calculadora/${bq.id}`)}>
             <Edit className="w-3 h-3 mr-1" /> Continuar editando
           </Button>
         )}
         {bq.payment_conditions && (
-          <p className="text-[11px] text-muted-foreground mt-1 truncate">{bq.payment_conditions}</p>
+          <p className="text-[11px] text-muted-foreground mt-2 truncate">{bq.payment_conditions}</p>
         )}
       </CardContent>
     </Card>
@@ -346,8 +363,8 @@ const Orcamentos = () => {
             <Button size="sm" variant="outline" onClick={() => navigate('/calculadora')}>
               <Calculator className="w-4 h-4 mr-1" /> Calculadora
             </Button>
-            <Button size="sm" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true); setMainTab('rapidos'); }}>
-              <Plus className="w-4 h-4 mr-1" /> Rápido
+            <Button size="sm" variant="premium" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true); setMainTab('rapidos'); }} className="group">
+              <Plus className="w-4 h-4 mr-1 transition-transform group-hover:rotate-90" /> Rápido
             </Button>
           </div>
         </div>
@@ -379,7 +396,7 @@ const Orcamentos = () => {
                     Nenhum orçamento em andamento. <button onClick={() => navigate('/calculadora')} className="text-primary underline">Criar novo</button>
                   </CardContent></Card>
                 )}
-                {bqEmAndamento.map(bq => <BudgetCard key={bq.id} bq={bq} />)}
+                {bqEmAndamento.map((bq, i) => <BudgetCard key={bq.id} bq={bq} index={i} />)}
               </TabsContent>
               <TabsContent value="finalizados" className="space-y-3 mt-3">
                 {bqFinalizados.length === 0 && (
@@ -387,7 +404,7 @@ const Orcamentos = () => {
                     Nenhum orçamento finalizado ainda.
                   </CardContent></Card>
                 )}
-                {bqFinalizados.map(bq => <BudgetCard key={bq.id} bq={bq} />)}
+                {bqFinalizados.map((bq, i) => <BudgetCard key={bq.id} bq={bq} index={i} />)}
               </TabsContent>
             </Tabs>
           </TabsContent>
