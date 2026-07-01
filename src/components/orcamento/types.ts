@@ -11,6 +11,8 @@ export interface ExtraItem {
   id: string;
   descricao: string;
   valor: number;
+  /** Se true (default), multiplica o valor pela quantidade de peças; se false, valor fixo por projeto. */
+  porQuantidade?: boolean;
 }
 
 export interface Abertura {
@@ -543,18 +545,22 @@ export function calcBordaPiscinaRedonda(p: PecaItem) {
   const areaM2 = areaCm2 / 10000;
 
   const fatorDesperdicio = 1 + ((parseFloat(p.desperdicioCurvo) || 25) / 100);
+  // areaCompraM2 é apenas informativo (exibido no PecaForm). O desperdício efetivo
+  // para custeio é aplicado uma única vez em calcPecaAreaCompra.
   const areaCompraM2 = areaM2 * fatorDesperdicio;
 
   const perimetroInternoM = (2 * Math.PI * raioInt) / 100;
   const perimetroExternoM = (2 * Math.PI * raioExt) / 100;
 
+  // Retornamos valores BRUTOS (sem arredondamento) para preservar precisão
+  // em cadeias de soma. Arredondamento fica na camada de apresentação.
   return {
     raioInt, raioExt, larguraBorda,
-    areaM2: Math.round(areaM2 * 100) / 100,
-    areaCompraM2: Math.round(areaCompraM2 * 100) / 100,
-    perimetroInternoM: Math.round(perimetroInternoM * 100) / 100,
-    perimetroExternoM: Math.round(perimetroExternoM * 100) / 100,
-    diametroExternoM: Math.round((raioExt * 2 / 100) * 100) / 100,
+    areaM2,
+    areaCompraM2,
+    perimetroInternoM,
+    perimetroExternoM,
+    diametroExternoM: raioExt * 2 / 100,
   };
 }
 
@@ -576,10 +582,17 @@ export const calcPecaAreaBase = (p: PecaItem): number => {
       areaCm2 = cm(p.largura) * cm(p.comprimento);
       break;
     case 'l_shape': {
-      const a1 = cm(p.largura) * cm(p.comprimento);
-      const a2 = cm(p.lTrecho2Largura) * cm(p.lTrecho2Comprimento);
-      const overlapW = Math.min(cm(p.largura), cm(p.lTrecho2Largura));
-      const overlap = overlapW * overlapW;
+      // Duas faixas perpendiculares (trecho1 horizontal, trecho2 vertical)
+      // encontram-se num retângulo de canto = largura1 × largura2.
+      // Correção: overlap real usa AMBAS as larguras, não o quadrado da menor.
+      const w1 = cm(p.largura);
+      const l1 = cm(p.comprimento);
+      const w2 = cm(p.lTrecho2Largura);
+      const l2 = cm(p.lTrecho2Comprimento);
+      const a1 = w1 * l1;
+      const a2 = w2 * l2;
+      // Limita overlap às dimensões reais para evitar dedução maior que uma das faixas.
+      const overlap = Math.min(w1, l2) * Math.min(w2, l1);
       areaCm2 = a1 + a2 - overlap;
       break;
     }
@@ -623,7 +636,8 @@ export const calcPecaDeductions = (p: PecaItem): number => {
 
   if (p.tipoCuba === 'Cuba sobreposta') {
     const ce = p.cubaEsculpida;
-    deductCm2 += cm(ce.compExterno) * cm(ce.largExterno) * 0.8 * (parseInt(ce.quantidade) || 1);
+    // Cuba sobreposta apoia sobre a bancada — só ~80% do footprint é recortado.
+    deductCm2 += cm(ce.compExterno) * cm(ce.largExterno) * CUBA_SOBREPOSTA_DEDUCAO_PCT * (parseInt(ce.quantidade) || 1);
   }
 
   if (p.rebaixoCooktop) {
@@ -713,14 +727,16 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
     }
   }
 
-  // Piscina submersa
+  // Piscina submersa — área do rebaixo interno (paredes internas × profundidade)
   if (cm(p.profundidadeSubmersa) > 0) {
     if (isPiscinaRedonda(p)) {
       const calc = calcBordaPiscinaRedonda(p);
       const areaSubmersaM2 = calc.perimetroInternoM * (cm(p.profundidadeSubmersa) / 100);
       extraCm2 += areaSubmersaM2 * 10000;
     } else {
-      extraCm2 += cm(p.profundidadeSubmersa) * cm(p.comprimento);
+      // Fix: perímetro interno completo × profundidade (não apenas 1 lado).
+      const perim = 2 * (cm(p.largura) + cm(p.comprimento));
+      extraCm2 += perim * cm(p.profundidadeSubmersa);
     }
   }
 
@@ -782,14 +798,18 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
     }
   }
 
-  // Revestimento — deduct aberturas
+  // Extras "por peça" — escalam com q (nicho, banco, prateleira, saia, etc já contados acima)
+  let result = cm2toM2(extraCm2) * q;
+
+  // Revestimento — aberturas (janelas, portas físicas do ambiente) são deduzidas UMA vez,
+  // não escalam com q. Um mesmo ambiente com q=3 painéis idênticos ainda tem só as mesmas janelas.
   if (p.aberturas && p.aberturas.length > 0) {
-    p.aberturas.forEach(ab => {
-      extraCm2 -= cm(ab.largura) * cm(ab.altura);
-    });
+    let aberturasCm2 = 0;
+    p.aberturas.forEach(ab => { aberturasCm2 += cm(ab.largura) * cm(ab.altura); });
+    result -= cm2toM2(aberturasCm2);
   }
 
-  return cm2toM2(extraCm2) * q;
+  return result;
 };
 
 /** Nicho embutido standalone — 5 faces internas + prateleiras
@@ -832,17 +852,23 @@ export const calcPecaAreaLiquida = (p: PecaItem): number => {
   return Math.max(0, base - deductions + extras);
 };
 
+/**
+ * Área de compra por peça — SEM arredondamento e SEM piso mínimo.
+ * O arredondamento (ceilM2) e o piso mínimo (MIN_AREA_M2_AMBIENTE) devem ser
+ * aplicados no NÍVEL DO AMBIENTE (calcAmbienteAreaCompra) para evitar
+ * superfaturamento quando um ambiente tem várias peças pequenas.
+ */
 export const calcPecaAreaCompra = (p: PecaItem): number => {
   const liquida = calcPecaAreaLiquida(p);
+  if (liquida <= 0) return 0;
   // Borda de Piscina redonda — desperdício específico para corte curvo
   if (isPiscinaRedonda(p)) {
     const fator = 1 + ((parseFloat(p.desperdicioCurvo) || 25) / 100);
-    return ceilM2(Math.max(liquida * fator, liquida > 0 ? 0.10 : 0));
+    return liquida * fator;
   }
   const wastePercent = (p.padraoPiso === 'espinha' || p.padraoPiso === 'diagonal' || p.padraoPiso === 'xadrez')
     && ['Piso'].includes(p.tipo) ? 0.15 : 0.10;
-  const withWaste = liquida * (1 + wastePercent);
-  return ceilM2(Math.max(withWaste, liquida > 0 ? 0.10 : 0));
+  return liquida * (1 + wastePercent);
 };
 
 export const calcPecaArea = calcPecaAreaLiquida;
@@ -1033,11 +1059,15 @@ export const calcMetrosLinearesBorda = (p: PecaItem): number => {
 /* ─── Ambiente-level calculations ─── */
 
 export const calcAmbienteArea = (amb: Ambiente): number => {
-  return amb.pecas.reduce((sum, p) => sum + calcPecaAreaLiquida(p), 0);
+  const raw = amb.pecas.reduce((sum, p) => sum + calcPecaAreaLiquida(p), 0);
+  return raw > 0 ? ceilM2(raw) : 0;
 };
 
 export const calcAmbienteAreaCompra = (amb: Ambiente): number => {
-  return amb.pecas.reduce((sum, p) => sum + calcPecaAreaCompra(p), 0);
+  const raw = amb.pecas.reduce((sum, p) => sum + calcPecaAreaCompra(p), 0);
+  if (raw <= 0) return 0;
+  // Piso mínimo aplicado UMA vez por ambiente (não por peça — evita superfaturamento).
+  return ceilM2(Math.max(raw, MIN_AREA_M2_AMBIENTE));
 };
 
 export const calcAmbienteMaterialCost = (amb: Ambiente, optionIndex: number): number => {
@@ -1228,7 +1258,11 @@ export const calcAmbienteLaborCost = (amb: Ambiente): number => {
     }
 
     // Extras
-    (p.extras || []).forEach(e => { total += (e.valor || 0) * q; });
+    // Extras da peça — porQuantidade (default true) multiplica pelo nº de peças
+    (p.extras || []).forEach(e => {
+      const escalaComQ = e.porQuantidade !== false;
+      total += (e.valor || 0) * (escalaComQ ? q : 1);
+    });
   });
 
   // Serviços customizados
@@ -1382,4 +1416,91 @@ export const calcResumoConsumo = (
   });
 
   return Array.from(map.values());
+};
+
+/* ─────────────────────────────────────────────────────────────
+   Constantes de cálculo (extraídas para eliminar valores mágicos)
+   ───────────────────────────────────────────────────────────── */
+
+/** % do footprint da cuba sobreposta que é efetivamente recortada da bancada. */
+export const CUBA_SOBREPOSTA_DEDUCAO_PCT = 0.8;
+
+/** Área mínima cobrável por AMBIENTE (nunca por peça). */
+export const MIN_AREA_M2_AMBIENTE = 0.10;
+
+/** Padrão de m² por chapa (usado no resumo de consumo). */
+export const M2_POR_CHAPA_DEFAULT = 6;
+
+/** Divisão sugerida de parcelamento (40% entrada, 30% intermediária, 30% saldo). */
+export const PARCELAMENTO_DEFAULT = {
+  entrada: 0.4,
+  parcela: 0.3,
+  saldo: 0.3,
+} as const;
+
+/* ─────────────────────────────────────────────────────────────
+   Cálculo unificado de totais (fonte única para TotaisSection + ResumoConsumo)
+   ───────────────────────────────────────────────────────────── */
+
+export interface TotaisSubtotais {
+  materials: number;
+  labor: number;
+  accessories: number;
+  installation: number;
+}
+export interface TotaisMargens {
+  material: number;   // %
+  servicos: number;   // %
+  acessorios: number; // %
+  instalacao: number; // %
+}
+export interface TotaisDesconto {
+  valor: string;
+  tipo: 'percent' | 'reais';
+}
+export interface TotaisCalculados {
+  materialComMargem: number;
+  servicosComMargem: number;
+  acessoriosComMargem: number;
+  instalacaoComMargem: number;
+  totalBruto: number;
+  desconto: number;
+  totalFinal: number;
+  totalMargem: number;
+  parcelas: { entrada: number; parcela: number; saldo: number };
+}
+
+export const calcTotais = (
+  subtotais: TotaisSubtotais,
+  margens: TotaisMargens,
+  desconto: TotaisDesconto,
+): TotaisCalculados => {
+  const materialComMargem = subtotais.materials * (1 + margens.material / 100);
+  const servicosComMargem = subtotais.labor * (1 + margens.servicos / 100);
+  const acessoriosComMargem = subtotais.accessories * (1 + margens.acessorios / 100);
+  const instalacaoComMargem = subtotais.installation * (1 + margens.instalacao / 100);
+
+  const totalBruto = materialComMargem + servicosComMargem + acessoriosComMargem + instalacaoComMargem;
+
+  const rawDesc = parseFloat(desconto.valor) || 0;
+  const descontoVal = desconto.tipo === 'percent'
+    ? totalBruto * (rawDesc / 100)
+    : rawDesc;
+  const totalFinal = Math.max(0, totalBruto - descontoVal);
+
+  const totalMargem =
+    subtotais.materials * (margens.material / 100) +
+    subtotais.labor * (margens.servicos / 100) +
+    subtotais.accessories * (margens.acessorios / 100) +
+    subtotais.installation * (margens.instalacao / 100);
+
+  return {
+    materialComMargem, servicosComMargem, acessoriosComMargem, instalacaoComMargem,
+    totalBruto, desconto: descontoVal, totalFinal, totalMargem,
+    parcelas: {
+      entrada: totalFinal * PARCELAMENTO_DEFAULT.entrada,
+      parcela: totalFinal * PARCELAMENTO_DEFAULT.parcela,
+      saldo: totalFinal * PARCELAMENTO_DEFAULT.saldo,
+    },
+  };
 };

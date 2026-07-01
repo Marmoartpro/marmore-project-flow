@@ -5,7 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Percent, Tag } from 'lucide-react';
-import { fmt } from './types';
+import { fmt, calcTotais } from './types';
 
 interface Props {
   subtotalMaterials: number;
@@ -56,23 +56,23 @@ const TotaisSection = ({
   condicoesPagamento, setCondicoesPagamento,
   observacoes, setObservacoes,
 }: Props) => {
-  const materialComMargem = subtotalMaterials * (1 + margemMaterial / 100);
-  const servicosComMargem = subtotalLabor * (1 + margemServicos / 100);
-  const acessoriosComMargem = subtotalAccessories * (1 + margemAcessorios / 100);
-  const instalacaoComMargem = subtotalInstallation * (1 + margemInstalacao / 100);
+  const t = calcTotais(
+    { materials: subtotalMaterials, labor: subtotalLabor, accessories: subtotalAccessories, installation: subtotalInstallation },
+    { material: margemMaterial, servicos: margemServicos, acessorios: margemAcessorios, instalacao: margemInstalacao },
+    { valor: descontoValor, tipo: descontoTipo },
+  );
+  const materialComMargem = t.materialComMargem;
+  const servicosComMargem = t.servicosComMargem;
+  const acessoriosComMargem = t.acessoriosComMargem;
+  const instalacaoComMargem = t.instalacaoComMargem;
+  const totalBruto = t.totalBruto;
+  const desconto = t.desconto;
+  const totalFinal = t.totalFinal;
+  const totalMargem = t.totalMargem;
 
-  const totalBruto = materialComMargem + servicosComMargem + acessoriosComMargem + instalacaoComMargem;
-  const desconto = descontoTipo === 'percent'
-    ? totalBruto * ((parseFloat(descontoValor) || 0) / 100)
-    : (parseFloat(descontoValor) || 0);
-  const totalFinal = totalBruto - desconto;
-  const totalMargem = (subtotalMaterials * margemMaterial / 100) + (subtotalLabor * margemServicos / 100) +
-    (subtotalAccessories * margemAcessorios / 100) + (subtotalInstallation * margemInstalacao / 100);
-
-  // Suggested payment split
-  const entrada = totalFinal * 0.4;
-  const parcela = totalFinal * 0.3;
-  const saldo = totalFinal * 0.3;
+  const entrada = t.parcelas.entrada;
+  const parcela = t.parcelas.parcela;
+  const saldo = t.parcelas.saldo;
 
   return (
     <div className="space-y-4">
