@@ -11,6 +11,8 @@ export interface ExtraItem {
   id: string;
   descricao: string;
   valor: number;
+  /** Se true (default), multiplica o valor pela quantidade de peças; se false, valor fixo por projeto. */
+  porQuantidade?: boolean;
 }
 
 export interface Abertura {
@@ -543,18 +545,22 @@ export function calcBordaPiscinaRedonda(p: PecaItem) {
   const areaM2 = areaCm2 / 10000;
 
   const fatorDesperdicio = 1 + ((parseFloat(p.desperdicioCurvo) || 25) / 100);
+  // areaCompraM2 é apenas informativo (exibido no PecaForm). O desperdício efetivo
+  // para custeio é aplicado uma única vez em calcPecaAreaCompra.
   const areaCompraM2 = areaM2 * fatorDesperdicio;
 
   const perimetroInternoM = (2 * Math.PI * raioInt) / 100;
   const perimetroExternoM = (2 * Math.PI * raioExt) / 100;
 
+  // Retornamos valores BRUTOS (sem arredondamento) para preservar precisão
+  // em cadeias de soma. Arredondamento fica na camada de apresentação.
   return {
     raioInt, raioExt, larguraBorda,
-    areaM2: Math.round(areaM2 * 100) / 100,
-    areaCompraM2: Math.round(areaCompraM2 * 100) / 100,
-    perimetroInternoM: Math.round(perimetroInternoM * 100) / 100,
-    perimetroExternoM: Math.round(perimetroExternoM * 100) / 100,
-    diametroExternoM: Math.round((raioExt * 2 / 100) * 100) / 100,
+    areaM2,
+    areaCompraM2,
+    perimetroInternoM,
+    perimetroExternoM,
+    diametroExternoM: raioExt * 2 / 100,
   };
 }
 
@@ -576,10 +582,17 @@ export const calcPecaAreaBase = (p: PecaItem): number => {
       areaCm2 = cm(p.largura) * cm(p.comprimento);
       break;
     case 'l_shape': {
-      const a1 = cm(p.largura) * cm(p.comprimento);
-      const a2 = cm(p.lTrecho2Largura) * cm(p.lTrecho2Comprimento);
-      const overlapW = Math.min(cm(p.largura), cm(p.lTrecho2Largura));
-      const overlap = overlapW * overlapW;
+      // Duas faixas perpendiculares (trecho1 horizontal, trecho2 vertical)
+      // encontram-se num retângulo de canto = largura1 × largura2.
+      // Correção: overlap real usa AMBAS as larguras, não o quadrado da menor.
+      const w1 = cm(p.largura);
+      const l1 = cm(p.comprimento);
+      const w2 = cm(p.lTrecho2Largura);
+      const l2 = cm(p.lTrecho2Comprimento);
+      const a1 = w1 * l1;
+      const a2 = w2 * l2;
+      // Limita overlap às dimensões reais para evitar dedução maior que uma das faixas.
+      const overlap = Math.min(w1, l2) * Math.min(w2, l1);
       areaCm2 = a1 + a2 - overlap;
       break;
     }
@@ -623,7 +636,8 @@ export const calcPecaDeductions = (p: PecaItem): number => {
 
   if (p.tipoCuba === 'Cuba sobreposta') {
     const ce = p.cubaEsculpida;
-    deductCm2 += cm(ce.compExterno) * cm(ce.largExterno) * 0.8 * (parseInt(ce.quantidade) || 1);
+    // Cuba sobreposta apoia sobre a bancada — só ~80% do footprint é recortado.
+    deductCm2 += cm(ce.compExterno) * cm(ce.largExterno) * CUBA_SOBREPOSTA_DEDUCAO_PCT * (parseInt(ce.quantidade) || 1);
   }
 
   if (p.rebaixoCooktop) {
@@ -713,14 +727,16 @@ export const calcPecaExtrasArea = (p: PecaItem): number => {
     }
   }
 
-  // Piscina submersa
+  // Piscina submersa — área do rebaixo interno (paredes internas × profundidade)
   if (cm(p.profundidadeSubmersa) > 0) {
     if (isPiscinaRedonda(p)) {
       const calc = calcBordaPiscinaRedonda(p);
       const areaSubmersaM2 = calc.perimetroInternoM * (cm(p.profundidadeSubmersa) / 100);
       extraCm2 += areaSubmersaM2 * 10000;
     } else {
-      extraCm2 += cm(p.profundidadeSubmersa) * cm(p.comprimento);
+      // Fix: perímetro interno completo × profundidade (não apenas 1 lado).
+      const perim = 2 * (cm(p.largura) + cm(p.comprimento));
+      extraCm2 += perim * cm(p.profundidadeSubmersa);
     }
   }
 
