@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { compressImage } from '@/lib/compressImage';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,6 +19,7 @@ import StoneCard from '@/components/mostruario/StoneCard';
 import PresentationMode from '@/components/mostruario/PresentationMode';
 import StoneAIImages from '@/components/mostruario/StoneAIImages';
 import BatchAIGenerator from '@/components/mostruario/BatchAIGenerator';
+import VirtualStoneGrid from '@/components/mostruario/VirtualStoneGrid';
 
 const Mostruario = () => {
   const { user, profile } = useAuth();
@@ -62,7 +63,7 @@ const Mostruario = () => {
     setGalleryPhotos(data || []);
   };
 
-  const filtered = stones.filter(s => {
+  const filtered = useMemo(() => stones.filter(s => {
     if (category !== 'Todos' && s.category !== category) return false;
     if (search && !s.name.toLowerCase().includes(search.toLowerCase())) return false;
     if (colorTone) {
@@ -79,7 +80,8 @@ const Mostruario = () => {
     if (stockFilter === 'in_stock' && !s.in_stock) return false;
     if (stockFilter === 'consulta' && s.in_stock) return false;
     return true;
-  });
+  }), [stones, category, search, colorTone, usageFilter, stockFilter]);
+
 
   const resetForm = () => {
     setForm({ name: '', category: 'Granito', origin: '', colors: '', thicknesses: '', finishes: '',
@@ -213,10 +215,13 @@ const Mostruario = () => {
     }
   };
 
-  const openDetail = async (s: any) => {
+  const openDetail = useCallback((s: any) => {
     setSelected(s);
     fetchGalleryPhotos(s.id);
-  };
+  }, []);
+
+  const handleUploadPhoto = useCallback((stone: any) => { openEdit(stone); }, []);
+
 
   const shareStone = (s: any) => {
     const url = `${window.location.origin}/mostruario?pedra=${s.id}`;
@@ -257,17 +262,13 @@ const Mostruario = () => {
           stockFilter={stockFilter} setStockFilter={setStockFilter}
         />
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {filtered.map(s => (
-            <StoneCard
-              key={s.id}
-              stone={s}
-              isMarmorista={isMarmorista}
-              onDetail={openDetail}
-              onUploadPhoto={(stone) => { openEdit(stone); }}
-            />
-          ))}
-        </div>
+        <VirtualStoneGrid
+          stones={filtered}
+          isMarmorista={isMarmorista}
+          onDetail={openDetail}
+          onUploadPhoto={handleUploadPhoto}
+        />
+
 
         {filtered.length === 0 && <p className="text-center text-muted-foreground text-sm py-8">Nenhuma pedra encontrada.</p>}
 

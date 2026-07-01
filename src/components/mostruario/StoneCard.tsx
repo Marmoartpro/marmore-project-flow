@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ const StoneCard = ({ stone: s, isMarmorista, onDetail, onUploadPhoto }: StoneCar
     <Card className="cursor-pointer hover:border-primary/40 transition-colors overflow-hidden group" onClick={() => onDetail(s)}>
       <div className="aspect-[4/3] bg-muted relative overflow-hidden">
         {s.photo_url ? (
-          <img src={s.photo_url} alt={s.name} className="w-full h-full object-cover" />
+          <img src={s.photo_url} alt={s.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-3">
             <Package className="w-8 h-8 text-muted-foreground" />
@@ -52,4 +53,13 @@ const StoneCard = ({ stone: s, isMarmorista, onDetail, onUploadPhoto }: StoneCar
   );
 };
 
-export default StoneCard;
+export default memo(StoneCard, (prev, next) =>
+  prev.stone.id === next.stone.id &&
+  prev.stone.photo_url === next.stone.photo_url &&
+  prev.stone.name === next.stone.name &&
+  prev.stone.price_per_m2 === next.stone.price_per_m2 &&
+  prev.stone.in_stock === next.stone.in_stock &&
+  prev.stone.featured === next.stone.featured &&
+  prev.stone.promo_active === next.stone.promo_active &&
+  prev.isMarmorista === next.isMarmorista
+);
