@@ -128,6 +128,7 @@ const AppRoutes = () => (
     <Route path="/nao-autorizado" element={<Unauthorized />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
+  </Suspense>
 );
 
 const App = () => (
