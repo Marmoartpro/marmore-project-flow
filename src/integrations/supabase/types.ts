@@ -1744,6 +1744,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_client_portal: { Args: { _token: string }; Returns: Json }
       get_default_permissions: {
         Args: { p_role: Database["public"]["Enums"]["user_role"] }
         Returns: Json
@@ -1767,6 +1768,7 @@ export type Database = {
           status: string
         }[]
       }
+      get_signature_for_signing: { Args: { _token: string }; Returns: Json }
       get_team_invite_by_token: {
         Args: { token_param: string }
         Returns: {
@@ -1792,6 +1794,10 @@ export type Database = {
         }
         Returns: number
       }
+      post_client_message: {
+        Args: { _content: string; _token: string }
+        Returns: string
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -1799,6 +1805,26 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      sign_document: {
+        Args: {
+          _signature_image: string
+          _signed_pdf_url: string
+          _signer_ip: string
+          _signer_location: string
+          _signer_name: string
+          _token: string
+        }
+        Returns: boolean
+      }
+      submit_nps: {
+        Args: {
+          _comment: string
+          _google_reviewed?: boolean
+          _score: number
+          _token: string
+        }
+        Returns: string
       }
       user_has_project_access: {
         Args: { project_uuid: string }
