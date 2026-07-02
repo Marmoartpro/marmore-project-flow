@@ -59,7 +59,19 @@ const Mostruario = () => {
 
   const fetchStones = async () => {
     const { data } = await supabase.from('stones').select('*').order('featured', { ascending: false }).order('name');
-    setStones(data || []);
+    const all = data || [];
+    // Dedupe by name (case-insensitive): prefer user-owned clone over global duplicate
+    const uid = user?.id;
+    const byName = new Map<string, any>();
+    for (const s of all) {
+      const key = (s.name || '').trim().toLowerCase();
+      const existing = byName.get(key);
+      if (!existing) { byName.set(key, s); continue; }
+      const existingIsMine = uid && existing.owner_id === uid;
+      const currentIsMine = uid && s.owner_id === uid;
+      if (currentIsMine && !existingIsMine) byName.set(key, s);
+    }
+    setStones(Array.from(byName.values()));
   };
 
   const fetchGalleryPhotos = async (stoneId: string) => {
