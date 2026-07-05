@@ -8,10 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 
+const isSafeRelative = (p: string | null) => !!p && p.startsWith("/") && !p.startsWith("//");
+
 const Login = () => {
   const [searchParams] = useSearchParams();
   const inviteToken = searchParams.get('invite');
   const teamToken = searchParams.get('team');
+  const nextParam = searchParams.get('next');
+  const nextTarget = isSafeRelative(nextParam) ? nextParam! : null;
   const [isSignUp, setIsSignUp] = useState(!!inviteToken || !!teamToken);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,10 +30,12 @@ const Login = () => {
       navigate(`/invite/${inviteToken}`);
     } else if (user && teamToken) {
       navigate(`/entrar/${teamToken}`);
-    } else if (user && !inviteToken && !teamToken) {
+    } else if (user && nextTarget) {
+      navigate(nextTarget);
+    } else if (user) {
       navigate('/');
     }
-  }, [user, inviteToken]);
+  }, [user, inviteToken, teamToken, nextTarget]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +50,9 @@ const Login = () => {
             data: { full_name: fullName },
             emailRedirectTo: inviteToken
               ? `${window.location.origin}/invite/${inviteToken}`
-              : window.location.origin,
+              : nextTarget
+                ? `${window.location.origin}${nextTarget}`
+                : window.location.origin,
           },
         });
         if (error) throw error;
@@ -64,6 +72,8 @@ const Login = () => {
         
         if (inviteToken) {
           navigate(`/invite/${inviteToken}`);
+        } else if (nextTarget) {
+          navigate(nextTarget);
         } else {
           navigate('/');
         }
