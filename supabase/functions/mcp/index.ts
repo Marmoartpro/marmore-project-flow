@@ -178,18 +178,86 @@ var create_client_default = defineTool5({
   }
 });
 
+// src/lib/mcp/tools/create-quote.ts
+import { createClient as createClient6 } from "npm:@supabase/supabase-js@^2.99.3";
+import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z6 } from "npm:zod@^3.25.76";
+function sb6(ctx) {
+  return createClient6(process.env.SUPABASE_URL, process.env.SUPABASE_PUBLISHABLE_KEY, {
+    global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+}
+var create_quote_default = defineTool6({
+  name: "create_quote",
+  title: "Criar or\xE7amento",
+  description: "Cria um novo or\xE7amento (quote) no M\xE1rmoreProart para o usu\xE1rio autenticado. Salva os dados via Supabase respeitando RLS (owner_id = usu\xE1rio logado).",
+  inputSchema: {
+    client_name: z6.string().trim().min(1).describe("Nome do cliente."),
+    client_whatsapp: z6.string().optional().describe("WhatsApp do cliente (com DDD, ex: +5511999999999)."),
+    environment_type: z6.string().optional().describe("Tipo de ambiente (ex: cozinha, banheiro, \xE1rea externa)."),
+    stone_type: z6.string().optional().describe("Tipo de pedra (ex: m\xE1rmore, quartzo, quartzito)."),
+    estimated_value: z6.number().nonnegative().optional().describe("Valor estimado em reais."),
+    status: z6.enum(["aguardando", "aprovado", "recusado", "expirado"]).optional().describe("Status do or\xE7amento. Padr\xE3o: aguardando."),
+    sent_date: z6.string().optional().describe("Data de envio no formato YYYY-MM-DD. Padr\xE3o: hoje."),
+    follow_up_date: z6.string().optional().describe("Data para follow-up no formato YYYY-MM-DD."),
+    observations: z6.string().optional().describe("Observa\xE7\xF5es internas sobre o or\xE7amento.")
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: false
+  },
+  handler: async (input, ctx) => {
+    if (!ctx.isAuthenticated()) {
+      return { content: [{ type: "text", text: "N\xE3o autenticado" }], isError: true };
+    }
+    const payload = {
+      owner_id: ctx.getUserId(),
+      client_name: input.client_name,
+      client_whatsapp: input.client_whatsapp ?? null,
+      environment_type: input.environment_type ?? null,
+      stone_type: input.stone_type ?? null,
+      estimated_value: input.estimated_value ?? 0,
+      status: input.status ?? "aguardando",
+      observations: input.observations ?? null,
+      follow_up_date: input.follow_up_date ?? null
+    };
+    if (input.sent_date) payload.sent_date = input.sent_date;
+    const { data, error } = await sb6(ctx).from("quotes").insert(payload).select().single();
+    if (error) {
+      return {
+        content: [{ type: "text", text: `Erro ao criar or\xE7amento: ${error.message}` }],
+        isError: true
+      };
+    }
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Or\xE7amento criado para "${data.client_name}" (id: ${data.id}, valor estimado: R$ ${Number(
+            data.estimated_value ?? 0
+          ).toFixed(2)}, status: ${data.status}).`
+        }
+      ],
+      structuredContent: { quote: data }
+    };
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "xbyewjvfrshemjvtgacz";
 var mcp_default = defineMcp({
   name: "marmoreproart-mcp",
   title: "M\xE1rmoreProart",
   version: "0.1.0",
-  instructions: "Ferramentas do M\xE1rmoreProart (gest\xE3o de marmoraria). Use list_projects, list_clients, list_quotes e list_stones para consultar dados do usu\xE1rio logado. Use create_client para cadastrar novos clientes. Todos os dados respeitam as permiss\xF5es do usu\xE1rio (RLS).",
+  instructions: "Ferramentas do M\xE1rmoreProart (gest\xE3o de marmoraria). Use list_projects, list_clients, list_quotes e list_stones para consultar dados do usu\xE1rio logado. Use create_client para cadastrar novos clientes e create_quote para criar novos or\xE7amentos. Todos os dados respeitam as permiss\xF5es do usu\xE1rio (RLS).",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
   }),
-  tools: [list_projects_default, list_clients_default, list_quotes_default, list_stones_default, create_client_default]
+  tools: [list_projects_default, list_clients_default, list_quotes_default, list_stones_default, create_client_default, create_quote_default]
 });
 
 // lovable-mcp-supabase-entry.ts
