@@ -38,6 +38,7 @@ const Unauthorized = lazy(() => import("./pages/Unauthorized"));
 const NotificationPreferences = lazy(() => import("./pages/NotificationPreferences"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -105,6 +106,7 @@ const AppRoutes = () => (
     <Route path="/assinar/:token" element={<AssinaturaPublica />} />
     <Route path="/mostruario/:stoneId" element={<StonePage />} />
     <Route path="/unsubscribe" element={<Unsubscribe />} />
+    <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
     <Route path="/configuracoes/notificacoes" element={<ProtectedRoute><NotificationPreferences /></ProtectedRoute>} />
     
     <Route path="/dashboard" element={<PermissionRoute permission="dashboard"><Dashboard /></PermissionRoute>} />
