@@ -4,6 +4,7 @@ import listClients from "./tools/list-clients";
 import listQuotes from "./tools/list-quotes";
 import listStones from "./tools/list-stones";
 import createClientTool from "./tools/create-client";
+import createQuote from "./tools/create-quote";
 
 // Import-safe: no env reads, no I/O, no throws at module top level.
 // Use VITE_SUPABASE_PROJECT_ID (inlined at build time by Vite) to build the
