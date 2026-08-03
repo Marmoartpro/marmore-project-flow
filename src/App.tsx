@@ -1,4 +1,5 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, HashRouter, Route, Routes, Navigate } from "react-router-dom";
 
@@ -11,34 +12,34 @@ import { usePermissions, PermissionKey } from "@/hooks/usePermissions";
 import Login from "./pages/Login";
 
 // Route-level code splitting: cada página vira um chunk sob demanda.
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const ArchitectDashboard = lazy(() => import("./pages/ArchitectDashboard"));
-const NewProject = lazy(() => import("./pages/NewProject"));
-const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
-const InviteAccept = lazy(() => import("./pages/InviteAccept"));
-const TeamInviteAccept = lazy(() => import("./pages/TeamInviteAccept"));
-const Financeiro = lazy(() => import("./pages/Financeiro"));
-const Orcamentos = lazy(() => import("./pages/Orcamentos"));
-const Clientes = lazy(() => import("./pages/Clientes"));
-const Mostruario = lazy(() => import("./pages/Mostruario"));
-const Fornecedores = lazy(() => import("./pages/Fornecedores"));
-const CalculadoraOrcamento = lazy(() => import("./pages/CalculadoraOrcamento"));
-const Portfolio = lazy(() => import("./pages/Portfolio"));
-const Relatorios = lazy(() => import("./pages/Relatorios"));
-const Contratos = lazy(() => import("./pages/Contratos"));
-const AssinaturaPublica = lazy(() => import("./pages/AssinaturaPublica"));
-const StonePage = lazy(() => import("./pages/StonePage"));
-const Equipe = lazy(() => import("./pages/Equipe"));
-const Agenda = lazy(() => import("./pages/Agenda"));
-const ClientePortal = lazy(() => import("./pages/ClientePortal"));
-const InstaladorPortal = lazy(() => import("./pages/InstaladorPortal"));
-const VendedorPortal = lazy(() => import("./pages/VendedorPortal"));
-const RhPortal = lazy(() => import("./pages/RhPortal"));
-const Unauthorized = lazy(() => import("./pages/Unauthorized"));
-const NotificationPreferences = lazy(() => import("./pages/NotificationPreferences"));
-const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
+const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
+const ArchitectDashboard = lazyWithRetry(() => import("./pages/ArchitectDashboard"));
+const NewProject = lazyWithRetry(() => import("./pages/NewProject"));
+const ProjectDetail = lazyWithRetry(() => import("./pages/ProjectDetail"));
+const InviteAccept = lazyWithRetry(() => import("./pages/InviteAccept"));
+const TeamInviteAccept = lazyWithRetry(() => import("./pages/TeamInviteAccept"));
+const Financeiro = lazyWithRetry(() => import("./pages/Financeiro"));
+const Orcamentos = lazyWithRetry(() => import("./pages/Orcamentos"));
+const Clientes = lazyWithRetry(() => import("./pages/Clientes"));
+const Mostruario = lazyWithRetry(() => import("./pages/Mostruario"));
+const Fornecedores = lazyWithRetry(() => import("./pages/Fornecedores"));
+const CalculadoraOrcamento = lazyWithRetry(() => import("./pages/CalculadoraOrcamento"));
+const Portfolio = lazyWithRetry(() => import("./pages/Portfolio"));
+const Relatorios = lazyWithRetry(() => import("./pages/Relatorios"));
+const Contratos = lazyWithRetry(() => import("./pages/Contratos"));
+const AssinaturaPublica = lazyWithRetry(() => import("./pages/AssinaturaPublica"));
+const StonePage = lazyWithRetry(() => import("./pages/StonePage"));
+const Equipe = lazyWithRetry(() => import("./pages/Equipe"));
+const Agenda = lazyWithRetry(() => import("./pages/Agenda"));
+const ClientePortal = lazyWithRetry(() => import("./pages/ClientePortal"));
+const InstaladorPortal = lazyWithRetry(() => import("./pages/InstaladorPortal"));
+const VendedorPortal = lazyWithRetry(() => import("./pages/VendedorPortal"));
+const RhPortal = lazyWithRetry(() => import("./pages/RhPortal"));
+const Unauthorized = lazyWithRetry(() => import("./pages/Unauthorized"));
+const NotificationPreferences = lazyWithRetry(() => import("./pages/NotificationPreferences"));
+const Unsubscribe = lazyWithRetry(() => import("./pages/Unsubscribe"));
+const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
+const OAuthConsent = lazyWithRetry(() => import("./pages/OAuthConsent"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
