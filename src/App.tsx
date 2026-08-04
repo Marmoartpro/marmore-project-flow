@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { usePermissions, PermissionKey } from "@/hooks/usePermissions";
+import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 import Login from "./pages/Login";
 
 // Route-level code splitting: cada página vira um chunk sob demanda.
