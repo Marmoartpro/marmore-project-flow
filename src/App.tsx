@@ -97,6 +97,7 @@ const HomeRedirect = () => {
 };
 
 const AppRoutes = () => (
+  <ChunkErrorBoundary>
   <Suspense fallback={<RouteFallback />}>
   <Routes>
     <Route path="/" element={<HomeRedirect />} />
@@ -133,6 +134,7 @@ const AppRoutes = () => (
     <Route path="*" element={<NotFound />} />
   </Routes>
   </Suspense>
+  </ChunkErrorBoundary>
 );
 
 const App = () => (
