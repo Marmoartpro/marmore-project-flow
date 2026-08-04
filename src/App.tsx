@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { usePermissions, PermissionKey } from "@/hooks/usePermissions";
+import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 import Login from "./pages/Login";
 
 // Route-level code splitting: cada página vira um chunk sob demanda.
@@ -96,6 +97,7 @@ const HomeRedirect = () => {
 };
 
 const AppRoutes = () => (
+  <ChunkErrorBoundary>
   <Suspense fallback={<RouteFallback />}>
   <Routes>
     <Route path="/" element={<HomeRedirect />} />
@@ -132,6 +134,7 @@ const AppRoutes = () => (
     <Route path="*" element={<NotFound />} />
   </Routes>
   </Suspense>
+  </ChunkErrorBoundary>
 );
 
 const App = () => (

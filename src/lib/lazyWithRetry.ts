@@ -3,16 +3,39 @@ import { lazy, type ComponentType } from "react";
 const RELOAD_FLAG = "lovable:chunk-reloaded";
 
 /**
- * React.lazy com resiliência a falhas de carregamento de chunk.
+ * Limpa caches do navegador (Cache Storage) para que o index.html e os assets
+ * antigos não sejam servidos novamente após o reload.
+ */
+async function clearCaches(): Promise<void> {
+  try {
+    if (typeof caches !== "undefined") {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+    }
+  } catch {
+    /* Cache Storage indisponível — ignorar */
+  }
+}
+
+/** Recarrega a página com cache-busting para forçar um index.html novo. */
+async function hardReload(): Promise<void> {
+  await clearCaches();
+  const url = new URL(window.location.href);
+  url.searchParams.set("_r", Date.now().toString(36));
+  window.location.replace(url.toString());
+}
+
+/**
+ * React.lazy resiliente a falhas de carregamento de chunk.
  *
- * Motivo: após um novo deploy, o HTML/bundle antigo em cache aponta para chunks
- * que não existem mais no servidor. O import dinâmico falha com
- * "Importing a module script failed" e a tela fica em branco.
+ * Após um novo deploy, o HTML/bundle antigo em cache aponta para chunks que não
+ * existem mais. O import dinâmico falha com "Importing a module script failed"
+ * e a tela fica em branco.
  *
  * Estratégia:
- * 1. Tenta o import novamente uma vez (cobre falhas transitórias de rede).
- * 2. Se falhar de novo, força um reload único da página (busca o index.html novo).
- *    Uma flag em sessionStorage evita loop infinito de reload.
+ * 1. Retenta o import (falhas transitórias de rede).
+ * 2. Se falhar de novo, limpa caches e faz um reload único com cache-busting.
+ * 3. Se já recarregou uma vez, propaga o erro para o ErrorBoundary exibir UI.
  */
 export function lazyWithRetry<T extends ComponentType<unknown>>(
   factory: () => Promise<{ default: T }>,
@@ -20,7 +43,6 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
   return lazy(async () => {
     try {
       const mod = await factory();
-      // Import bem-sucedido: limpa a flag para permitir recuperação futura.
       try {
         window.sessionStorage.removeItem(RELOAD_FLAG);
       } catch {
@@ -28,7 +50,6 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
       }
       return mod;
     } catch (error) {
-      // Segunda tentativa: falhas de rede transitórias costumam passar aqui.
       try {
         return await factory();
       } catch (retryError) {
@@ -41,13 +62,13 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
         }
 
         if (!alreadyReloaded) {
-          window.location.reload();
+          void hardReload();
           // Promise pendente: a página está sendo recarregada.
           return new Promise<{ default: T }>(() => {});
         }
 
         console.error("[lazyWithRetry] falha ao carregar chunk", retryError ?? error);
-        throw retryError;
+        throw retryError ?? error;
       }
     }
   });
