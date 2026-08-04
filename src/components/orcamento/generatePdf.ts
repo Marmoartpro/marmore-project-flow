@@ -974,6 +974,11 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
           file_path: path,
           file_name: fileName,
         });
+        // Marca atividade recente para o orçamento não "sumir" no fim da lista
+        await supabase
+          .from('budget_quotes')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', params.quoteId);
       }
     } catch (e) {
       console.warn('Falha ao salvar PDF no histórico:', e);

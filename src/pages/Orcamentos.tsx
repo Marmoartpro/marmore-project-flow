@@ -114,7 +114,7 @@ const Orcamentos = () => {
     setQuotes(data || []);
   };
   const fetchBudgetQuotes = async () => {
-    const { data } = await supabase.from('budget_quotes').select('*').order('created_at', { ascending: false });
+    const { data } = await supabase.from('budget_quotes').select('*').order('updated_at', { ascending: false });
     setBudgetQuotes(data || []);
   };
 
