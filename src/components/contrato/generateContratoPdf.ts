@@ -102,7 +102,7 @@ function dataPorExtenso(dateStr: string): string {
 }
 
 export const generateContratoEmpreitadaPdf = async (params: ContratoEmpreitadaParams) => {
-  const doc = new jsPDF('p', 'mm', 'a4');
+  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const mL = 25, mR = 20;
@@ -178,7 +178,7 @@ export const generateContratoEmpreitadaPdf = async (params: ContratoEmpreitadaPa
   // ===== HEADER =====
   const logoData = params.logoUrl ? await loadImage(params.logoUrl) : null;
   if (logoData) {
-    try { doc.addImage(logoData, 'PNG', pageW / 2 - 12, y, 24, 24); y += 28; } catch { y += 4; }
+    try { doc.addImage(logoData, 'JPEG', pageW / 2 - 12, y, 24, 24, undefined, 'FAST'); y += 28; } catch { y += 4; }
   }
 
   // Title
@@ -374,6 +374,12 @@ export const generateContratoEmpreitadaPdf = async (params: ContratoEmpreitadaPa
     addFooter(i, totalPages);
   }
 
+  // Garantia de tamanho: se ainda passar de 5 MB (logo problemática), regera sem logo.
+  const blob = doc.output('blob');
+  if (blob.size > MAX_PDF_BYTES && logoData) {
+    return generateContratoEmpreitadaPdf({ ...params, logoUrl: null });
+  }
   doc.save(`contrato-empreitada-${params.contractNumber}.pdf`);
+
   return docHash;
 };
