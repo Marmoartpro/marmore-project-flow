@@ -39,22 +39,41 @@ export interface ContratoEmpreitadaParams {
   contractorTipo?: 'pf' | 'pj';
 }
 
-const loadImage = (url: string): Promise<string | null> => {
+/**
+ * Carrega e otimiza a logo para embutir no PDF.
+ * Reduz a imagem para no máximo `maxPx` e converte para JPEG (fundo branco),
+ * o que evita PDFs de dezenas de MB causados por logos em alta resolução.
+ */
+const loadImage = (url: string, maxPx = 240): Promise<string | null> => {
   return new Promise((resolve) => {
     if (!url) { resolve(null); return; }
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width; canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL('image/png'));
+      try {
+        const ratio = Math.min(1, maxPx / Math.max(img.width || 1, img.height || 1));
+        const w = Math.max(1, Math.round((img.width || maxPx) * ratio));
+        const h = Math.max(1, Math.round((img.height || maxPx) * ratio));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(null); return; }
+        // Fundo branco: JPEG não suporta transparência
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      } catch {
+        resolve(null);
+      }
     };
     img.onerror = () => resolve(null);
     img.src = url;
   });
 };
+
+const MAX_PDF_BYTES = 5 * 1024 * 1024;
+
 
 const DARK = '#1a1a2e';
 
