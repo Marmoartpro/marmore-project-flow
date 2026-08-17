@@ -636,7 +636,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     const ambNames = ambientes.map(a => a.nomeCustom?.trim() ? a.nomeCustom : a.tipo);
     const maxOpts = Math.max(...ambientes.map(a => a.materialOptions.length));
 
-    const scenarioHead = ['Cenário de Investimento', ...ambNames.map(n => `Subtotal ${n}`), 'Custo Instalação', 'INVESTIMENTO TOTAL'];
+    const scenarioHead = ['Cenário de Investimento', ...ambNames.map(n => `Subtotal ${n}`), 'Custo Instalação', 'VALOR TOTAL'];
     const scenarioRows: string[][] = [];
 
     for (let optIdx = 0; optIdx < maxOpts; optIdx++) {
@@ -663,14 +663,10 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
       });
 
       scenarioTotal += totalAcc;
-      // Apply discount to scenario
-      const scenarioDiscount = descontoTipo === 'percent'
-        ? scenarioTotal * ((parseFloat(descontoValor) || 0) / 100)
-        : (parseFloat(descontoValor) || 0);
-      const scenarioFinal = scenarioTotal - scenarioDiscount;
 
       row.push(`Incluída nos subtotais`);
-      row.push(`R$ ${fmt(scenarioFinal)}`);
+      row.push(`R$ ${fmt(scenarioTotal)}`);
+
       scenarioRows.push(row);
     }
 
@@ -693,16 +689,33 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
 
     // Discount highlight for scenarios
     if (desconto > 0) {
-      checkPageBreak(16);
-      doc.setFillColor(39, 174, 96);
-      doc.roundedRect(marginL, y, contentW, 10, 2, 2, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(9);
+      checkPageBreak(28);
+      doc.setDrawColor(39, 174, 96);
+      doc.setFillColor(240, 250, 244);
+      doc.roundedRect(marginL, y, contentW, 9, 2, 2, 'FD');
+      doc.setTextColor(39, 120, 80);
+      doc.setFontSize(8.5);
       doc.setFont('helvetica', 'bold');
-      doc.text(`DESCONTO PARA PAGAMENTO À VISTA (${descontoTipo === 'percent' ? `${descontoValor}%` : `R$ ${descontoValor}`})`, marginL + 5, y + 7);
-      doc.text(`- R$ ${fmt(desconto)}`, pageW - marginR - 5, y + 7, { align: 'right' });
-      y += 14;
+      doc.text(`(-) Desconto para pagamento à vista${descontoTipo === 'percent' ? ` (${descontoValor}%)` : ''}`, marginL + 5, y + 6);
+      doc.text(`- R$ ${fmt(desconto)}`, pageW - marginR - 5, y + 6, { align: 'right' });
+      y += 11;
+
+      doc.setFillColor(39, 174, 96);
+      doc.roundedRect(marginL, y, contentW, 11, 2, 2, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(10.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('VALOR À VISTA (COM DESCONTO)', marginL + 5, y + 7.5);
+      doc.text(`R$ ${fmt(totalFinal)}`, pageW - marginR - 5, y + 7.5, { align: 'right' });
+      y += 13;
+
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(90, 90, 90);
+      doc.text('Os valores da tabela acima são os valores totais. O desconto é válido apenas para pagamento à vista.', pageW - marginR, y + 2, { align: 'right' });
+      y += 8;
     }
+
   } else {
     // Single option — show investment total
     sectionTitle('Investimento Total');
@@ -728,29 +741,48 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
       });
       y = (doc as any).lastAutoTable.finalY + 3;
 
-      // Discount highlight
-      if (desconto > 0) {
-        checkPageBreak(14);
-        doc.setFillColor(39, 174, 96);
-        doc.roundedRect(marginL + contentW * 0.35, y, contentW * 0.65, 10, 2, 2, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('DESC. PGTO À VISTA', marginL + contentW * 0.35 + 5, y + 7);
-        doc.text(`- R$ ${fmt(desconto)}`, pageW - marginR - 5, y + 7, { align: 'right' });
-        y += 14;
-      }
-
-      // Total highlight box
+      // Valor total (sem desconto) — sempre em destaque
       checkPageBreak(14);
       doc.setFillColor(BLUE);
-      doc.roundedRect(marginL + contentW * 0.35, y, contentW * 0.65, 10, 2, 2, 'F');
+      doc.roundedRect(marginL + contentW * 0.35, y, contentW * 0.65, 11, 2, 2, 'F');
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(10);
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text('INVESTIMENTO TOTAL', marginL + contentW * 0.35 + 5, y + 7);
-      doc.text(`R$ ${fmt(totalFinal)}`, pageW - marginR - 5, y + 7, { align: 'right' });
-      y += 16;
+      doc.text('VALOR TOTAL DO ORÇAMENTO', marginL + contentW * 0.35 + 5, y + 7.5);
+      doc.text(`R$ ${fmt(totalBruto)}`, pageW - marginR - 5, y + 7.5, { align: 'right' });
+      y += 14;
+
+      if (desconto > 0) {
+        // Linha do desconto
+        checkPageBreak(24);
+        doc.setDrawColor(39, 174, 96);
+        doc.setFillColor(240, 250, 244);
+        doc.roundedRect(marginL + contentW * 0.35, y, contentW * 0.65, 9, 2, 2, 'FD');
+        doc.setTextColor(39, 120, 80);
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`(-) Desconto para pagamento à vista${descontoTipo === 'percent' ? ` (${descontoValor}%)` : ''}`, marginL + contentW * 0.35 + 5, y + 6);
+        doc.text(`- R$ ${fmt(desconto)}`, pageW - marginR - 5, y + 6, { align: 'right' });
+        y += 11;
+
+        // Valor final com desconto
+        doc.setFillColor(39, 174, 96);
+        doc.roundedRect(marginL + contentW * 0.35, y, contentW * 0.65, 11, 2, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text('VALOR À VISTA (COM DESCONTO)', marginL + contentW * 0.35 + 5, y + 7.5);
+        doc.text(`R$ ${fmt(totalFinal)}`, pageW - marginR - 5, y + 7.5, { align: 'right' });
+        y += 13;
+
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(90, 90, 90);
+        doc.text('O desconto acima é válido exclusivamente para pagamento à vista.', pageW - marginR, y + 2, { align: 'right' });
+        y += 6;
+      }
+      y += 3;
+
     } else {
       checkPageBreak(20);
       doc.setFillColor(BLUE);
@@ -876,8 +908,8 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     let match;
     while ((match = percentRegex.exec(condicoesPagamento)) !== null) {
       const pct = parseFloat(match[1]);
-      const val = totalFinal * (pct / 100);
-      bulletItems.push(`   → ${pct}% = R$ ${fmt(val)}`);
+      const val = totalBruto * (pct / 100);
+      bulletItems.push(`   → ${pct}% = R$ ${fmt(val)} (sobre o valor total de R$ ${fmt(totalBruto)})`);
     }
   } else {
     bulletItems.push('Condições de Pagamento: A combinar.');
@@ -885,8 +917,9 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
 
   // Discount note
   if (desconto > 0) {
-    bulletItems.push(`Desconto para Pagamento à Vista: ${descontoTipo === 'percent' ? `${descontoValor}%` : `R$ ${fmt(desconto)}`} — Valor à vista: R$ ${fmt(totalFinal)}`);
+    bulletItems.push(`Valor total do orçamento: R$ ${fmt(totalBruto)}. Desconto para pagamento à vista: ${descontoTipo === 'percent' ? `${descontoValor}%` : `R$ ${fmt(desconto)}`} (- R$ ${fmt(desconto)}) — Valor à vista: R$ ${fmt(totalFinal)}. O parcelamento é calculado sobre o valor total, sem desconto.`);
   }
+
 
   const hasClientMaterial = ambientes.some(a => a.materialOptions.some(o => o.materialDoCliente));
   if (hasClientMaterial) {
