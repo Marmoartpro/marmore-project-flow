@@ -908,8 +908,8 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     let match;
     while ((match = percentRegex.exec(condicoesPagamento)) !== null) {
       const pct = parseFloat(match[1]);
-      const val = totalFinal * (pct / 100);
-      bulletItems.push(`   → ${pct}% = R$ ${fmt(val)}`);
+      const val = totalBruto * (pct / 100);
+      bulletItems.push(`   → ${pct}% = R$ ${fmt(val)} (sobre o valor total de R$ ${fmt(totalBruto)})`);
     }
   } else {
     bulletItems.push('Condições de Pagamento: A combinar.');
@@ -917,8 +917,9 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
 
   // Discount note
   if (desconto > 0) {
-    bulletItems.push(`Desconto para Pagamento à Vista: ${descontoTipo === 'percent' ? `${descontoValor}%` : `R$ ${fmt(desconto)}`} — Valor à vista: R$ ${fmt(totalFinal)}`);
+    bulletItems.push(`Valor total do orçamento: R$ ${fmt(totalBruto)}. Desconto para pagamento à vista: ${descontoTipo === 'percent' ? `${descontoValor}%` : `R$ ${fmt(desconto)}`} (- R$ ${fmt(desconto)}) — Valor à vista: R$ ${fmt(totalFinal)}. O parcelamento é calculado sobre o valor total, sem desconto.`);
   }
+
 
   const hasClientMaterial = ambientes.some(a => a.materialOptions.some(o => o.materialDoCliente));
   if (hasClientMaterial) {
