@@ -693,16 +693,33 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
 
     // Discount highlight for scenarios
     if (desconto > 0) {
-      checkPageBreak(16);
-      doc.setFillColor(39, 174, 96);
-      doc.roundedRect(marginL, y, contentW, 10, 2, 2, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(9);
+      checkPageBreak(28);
+      doc.setDrawColor(39, 174, 96);
+      doc.setFillColor(240, 250, 244);
+      doc.roundedRect(marginL, y, contentW, 9, 2, 2, 'FD');
+      doc.setTextColor(39, 120, 80);
+      doc.setFontSize(8.5);
       doc.setFont('helvetica', 'bold');
-      doc.text(`DESCONTO PARA PAGAMENTO À VISTA (${descontoTipo === 'percent' ? `${descontoValor}%` : `R$ ${descontoValor}`})`, marginL + 5, y + 7);
-      doc.text(`- R$ ${fmt(desconto)}`, pageW - marginR - 5, y + 7, { align: 'right' });
-      y += 14;
+      doc.text(`(-) Desconto para pagamento à vista${descontoTipo === 'percent' ? ` (${descontoValor}%)` : ''}`, marginL + 5, y + 6);
+      doc.text(`- R$ ${fmt(desconto)}`, pageW - marginR - 5, y + 6, { align: 'right' });
+      y += 11;
+
+      doc.setFillColor(39, 174, 96);
+      doc.roundedRect(marginL, y, contentW, 11, 2, 2, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(10.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('VALOR À VISTA (COM DESCONTO)', marginL + 5, y + 7.5);
+      doc.text(`R$ ${fmt(totalFinal)}`, pageW - marginR - 5, y + 7.5, { align: 'right' });
+      y += 13;
+
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(90, 90, 90);
+      doc.text('Os valores da tabela acima são os valores totais. O desconto é válido apenas para pagamento à vista.', pageW - marginR, y + 2, { align: 'right' });
+      y += 8;
     }
+
   } else {
     // Single option — show investment total
     sectionTitle('Investimento Total');
