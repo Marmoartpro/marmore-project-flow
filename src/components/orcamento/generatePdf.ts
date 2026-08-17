@@ -663,14 +663,10 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
       });
 
       scenarioTotal += totalAcc;
-      // Apply discount to scenario
-      const scenarioDiscount = descontoTipo === 'percent'
-        ? scenarioTotal * ((parseFloat(descontoValor) || 0) / 100)
-        : (parseFloat(descontoValor) || 0);
-      const scenarioFinal = scenarioTotal - scenarioDiscount;
 
       row.push(`Incluída nos subtotais`);
-      row.push(`R$ ${fmt(scenarioFinal)}`);
+      row.push(`R$ ${fmt(scenarioTotal)}`);
+
       scenarioRows.push(row);
     }
 
