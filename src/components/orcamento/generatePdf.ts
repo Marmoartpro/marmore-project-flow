@@ -728,29 +728,48 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
       });
       y = (doc as any).lastAutoTable.finalY + 3;
 
-      // Discount highlight
-      if (desconto > 0) {
-        checkPageBreak(14);
-        doc.setFillColor(39, 174, 96);
-        doc.roundedRect(marginL + contentW * 0.35, y, contentW * 0.65, 10, 2, 2, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('DESC. PGTO À VISTA', marginL + contentW * 0.35 + 5, y + 7);
-        doc.text(`- R$ ${fmt(desconto)}`, pageW - marginR - 5, y + 7, { align: 'right' });
-        y += 14;
-      }
-
-      // Total highlight box
+      // Valor total (sem desconto) — sempre em destaque
       checkPageBreak(14);
       doc.setFillColor(BLUE);
-      doc.roundedRect(marginL + contentW * 0.35, y, contentW * 0.65, 10, 2, 2, 'F');
+      doc.roundedRect(marginL + contentW * 0.35, y, contentW * 0.65, 11, 2, 2, 'F');
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(10);
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text('INVESTIMENTO TOTAL', marginL + contentW * 0.35 + 5, y + 7);
-      doc.text(`R$ ${fmt(totalFinal)}`, pageW - marginR - 5, y + 7, { align: 'right' });
-      y += 16;
+      doc.text('VALOR TOTAL DO ORÇAMENTO', marginL + contentW * 0.35 + 5, y + 7.5);
+      doc.text(`R$ ${fmt(totalBruto)}`, pageW - marginR - 5, y + 7.5, { align: 'right' });
+      y += 14;
+
+      if (desconto > 0) {
+        // Linha do desconto
+        checkPageBreak(24);
+        doc.setDrawColor(39, 174, 96);
+        doc.setFillColor(240, 250, 244);
+        doc.roundedRect(marginL + contentW * 0.35, y, contentW * 0.65, 9, 2, 2, 'FD');
+        doc.setTextColor(39, 120, 80);
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`(-) Desconto para pagamento à vista${descontoTipo === 'percent' ? ` (${descontoValor}%)` : ''}`, marginL + contentW * 0.35 + 5, y + 6);
+        doc.text(`- R$ ${fmt(desconto)}`, pageW - marginR - 5, y + 6, { align: 'right' });
+        y += 11;
+
+        // Valor final com desconto
+        doc.setFillColor(39, 174, 96);
+        doc.roundedRect(marginL + contentW * 0.35, y, contentW * 0.65, 11, 2, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text('VALOR À VISTA (COM DESCONTO)', marginL + contentW * 0.35 + 5, y + 7.5);
+        doc.text(`R$ ${fmt(totalFinal)}`, pageW - marginR - 5, y + 7.5, { align: 'right' });
+        y += 13;
+
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(90, 90, 90);
+        doc.text('O desconto acima é válido exclusivamente para pagamento à vista.', pageW - marginR, y + 2, { align: 'right' });
+        y += 6;
+      }
+      y += 3;
+
     } else {
       checkPageBreak(20);
       doc.setFillColor(BLUE);
