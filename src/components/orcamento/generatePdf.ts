@@ -636,7 +636,7 @@ export const generateOrcamentoPdf = async (params: PdfParams) => {
     const ambNames = ambientes.map(a => a.nomeCustom?.trim() ? a.nomeCustom : a.tipo);
     const maxOpts = Math.max(...ambientes.map(a => a.materialOptions.length));
 
-    const scenarioHead = ['Cenário de Investimento', ...ambNames.map(n => `Subtotal ${n}`), 'Custo Instalação', 'INVESTIMENTO TOTAL'];
+    const scenarioHead = ['Cenário de Investimento', ...ambNames.map(n => `Subtotal ${n}`), 'Custo Instalação', 'VALOR TOTAL'];
     const scenarioRows: string[][] = [];
 
     for (let optIdx = 0; optIdx < maxOpts; optIdx++) {
