@@ -65,8 +65,23 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
   const [aiReviewing, setAiReviewing] = useState(false);
   const [aiReview, setAiReview] = useState('');
 
+  // Chave de inicialização: garante que o formulário seja preenchido UMA vez
+  // por abertura do diálogo. Sem isso, um refresh de sessão (ex.: ao voltar de
+  // outra aba do navegador) mudava a identidade de `user` e reexecutava o
+  // efeito, apagando tudo que o usuário já havia digitado.
+  const initKeyRef = useRef<string | null>(null);
+  const userId = user?.id ?? null;
+
   useEffect(() => {
-    if (!open || !user || !budgetQuote) return;
+    if (!open) {
+      initKeyRef.current = null;
+      return;
+    }
+    if (!userId || !budgetQuote) return;
+    const key = `${userId}:${existingContract?.id || budgetQuote?.id || 'novo'}`;
+    if (initKeyRef.current === key) return;
+    initKeyRef.current = key;
+
     setClientName(existingContract?.client_name || budgetQuote?.client_name || '');
     setTotalValue(Number(existingContract?.total_value || budgetQuote?.total || 0));
     setPaymentConditions(existingContract?.payment_conditions || budgetQuote?.payment_conditions || '');
@@ -77,7 +92,8 @@ const ContratoDialog = ({ open, onClose, budgetQuote, existingContract }: Props)
       loadClientData();
     }
     loadContractSettings();
-  }, [open, user, budgetQuote]);
+  }, [open, userId, budgetQuote, existingContract?.id]);
+
 
   const loadExistingContract = () => {
     const ec = existingContract;
