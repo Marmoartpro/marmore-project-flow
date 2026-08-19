@@ -43,7 +43,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
-        setUser(session?.user ?? null);
+        // Mantém a MESMA referência de `user` quando apenas o token é renovado
+        // (ex.: ao voltar de outra aba). Assim, efeitos que dependem de `user`
+        // não reexecutam e formulários em edição não são resetados.
+        setUser((prev) => (prev && prev.id === session?.user?.id ? prev : session?.user ?? null));
         if (session?.user) {
           setTimeout(() => fetchProfile(session.user.id), 0);
         } else {
@@ -52,6 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
       }
     );
+
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
