@@ -171,11 +171,11 @@ const TotaisSection = ({
           <Label className="text-xs font-medium">Condições de Pagamento</Label>
           {totalFinal > 0 && (
             <div className="text-[11px] text-muted-foreground space-y-1">
-              <p>Sugestão: Entrada 40% (R$ {fmt(entrada)}) | Parcela intermediária 30% (R$ {fmt(parcela)}) | Saldo 30% (R$ {fmt(saldo)})</p>
+              <p>Sugestão: Entrada 50% (R$ {fmt(entrada)}) | Saldo na entrega 50% (R$ {fmt(saldo)})</p>
             </div>
           )}
           <Textarea value={condicoesPagamento} onChange={e => setCondicoesPagamento(e.target.value)} rows={2} className="text-sm"
-            placeholder="Entrada 40%, parcela intermediária 30%, saldo na conclusão 30%" />
+            placeholder="Entrada 50%, saldo na entrega 50%" />
         </CardContent>
       </Card>
 

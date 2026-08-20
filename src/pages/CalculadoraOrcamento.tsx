@@ -64,7 +64,7 @@ const CalculadoraOrcamento = () => {
   const [margemInstalacao, setMargemInstalacao] = useState(20);
   const [descontoValor, setDescontoValor] = useState('');
   const [descontoTipo, setDescontoTipo] = useState<'percent' | 'reais'>('percent');
-  const [condicoesPagamento, setCondicoesPagamento] = useState('Entrada 40%, parcela intermediária 30%, saldo na conclusão 30%');
+  const [condicoesPagamento, setCondicoesPagamento] = useState('Entrada 50%, saldo na entrega 50%');
   const [observacoes, setObservacoes] = useState('');
   const [showAddAmbiente, setShowAddAmbiente] = useState(false);
   const [nomeEmpresa, setNomeEmpresa] = useState('Marmoraria Artesanal');
@@ -392,7 +392,7 @@ const CalculadoraOrcamento = () => {
     setAmbientes([newAmbiente('Cozinha')]); setAcessorios([newAcessorio()]);
     setMargemMaterial(30); setMargemServicos(30); setMargemAcessorios(30); setMargemInstalacao(20);
     setDescontoValor(''); setDescontoTipo('percent');
-    setCondicoesPagamento('Entrada 40%, parcela intermediária 30%, saldo na conclusão 30%');
+    setCondicoesPagamento('Entrada 50%, saldo na entrega 50%');
     setObservacoes(''); setEditingQuoteId(null); setEditingVersion(1); setEditingQuoteNumber('');
     setVersoes([]); setVersaoAtivaId(PRINCIPAL_VERSION_ID); setVersaoPrincipalNome('Versão Principal');
     draftIdRef.current = null;

@@ -188,9 +188,9 @@ describe('calcTotais — cálculo unificado (fix #9)', () => {
       { material: 0, servicos: 0, acessorios: 0, instalacao: 0 },
       { valor: '0', tipo: 'reais' },
     );
-    expect(approx(t.parcelas.entrada, 400)).toBe(true);
-    expect(approx(t.parcelas.parcela, 300)).toBe(true);
-    expect(approx(t.parcelas.saldo, 300)).toBe(true);
+    expect(approx(t.parcelas.entrada, 500)).toBe(true);
+    expect(approx(t.parcelas.parcela, 0)).toBe(true);
+    expect(approx(t.parcelas.saldo, 500)).toBe(true);
     expect(approx(t.parcelas.entrada + t.parcelas.parcela + t.parcelas.saldo, t.totalFinal)).toBe(true);
   });
 });

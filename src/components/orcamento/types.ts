@@ -1431,11 +1431,11 @@ export const MIN_AREA_M2_AMBIENTE = 0.10;
 /** Padrão de m² por chapa (usado no resumo de consumo). */
 export const M2_POR_CHAPA_DEFAULT = 6;
 
-/** Divisão sugerida de parcelamento (40% entrada, 30% intermediária, 30% saldo). */
+/** Divisão sugerida de parcelamento (50% entrada, 50% na entrega). */
 export const PARCELAMENTO_DEFAULT = {
-  entrada: 0.4,
-  parcela: 0.3,
-  saldo: 0.3,
+  entrada: 0.5,
+  parcela: 0,
+  saldo: 0.5,
 } as const;
 
 /* ─────────────────────────────────────────────────────────────
