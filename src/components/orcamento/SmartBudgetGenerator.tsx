@@ -487,7 +487,14 @@ export default function SmartBudgetGenerator({
               </TabsList>
 
               <div className="space-y-2 mt-4">
-                <Label>Material Base</Label>
+                <Label>
+                  Material Base
+                  {activeTab === 'file' && (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      (opcional — a IA usa os materiais citados no arquivo)
+                    </span>
+                  )}
+                </Label>
                 <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um material do mostruário" />
