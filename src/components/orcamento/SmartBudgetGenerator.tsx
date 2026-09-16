@@ -237,6 +237,7 @@ export default function SmartBudgetGenerator({
     setGeneratedAmbientes([]);
     setMeasurements('');
     setUploadedImage(null);
+    setParsedFile(null);
     setChatMessages([]);
     setShowChat(false);
   };
