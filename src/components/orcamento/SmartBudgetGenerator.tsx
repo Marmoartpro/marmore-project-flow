@@ -461,7 +461,7 @@ export default function SmartBudgetGenerator({
                     rows={5}
                   />
                 </div>
-                <Button onClick={() => generateBudget(false)} disabled={loading || !selectedMaterial || !measurements} className="w-full">
+                <Button onClick={() => generateBudget('manual')} disabled={loading || !selectedMaterial || !measurements} className="w-full">
                   {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Gerando peças...</> : <><Sparkles className="w-4 h-4 mr-2" />Preencher Orçamento com IA</>}
                 </Button>
               </TabsContent>
