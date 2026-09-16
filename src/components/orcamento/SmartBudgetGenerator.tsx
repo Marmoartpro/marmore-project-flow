@@ -100,24 +100,66 @@ export default function SmartBudgetGenerator({
     }
   };
 
+  /** Normaliza nomes de pedra para comparação (sem acentos, minúsculo). */
+  const normalize = (v: string) =>
+    (v || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+
+  /** Encontra no mostruário a pedra citada pela IA; cai para o material base. */
+  const resolveStone = (materialName?: string) => {
+    const wanted = normalize(materialName || '');
+    if (!wanted) return selectedStone || null;
+    const exact = stones.find((s) => normalize(s.name) === wanted);
+    if (exact) return exact;
+    const partial = stones.find(
+      (s) => normalize(s.name).includes(wanted) || wanted.includes(normalize(s.name)),
+    );
+    return partial || selectedStone || null;
+  };
+
   const buildAmbientesFromAI = (aiAmbientes: any[]): Ambiente[] => {
-    return aiAmbientes.map((aiAmb: any) => {
+    const result: Ambiente[] = [];
+
+    aiAmbientes.forEach((aiAmb: any) => {
       const tipo = aiAmb.tipo || 'Ambiente Personalizado';
-      const amb = newAmbiente(tipo);
+      const pecasIA: any[] = aiAmb.pecas || [];
 
-      if (selectedStone) {
-        amb.materialOptions = [
-          {
-            ...newMaterialOption('Opção A'),
-            stoneId: selectedStone.id,
-            stoneName: selectedStone.name,
-            pricePerM2: selectedStone.price_per_m2 || 0,
-          },
-        ];
-      }
+      // Agrupa peças por material: cada material vira um bloco de ambiente próprio,
+      // porque o orçamento armazena o material no nível do ambiente.
+      const grupos = new Map<string, any[]>();
+      pecasIA.forEach((p) => {
+        const nome = p?.material || aiAmb.material || '';
+        const key = normalize(nome) || '__base__';
+        if (!grupos.has(key)) grupos.set(key, []);
+        grupos.get(key)!.push({ ...p, __materialNome: nome });
+      });
+      if (grupos.size === 0) grupos.set('__base__', []);
 
-      const pecaTipos = PECA_TIPOS[tipo] || PECA_TIPOS['Ambiente Personalizado'];
-      amb.pecas = (aiAmb.pecas || []).map((aiPeca: any) => {
+      const multiplos = grupos.size > 1;
+
+      grupos.forEach((pecasGrupo) => {
+        const materialNome = pecasGrupo[0]?.__materialNome || aiAmb.material || '';
+        const stone = resolveStone(materialNome);
+        const amb = newAmbiente(tipo);
+
+        if (stone) {
+          amb.materialOptions = [
+            {
+              ...newMaterialOption('Opção A'),
+              stoneId: stone.id,
+              stoneName: stone.name,
+              pricePerM2: stone.price_per_m2 || 0,
+            },
+          ];
+        }
+        if (multiplos && stone) amb.nomeCustom = `${tipo} - ${stone.name}`;
+
+        const pecaTipos = PECA_TIPOS[tipo] || PECA_TIPOS['Ambiente Personalizado'];
+        amb.pecas = pecasGrupo.map((aiPeca: any) => {
         const pecaTipo = pecaTipos.includes(aiPeca.tipo) ? aiPeca.tipo : (pecaTipos[0] || 'Peça Personalizada');
         const peca = newPeca(pecaTipo);
 
