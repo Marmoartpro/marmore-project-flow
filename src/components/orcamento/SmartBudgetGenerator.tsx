@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Upload, Sparkles, CheckCircle2, MessageCircle, Send, ImagePlus, X } from 'lucide-react';
+import { Loader2, Upload, Sparkles, CheckCircle2, MessageCircle, Send, ImagePlus, X, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Ambiente, PecaItem, newPeca, newAmbiente, newMaterialOption, PECA_TIPOS } from './types';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { parseBudgetFile, isSupportedBudgetFile, type ParsedFileResult } from '@/lib/parseBudgetFiles';
 
 interface SmartBudgetGeneratorProps {
   open: boolean;
@@ -42,6 +43,8 @@ export default function SmartBudgetGenerator({
   const [measurements, setMeasurements] = useState('');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('manual');
+  const [parsedFile, setParsedFile] = useState<ParsedFileResult | null>(null);
+  const [fileParsing, setFileParsing] = useState(false);
   const [summary, setSummary] = useState<AISummary | null>(null);
   const [generatedAmbientes, setGeneratedAmbientes] = useState<Ambiente[]>([]);
   const [generatedResumo, setGeneratedResumo] = useState('');
@@ -60,6 +63,41 @@ export default function SmartBudgetGenerator({
     const reader = new FileReader();
     reader.onload = (event) => setUploadedImage(event.target?.result as string);
     reader.readAsDataURL(file);
+  };
+
+  /** Lê PDF ou planilha enviada pelo cliente e prepara o conteúdo para a IA. */
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (!isSupportedBudgetFile(file)) {
+      toast.error('Formato não suportado. Envie PDF, XLSX, XLS ou CSV.');
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error('Arquivo muito grande (máximo 25 MB).');
+      return;
+    }
+
+    setFileParsing(true);
+    try {
+      const result = await parseBudgetFile(file);
+      if (!result.text && result.images.length === 0) {
+        toast.error('Não foi possível ler o conteúdo deste arquivo.');
+        return;
+      }
+      setParsedFile(result);
+      toast.success(
+        result.text
+          ? `"${result.fileName}" lido com sucesso.`
+          : `"${result.fileName}" é digitalizado — as páginas serão analisadas como imagem.`,
+      );
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao ler o arquivo');
+    } finally {
+      setFileParsing(false);
+    }
   };
 
   const buildAmbientesFromAI = (aiAmbientes: any[]): Ambiente[] => {
@@ -132,25 +170,37 @@ export default function SmartBudgetGenerator({
     });
   };
 
-  const generateBudget = async (useImage: boolean = false) => {
+  type BudgetSource = 'manual' | 'image' | 'file';
+
+  const generateBudget = async (source: BudgetSource = 'manual') => {
     if (!selectedMaterial) { toast.error('Selecione um material'); return; }
-    if (!useImage && !measurements) { toast.error('Preencha as medidas'); return; }
-    if (useImage && !uploadedImage) { toast.error('Envie uma imagem'); return; }
+    if (source === 'manual' && !measurements) { toast.error('Preencha as medidas'); return; }
+    if (source === 'image' && !uploadedImage) { toast.error('Envie uma imagem'); return; }
+    if (source === 'file' && !parsedFile) { toast.error('Envie um PDF ou planilha'); return; }
 
     setLoading(true);
     setSummary(null);
     setShowChat(false);
     setChatMessages([]);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         mode: 'generate',
         material_name: selectedStone?.name || '',
         material_price: selectedStone?.price_per_m2 || 0,
         stone_id: selectedMaterial,
-        measurements: measurements || 'Analisar imagem anexa',
+        measurements:
+          source === 'file'
+            ? measurements || 'Extrair do arquivo anexado'
+            : measurements || 'Analisar imagem anexa',
         service_type: 'Corte e Acabamento padrão',
-        image_base64: useImage ? uploadedImage : null,
+        image_base64: source === 'image' ? uploadedImage : null,
       };
+
+      if (source === 'file' && parsedFile) {
+        payload.document_text = parsedFile.text;
+        payload.document_name = parsedFile.fileName;
+        payload.images_base64 = parsedFile.images;
+      }
 
       const { data, error } = await supabase.functions.invoke('generate-budget-gemini', { body: payload });
       if (error) throw new Error(error.message || 'Erro ao chamar a função');
@@ -187,6 +237,7 @@ export default function SmartBudgetGenerator({
     setGeneratedAmbientes([]);
     setMeasurements('');
     setUploadedImage(null);
+    setParsedFile(null);
     setChatMessages([]);
     setShowChat(false);
   };
@@ -379,9 +430,10 @@ export default function SmartBudgetGenerator({
             </p>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="manual">Por Medidas</TabsTrigger>
                 <TabsTrigger value="image">Por Planta/Foto</TabsTrigger>
+                <TabsTrigger value="file">Por Arquivo</TabsTrigger>
               </TabsList>
 
               <div className="space-y-2 mt-4">
@@ -410,7 +462,7 @@ export default function SmartBudgetGenerator({
                     rows={5}
                   />
                 </div>
-                <Button onClick={() => generateBudget(false)} disabled={loading || !selectedMaterial || !measurements} className="w-full">
+                <Button onClick={() => generateBudget('manual')} disabled={loading || !selectedMaterial || !measurements} className="w-full">
                   {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Gerando peças...</> : <><Sparkles className="w-4 h-4 mr-2" />Preencher Orçamento com IA</>}
                 </Button>
               </TabsContent>
@@ -435,8 +487,84 @@ export default function SmartBudgetGenerator({
                     )}
                   </div>
                 </div>
-                <Button onClick={() => generateBudget(true)} disabled={loading || !selectedMaterial || !uploadedImage} className="w-full">
+                <Button onClick={() => generateBudget('image')} disabled={loading || !selectedMaterial || !uploadedImage} className="w-full">
                   {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analisando imagem...</> : <><Sparkles className="w-4 h-4 mr-2" />Analisar e Preencher</>}
+                </Button>
+              </TabsContent>
+
+              <TabsContent value="file" className="space-y-4">
+                <div className="space-y-2">
+                  <Label>PDF ou Planilha do Cliente</Label>
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                    {fileParsing ? (
+                      <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="w-6 h-6 animate-spin" /> Lendo arquivo...
+                      </div>
+                    ) : parsedFile ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-center gap-2 text-sm font-medium">
+                          <FileText className="w-4 h-4 text-primary" />
+                          {parsedFile.fileName}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          {parsedFile.text
+                            ? `${parsedFile.text.length.toLocaleString('pt-BR')} caracteres lidos`
+                            : `${parsedFile.images.length} página(s) serão analisadas como imagem`}
+                        </p>
+                        {parsedFile.text && (
+                          <ScrollArea className="max-h-28 text-left">
+                            <pre className="text-[10px] whitespace-pre-wrap text-muted-foreground p-2">
+                              {parsedFile.text.slice(0, 800)}
+                              {parsedFile.text.length > 800 ? '…' : ''}
+                            </pre>
+                          </ScrollArea>
+                        )}
+                        <Button variant="outline" size="sm" onClick={() => setParsedFile(null)}>
+                          Remover Arquivo
+                        </Button>
+                      </div>
+                    ) : (
+                      <label className="cursor-pointer">
+                        <div className="flex flex-col items-center gap-2">
+                          <Upload className="w-8 h-8 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            Clique para enviar um PDF, XLSX, XLS ou CSV
+                          </span>
+                          <span className="text-[11px] text-muted-foreground/70">
+                            Ideal para listas de medidas enviadas pelo cliente (até 25 MB)
+                          </span>
+                        </div>
+                        <Input
+                          type="file"
+                          accept=".pdf,.xlsx,.xls,.csv"
+                          onChange={handleDocumentUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Observações adicionais (opcional)</Label>
+                  <Textarea
+                    placeholder="Ex: considerar apenas os itens da cozinha, espessura 3cm..."
+                    value={measurements}
+                    onChange={(e) => setMeasurements(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+
+                <Button
+                  onClick={() => generateBudget('file')}
+                  disabled={loading || fileParsing || !selectedMaterial || !parsedFile}
+                  className="w-full"
+                >
+                  {loading ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analisando arquivo...</>
+                  ) : (
+                    <><Sparkles className="w-4 h-4 mr-2" />Analisar Arquivo e Preencher</>
+                  )}
                 </Button>
               </TabsContent>
             </Tabs>

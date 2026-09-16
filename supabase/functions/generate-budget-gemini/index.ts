@@ -26,7 +26,7 @@ serve(async (req) => {
     if (mode === 'chat') {
       // Chat mode: refine budget via conversation
       const { material_name, material_price, previous_result, chat_messages, measurements, chat_image_base64 } = body
-      model = chat_image_base64 ? "google/gemini-2.5-flash" : "google/gemini-3-flash-preview"
+      model = "google/gemini-3.8-flash"
 
       const contextStr = previous_result ? `\nOrçamento atual completo:\n${JSON.stringify(previous_result, null, 2)}` : ''
       const measureStr = measurements ? `\nDescrição original: ${measurements}` : ''
@@ -76,7 +76,7 @@ Se for APENAS uma pergunta sem alteração necessária:
       }
     } else if (mode === 'review') {
       const { ambientes, acessorios, totalGeral, margemLucro } = body
-      model = "google/gemini-3-flash-preview"
+      model = "google/gemini-3.8-flash"
       messages = [
         {
           role: "system",
@@ -94,14 +94,36 @@ Verifique: preços inconsistentes, áreas suspeitas, peças que podem ser cortad
         }
       ]
     } else {
-      const { material_name, material_price, stone_id, measurements, service_type, image_base64 } = body
-      model = image_base64 ? "google/gemini-2.5-flash" : "google/gemini-3-flash-preview"
+      const {
+        material_name,
+        material_price,
+        stone_id,
+        measurements,
+        service_type,
+        image_base64,
+        document_text,
+        document_name,
+        images_base64,
+      } = body
+      model = "google/gemini-3.8-flash"
+
+      // Imagens: foto/planta única e/ou páginas de PDF digitalizado.
+      const allImages: string[] = [
+        ...(image_base64 ? [image_base64] : []),
+        ...(Array.isArray(images_base64) ? images_base64 : []),
+      ].filter((img) => typeof img === "string" && img.length > 0)
+
+      // Limite defensivo para não estourar o contexto do modelo.
+      const docText = typeof document_text === "string" ? document_text.slice(0, 120000) : ""
+      const docBlock = docText
+        ? `\n\nCONTEÚDO DO ARQUIVO ENVIADO PELO CLIENTE${document_name ? ` ("${document_name}")` : ''}:\n"""\n${docText}\n"""\nUse esse conteúdo como fonte principal das medidas e itens. Converta todas as medidas para CENTÍMETROS (se vierem em metros ou milímetros, converta). Ignore textos irrelevantes como cabeçalhos, rodapés e condições comerciais.`
+        : ''
 
       const promptText = `
 Você é um orçamentista especialista em marmoraria.
 Material: ${material_name || 'Não especificado'} - R$ ${material_price}/m²
 Serviço: ${service_type || 'Corte e Acabamento padrão'}
-Medidas/Descrição: ${measurements || 'Analisar imagem anexa'}
+Medidas/Descrição: ${measurements || (docText ? 'Ver conteúdo do arquivo abaixo' : 'Analisar imagem anexa')}${docBlock}
 
 REGRAS:
 1. Identifique todos os ambientes e peças do projeto.
@@ -144,13 +166,15 @@ RETORNE APENAS JSON VÁLIDO com esta estrutura (sem markdown):
         { role: "system", content: "Você é um orçamentista especialista em marmoraria. Responda sempre em JSON válido." },
       ]
 
-      if (image_base64) {
-        const base64Data = image_base64.replace(/^data:image\/\w+;base64,/, "")
+      if (allImages.length > 0) {
         messages.push({
           role: "user",
           content: [
             { type: "text", text: promptText },
-            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Data}` } },
+            ...allImages.map((img) => ({
+              type: "image_url",
+              image_url: { url: `data:image/jpeg;base64,${img.replace(/^data:image\/\w+;base64,/, "")}` },
+            })),
           ],
         })
       } else {
