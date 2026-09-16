@@ -238,6 +238,65 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove
           className="h-8 text-xs" placeholder="Descrição opcional da peça" />
       </div>
 
+      {/* Material próprio desta peça */}
+      <div className="rounded-md border border-dashed border-border p-2 space-y-2">
+        <label className="flex items-center gap-2 text-[11px] font-medium cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!!peca.materialOverride}
+            onChange={e => onChange('materialOverride', e.target.checked)}
+          />
+          Pedra diferente para esta peça
+        </label>
+
+        {peca.materialOverride && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="sm:col-span-2">
+              <Label className="text-[10px]">Pedra</Label>
+              <select
+                value={peca.materialStoneId || ''}
+                onChange={e => {
+                  const stone = stones.find((s: any) => s.id === e.target.value);
+                  onChange('materialStone', {
+                    materialStoneId: stone?.id || '',
+                    materialStoneName: stone?.name || '',
+                    materialPricePerM2: Number(stone?.price_per_m2) || 0,
+                  });
+                }}
+                className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs"
+              >
+                <option value="">Selecionar do mostruário…</option>
+                {stones.map((s: any) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label className="text-[10px]">R$ / m²</Label>
+              <Input
+                type="number" step="0.01" value={peca.materialPricePerM2 || ''}
+                onChange={e => onChange('materialPricePerM2', parseFloat(e.target.value) || 0)}
+                className="h-8 text-xs" disabled={peca.materialDoCliente}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-[11px] sm:col-span-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!peca.materialDoCliente}
+                onChange={e => onChange('materialDoCliente', e.target.checked)}
+              />
+              Material fornecido pelo cliente (não cobrar a pedra)
+            </label>
+            {areaCompra > 0 && !peca.materialDoCliente && (
+              <p className="text-[10px] text-muted-foreground sm:col-span-3">
+                {fmt(areaCompra)} m² × R$ {fmt(peca.materialPricePerM2 || 0)} ={' '}
+                <b>R$ {fmt(areaCompra * (peca.materialPricePerM2 || 0))}</b>
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Soleira/Peitoril method */}
       {(isSoleira || isPeitoril) && (
         <div className="flex gap-4 text-xs">
