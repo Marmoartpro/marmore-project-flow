@@ -1412,29 +1412,50 @@ export const calcResumoConsumo = (
 ): ResumoMaterial[] => {
   const map = new Map<string, ResumoMaterial>();
 
-  ambientes.forEach(amb => {
-    const idx = Math.min(optionIndex, amb.materialOptions.length - 1);
-    const opt = amb.materialOptions[idx];
-    if (!opt || opt.materialDoCliente || !opt.stoneId) return;
-
-    const key = opt.stoneId;
-    if (!map.has(key)) {
-      map.set(key, {
-        stoneName: opt.stoneName,
-        stoneId: opt.stoneId,
+  const add = (
+    stoneId: string, stoneName: string, pricePerM2: number,
+    liq: number, compra: number,
+  ) => {
+    if (!stoneId || compra <= 0) return;
+    if (!map.has(stoneId)) {
+      map.set(stoneId, {
+        stoneName, stoneId,
         totalM2Liquido: 0,
         totalM2Compra: 0,
-        pricePerM2: opt.pricePerM2,
+        pricePerM2,
         custoTotal: 0,
         chapasNecessarias: 0,
       });
     }
-    const entry = map.get(key)!;
-    const ambLiq = calcAmbienteArea(amb);
-    const ambCompra = calcAmbienteAreaCompra(amb);
-    entry.totalM2Liquido += ambLiq;
-    entry.totalM2Compra += ambCompra;
-    entry.custoTotal += ambCompra * opt.pricePerM2;
+    const entry = map.get(stoneId)!;
+    entry.totalM2Liquido += liq;
+    entry.totalM2Compra += compra;
+    entry.custoTotal += compra * pricePerM2;
+  };
+
+  ambientes.forEach(amb => {
+    const idx = Math.min(optionIndex, amb.materialOptions.length - 1);
+    const opt = amb.materialOptions[idx];
+
+    // Peças que usam o material do ambiente
+    const pecasBase = amb.pecas.filter(p => !pecaTemMaterialProprio(p));
+    if (opt && !opt.materialDoCliente && opt.stoneId && pecasBase.length > 0) {
+      const rawLiq = pecasBase.reduce((s, p) => s + calcPecaAreaLiquida(p), 0);
+      const rawCompra = pecasBase.reduce((s, p) => s + calcPecaAreaCompra(p), 0);
+      if (rawCompra > 0) {
+        add(opt.stoneId, opt.stoneName, opt.pricePerM2,
+          ceilM2(rawLiq), ceilM2(Math.max(rawCompra, MIN_AREA_M2_AMBIENTE)));
+      }
+    }
+
+    // Peças com pedra própria
+    amb.pecas.filter(pecaTemMaterialProprio).forEach(p => {
+      if (p.materialDoCliente || !p.materialStoneId) return;
+      const compra = calcPecaAreaCompra(p);
+      if (compra <= 0) return;
+      add(p.materialStoneId, p.materialStoneName, p.materialPricePerM2 || 0,
+        ceilM2(calcPecaAreaLiquida(p)), ceilM2(compra));
+    });
   });
 
   map.forEach(entry => {
