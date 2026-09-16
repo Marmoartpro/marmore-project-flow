@@ -147,7 +147,9 @@ const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Prop
                 peca={peca}
                 pecaTipos={pecaTipos}
                 ambienteTipo={ambiente.tipo}
+                stones={stones}
                 onChange={(field, value) => updatePeca(peca.id, field, value)}
+                onChangeBatch={(fields) => updatePecaBatch(peca.id, fields)}
                 onRemove={() => removePeca(peca.id)}
                 canRemove={ambiente.pecas.length > 1}
               />
