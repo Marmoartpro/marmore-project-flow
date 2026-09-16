@@ -104,6 +104,7 @@ Verifique: preços inconsistentes, áreas suspeitas, peças que podem ser cortad
         document_text,
         document_name,
         images_base64,
+        available_materials,
       } = body
       model = "google/gemini-3.8-flash"
 
@@ -119,11 +120,28 @@ Verifique: preços inconsistentes, áreas suspeitas, peças que podem ser cortad
         ? `\n\nCONTEÚDO DO ARQUIVO ENVIADO PELO CLIENTE${document_name ? ` ("${document_name}")` : ''}:\n"""\n${docText}\n"""\nUse esse conteúdo como fonte principal das medidas e itens. Converta todas as medidas para CENTÍMETROS (se vierem em metros ou milímetros, converta). Ignore textos irrelevantes como cabeçalhos, rodapés e condições comerciais.`
         : ''
 
+      // Catálogo de pedras do usuário, para a IA detectar o material de cada ambiente.
+      const catalog = Array.isArray(available_materials)
+        ? available_materials
+            .filter((m: any) => m && typeof m.name === "string")
+            .slice(0, 200)
+            .map((m: any) => `- ${m.name}${m.price ? ` (R$ ${m.price}/m²)` : ''}`)
+            .join("\n")
+        : ""
+      const catalogBlock = catalog
+        ? `\n\nMATERIAIS DISPONÍVEIS NO MOSTRUÁRIO DO USUÁRIO:\n${catalog}\n\nIMPORTANTE SOBRE MATERIAIS:
+- O arquivo pode conter VÁRIOS materiais diferentes (um por ambiente ou até por peça).
+- Para cada ambiente, informe o campo "material" com o nome do material citado no arquivo/imagem.
+- Sempre que o material citado corresponder (mesmo com grafia diferente) a um material da lista acima, use EXATAMENTE o nome da lista.
+- Se o arquivo não citar material para um ambiente, use "${material_name || ''}" (material base) ou deixe "material" vazio.
+- Quando peças do mesmo ambiente usarem materiais diferentes, informe também "material" dentro de cada peça.`
+        : ''
+
       const promptText = `
 Você é um orçamentista especialista em marmoraria.
-Material: ${material_name || 'Não especificado'} - R$ ${material_price}/m²
+Material base (padrão quando nada for citado): ${material_name || 'Não especificado'} - R$ ${material_price}/m²
 Serviço: ${service_type || 'Corte e Acabamento padrão'}
-Medidas/Descrição: ${measurements || (docText ? 'Ver conteúdo do arquivo abaixo' : 'Analisar imagem anexa')}${docBlock}
+Medidas/Descrição: ${measurements || (docText ? 'Ver conteúdo do arquivo abaixo' : 'Analisar imagem anexa')}${docBlock}${catalogBlock}
 
 REGRAS:
 1. Identifique todos os ambientes e peças do projeto.
@@ -137,9 +155,11 @@ RETORNE APENAS JSON VÁLIDO com esta estrutura (sem markdown):
   "ambientes": [
     {
       "tipo": "Cozinha",
+      "material": "Nome do material deste ambiente (ou vazio)",
       "pecas": [
         {
           "nomePeca": "Bancada principal",
+          "material": "Nome do material desta peça, se diferente do ambiente (ou vazio)",
           "tipo": "Bancada",
           "formato": "retangular",
           "largura": "60",

@@ -100,24 +100,66 @@ export default function SmartBudgetGenerator({
     }
   };
 
+  /** Normaliza nomes de pedra para comparação (sem acentos, minúsculo). */
+  const normalize = (v: string) =>
+    (v || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+
+  /** Encontra no mostruário a pedra citada pela IA; cai para o material base. */
+  const resolveStone = (materialName?: string) => {
+    const wanted = normalize(materialName || '');
+    if (!wanted) return selectedStone || null;
+    const exact = stones.find((s) => normalize(s.name) === wanted);
+    if (exact) return exact;
+    const partial = stones.find(
+      (s) => normalize(s.name).includes(wanted) || wanted.includes(normalize(s.name)),
+    );
+    return partial || selectedStone || null;
+  };
+
   const buildAmbientesFromAI = (aiAmbientes: any[]): Ambiente[] => {
-    return aiAmbientes.map((aiAmb: any) => {
+    const result: Ambiente[] = [];
+
+    aiAmbientes.forEach((aiAmb: any) => {
       const tipo = aiAmb.tipo || 'Ambiente Personalizado';
-      const amb = newAmbiente(tipo);
+      const pecasIA: any[] = aiAmb.pecas || [];
 
-      if (selectedStone) {
-        amb.materialOptions = [
-          {
-            ...newMaterialOption('Opção A'),
-            stoneId: selectedStone.id,
-            stoneName: selectedStone.name,
-            pricePerM2: selectedStone.price_per_m2 || 0,
-          },
-        ];
-      }
+      // Agrupa peças por material: cada material vira um bloco de ambiente próprio,
+      // porque o orçamento armazena o material no nível do ambiente.
+      const grupos = new Map<string, any[]>();
+      pecasIA.forEach((p) => {
+        const nome = p?.material || aiAmb.material || '';
+        const key = normalize(nome) || '__base__';
+        if (!grupos.has(key)) grupos.set(key, []);
+        grupos.get(key)!.push({ ...p, __materialNome: nome });
+      });
+      if (grupos.size === 0) grupos.set('__base__', []);
 
-      const pecaTipos = PECA_TIPOS[tipo] || PECA_TIPOS['Ambiente Personalizado'];
-      amb.pecas = (aiAmb.pecas || []).map((aiPeca: any) => {
+      const multiplos = grupos.size > 1;
+
+      grupos.forEach((pecasGrupo) => {
+        const materialNome = pecasGrupo[0]?.__materialNome || aiAmb.material || '';
+        const stone = resolveStone(materialNome);
+        const amb = newAmbiente(tipo);
+
+        if (stone) {
+          amb.materialOptions = [
+            {
+              ...newMaterialOption('Opção A'),
+              stoneId: stone.id,
+              stoneName: stone.name,
+              pricePerM2: stone.price_per_m2 || 0,
+            },
+          ];
+        }
+        if (multiplos && stone) amb.nomeCustom = `${tipo} - ${stone.name}`;
+
+        const pecaTipos = PECA_TIPOS[tipo] || PECA_TIPOS['Ambiente Personalizado'];
+        amb.pecas = pecasGrupo.map((aiPeca: any) => {
         const pecaTipo = pecaTipos.includes(aiPeca.tipo) ? aiPeca.tipo : (pecaTipos[0] || 'Peça Personalizada');
         const peca = newPeca(pecaTipo);
 
@@ -159,21 +201,25 @@ export default function SmartBudgetGenerator({
         if (aiPeca.lTrecho2Largura) peca.lTrecho2Largura = String(aiPeca.lTrecho2Largura);
         if (aiPeca.lTrecho2Comprimento) peca.lTrecho2Comprimento = String(aiPeca.lTrecho2Comprimento);
 
-        return peca;
+          return peca;
+        });
+
+        if (amb.pecas.length === 0) {
+          amb.pecas = [newPeca(pecaTipos[0] || 'Bancada')];
+        }
+
+        result.push(amb);
       });
-
-      if (amb.pecas.length === 0) {
-        amb.pecas = [newPeca(pecaTipos[0] || 'Bancada')];
-      }
-
-      return amb;
     });
+
+    return result;
   };
 
   type BudgetSource = 'manual' | 'image' | 'file';
 
   const generateBudget = async (source: BudgetSource = 'manual') => {
-    if (!selectedMaterial) { toast.error('Selecione um material'); return; }
+    // No modo arquivo o material pode vir do próprio documento; nos demais é obrigatório.
+    if (source !== 'file' && !selectedMaterial) { toast.error('Selecione um material'); return; }
     if (source === 'manual' && !measurements) { toast.error('Preencha as medidas'); return; }
     if (source === 'image' && !uploadedImage) { toast.error('Envie uma imagem'); return; }
     if (source === 'file' && !parsedFile) { toast.error('Envie um PDF ou planilha'); return; }
@@ -194,6 +240,8 @@ export default function SmartBudgetGenerator({
             : measurements || 'Analisar imagem anexa',
         service_type: 'Corte e Acabamento padrão',
         image_base64: source === 'image' ? uploadedImage : null,
+        // Catálogo do mostruário para a IA reconhecer os materiais citados no arquivo.
+        available_materials: stones.map((s) => ({ name: s.name, price: s.price_per_m2 || 0 })),
       };
 
       if (source === 'file' && parsedFile) {
@@ -213,7 +261,9 @@ export default function SmartBudgetGenerator({
         ambientes: ambientes.length,
         pecas: ambientes.reduce((s, a) => s + a.pecas.length, 0),
         lista: ambientes.map(a => ({
-          ambiente: a.tipo + (a.nomeCustom ? ` (${a.nomeCustom})` : ''),
+          ambiente:
+            (a.nomeCustom || a.tipo) +
+            (a.materialOptions?.[0]?.stoneName ? ` — ${a.materialOptions[0].stoneName}` : ' — material a definir'),
           pecas: a.pecas.map(p => `${p.nomePeca || p.tipo} ${p.largura}x${p.comprimento}cm`),
         })),
         resumo: data.resumo || '',
@@ -437,7 +487,14 @@ export default function SmartBudgetGenerator({
               </TabsList>
 
               <div className="space-y-2 mt-4">
-                <Label>Material Base</Label>
+                <Label>
+                  Material Base
+                  {activeTab === 'file' && (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      (opcional — a IA usa os materiais citados no arquivo)
+                    </span>
+                  )}
+                </Label>
                 <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um material do mostruário" />
@@ -557,7 +614,7 @@ export default function SmartBudgetGenerator({
 
                 <Button
                   onClick={() => generateBudget('file')}
-                  disabled={loading || fileParsing || !selectedMaterial || !parsedFile}
+                  disabled={loading || fileParsing || !parsedFile}
                   className="w-full"
                 >
                   {loading ? (
