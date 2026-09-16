@@ -43,6 +43,8 @@ export default function SmartBudgetGenerator({
   const [measurements, setMeasurements] = useState('');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('manual');
+  const [parsedFile, setParsedFile] = useState<ParsedFileResult | null>(null);
+  const [fileParsing, setFileParsing] = useState(false);
   const [summary, setSummary] = useState<AISummary | null>(null);
   const [generatedAmbientes, setGeneratedAmbientes] = useState<Ambiente[]>([]);
   const [generatedResumo, setGeneratedResumo] = useState('');
