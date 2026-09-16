@@ -486,8 +486,84 @@ export default function SmartBudgetGenerator({
                     )}
                   </div>
                 </div>
-                <Button onClick={() => generateBudget(true)} disabled={loading || !selectedMaterial || !uploadedImage} className="w-full">
+                <Button onClick={() => generateBudget('image')} disabled={loading || !selectedMaterial || !uploadedImage} className="w-full">
                   {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analisando imagem...</> : <><Sparkles className="w-4 h-4 mr-2" />Analisar e Preencher</>}
+                </Button>
+              </TabsContent>
+
+              <TabsContent value="file" className="space-y-4">
+                <div className="space-y-2">
+                  <Label>PDF ou Planilha do Cliente</Label>
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                    {fileParsing ? (
+                      <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="w-6 h-6 animate-spin" /> Lendo arquivo...
+                      </div>
+                    ) : parsedFile ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-center gap-2 text-sm font-medium">
+                          <FileText className="w-4 h-4 text-primary" />
+                          {parsedFile.fileName}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          {parsedFile.text
+                            ? `${parsedFile.text.length.toLocaleString('pt-BR')} caracteres lidos`
+                            : `${parsedFile.images.length} página(s) serão analisadas como imagem`}
+                        </p>
+                        {parsedFile.text && (
+                          <ScrollArea className="max-h-28 text-left">
+                            <pre className="text-[10px] whitespace-pre-wrap text-muted-foreground p-2">
+                              {parsedFile.text.slice(0, 800)}
+                              {parsedFile.text.length > 800 ? '…' : ''}
+                            </pre>
+                          </ScrollArea>
+                        )}
+                        <Button variant="outline" size="sm" onClick={() => setParsedFile(null)}>
+                          Remover Arquivo
+                        </Button>
+                      </div>
+                    ) : (
+                      <label className="cursor-pointer">
+                        <div className="flex flex-col items-center gap-2">
+                          <Upload className="w-8 h-8 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            Clique para enviar um PDF, XLSX, XLS ou CSV
+                          </span>
+                          <span className="text-[11px] text-muted-foreground/70">
+                            Ideal para listas de medidas enviadas pelo cliente (até 25 MB)
+                          </span>
+                        </div>
+                        <Input
+                          type="file"
+                          accept=".pdf,.xlsx,.xls,.csv"
+                          onChange={handleDocumentUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Observações adicionais (opcional)</Label>
+                  <Textarea
+                    placeholder="Ex: considerar apenas os itens da cozinha, espessura 3cm..."
+                    value={measurements}
+                    onChange={(e) => setMeasurements(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+
+                <Button
+                  onClick={() => generateBudget('file')}
+                  disabled={loading || fileParsing || !selectedMaterial || !parsedFile}
+                  className="w-full"
+                >
+                  {loading ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analisando arquivo...</>
+                  ) : (
+                    <><Sparkles className="w-4 h-4 mr-2" />Analisar Arquivo e Preencher</>
+                  )}
                 </Button>
               </TabsContent>
             </Tabs>
