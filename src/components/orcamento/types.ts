@@ -220,6 +220,12 @@ export interface PecaItem {
   nivelSuperiorComLaterais: boolean;  // adiciona 2 tampas laterais fechando os cantos
   nivelSuperiorComEspelho: boolean;   // adiciona espelho/painel traseiro ligando bancada inferior ao tampo superior
   nivelSuperiorUniao45: boolean;      // junções em 45° (mitra) entre tampo, saia, laterais e espelho — soma ML auto
+  // Material próprio da peça (sobrepõe o material do ambiente)
+  materialOverride: boolean;
+  materialStoneId: string;
+  materialStoneName: string;
+  materialPricePerM2: number;
+  materialDoCliente: boolean;
   // Extras
   extras: ExtraItem[];
 }
