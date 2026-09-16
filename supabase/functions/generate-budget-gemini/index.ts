@@ -166,13 +166,15 @@ RETORNE APENAS JSON VÁLIDO com esta estrutura (sem markdown):
         { role: "system", content: "Você é um orçamentista especialista em marmoraria. Responda sempre em JSON válido." },
       ]
 
-      if (image_base64) {
-        const base64Data = image_base64.replace(/^data:image\/\w+;base64,/, "")
+      if (allImages.length > 0) {
         messages.push({
           role: "user",
           content: [
             { type: "text", text: promptText },
-            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Data}` } },
+            ...allImages.map((img) => ({
+              type: "image_url",
+              image_url: { url: `data:image/jpeg;base64,${img.replace(/^data:image\/\w+;base64,/, "")}` },
+            })),
           ],
         })
       } else {
