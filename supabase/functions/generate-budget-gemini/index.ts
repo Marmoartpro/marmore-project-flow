@@ -104,6 +104,7 @@ Verifique: preços inconsistentes, áreas suspeitas, peças que podem ser cortad
         document_text,
         document_name,
         images_base64,
+        available_materials,
       } = body
       model = "google/gemini-3.8-flash"
 
