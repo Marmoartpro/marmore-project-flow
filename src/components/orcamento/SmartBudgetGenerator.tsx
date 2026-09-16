@@ -170,25 +170,37 @@ export default function SmartBudgetGenerator({
     });
   };
 
-  const generateBudget = async (useImage: boolean = false) => {
+  type BudgetSource = 'manual' | 'image' | 'file';
+
+  const generateBudget = async (source: BudgetSource = 'manual') => {
     if (!selectedMaterial) { toast.error('Selecione um material'); return; }
-    if (!useImage && !measurements) { toast.error('Preencha as medidas'); return; }
-    if (useImage && !uploadedImage) { toast.error('Envie uma imagem'); return; }
+    if (source === 'manual' && !measurements) { toast.error('Preencha as medidas'); return; }
+    if (source === 'image' && !uploadedImage) { toast.error('Envie uma imagem'); return; }
+    if (source === 'file' && !parsedFile) { toast.error('Envie um PDF ou planilha'); return; }
 
     setLoading(true);
     setSummary(null);
     setShowChat(false);
     setChatMessages([]);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         mode: 'generate',
         material_name: selectedStone?.name || '',
         material_price: selectedStone?.price_per_m2 || 0,
         stone_id: selectedMaterial,
-        measurements: measurements || 'Analisar imagem anexa',
+        measurements:
+          source === 'file'
+            ? measurements || 'Extrair do arquivo anexado'
+            : measurements || 'Analisar imagem anexa',
         service_type: 'Corte e Acabamento padrão',
-        image_base64: useImage ? uploadedImage : null,
+        image_base64: source === 'image' ? uploadedImage : null,
       };
+
+      if (source === 'file' && parsedFile) {
+        payload.document_text = parsedFile.text;
+        payload.document_name = parsedFile.fileName;
+        payload.images_base64 = parsedFile.images;
+      }
 
       const { data, error } = await supabase.functions.invoke('generate-budget-gemini', { body: payload });
       if (error) throw new Error(error.message || 'Erro ao chamar a função');
