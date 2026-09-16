@@ -1078,11 +1078,32 @@ export const calcAmbienteAreaCompra = (amb: Ambiente): number => {
   return ceilM2(Math.max(raw, MIN_AREA_M2_AMBIENTE));
 };
 
+/** True quando a peça tem pedra própria definida (sobrepõe o material do ambiente). */
+export const pecaTemMaterialProprio = (p: PecaItem): boolean =>
+  !!p.materialOverride && (!!p.materialStoneId || (p.materialPricePerM2 || 0) > 0 || !!p.materialDoCliente);
+
+/**
+ * Custo de material do ambiente.
+ * Peças sem material próprio usam o material do ambiente (com piso mínimo aplicado uma vez).
+ * Peças com material próprio são cobradas pela sua própria pedra/preço.
+ */
 export const calcAmbienteMaterialCost = (amb: Ambiente, optionIndex: number): number => {
   const opt = amb.materialOptions[optionIndex];
-  if (!opt || opt.materialDoCliente) return 0;
-  const areaCompra = calcAmbienteAreaCompra(amb);
-  return ceilMoney(areaCompra * opt.pricePerM2);
+  let total = 0;
+
+  const pecasBase = amb.pecas.filter(p => !pecaTemMaterialProprio(p));
+  if (opt && !opt.materialDoCliente && pecasBase.length > 0) {
+    const raw = pecasBase.reduce((s, p) => s + calcPecaAreaCompra(p), 0);
+    if (raw > 0) total += ceilM2(Math.max(raw, MIN_AREA_M2_AMBIENTE)) * opt.pricePerM2;
+  }
+
+  amb.pecas.filter(pecaTemMaterialProprio).forEach(p => {
+    if (p.materialDoCliente) return;
+    const area = calcPecaAreaCompra(p);
+    if (area > 0) total += ceilM2(area) * (p.materialPricePerM2 || 0);
+  });
+
+  return ceilMoney(total);
 };
 
 /** Calcula todos os custos de serviços/mão de obra */
