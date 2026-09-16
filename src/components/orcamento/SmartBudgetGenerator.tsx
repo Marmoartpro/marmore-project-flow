@@ -614,7 +614,7 @@ export default function SmartBudgetGenerator({
 
                 <Button
                   onClick={() => generateBudget('file')}
-                  disabled={loading || fileParsing || !selectedMaterial || !parsedFile}
+                  disabled={loading || fileParsing || !parsedFile}
                   className="w-full"
                 >
                   {loading ? (
