@@ -18,12 +18,18 @@ interface Props {
   peca: PecaItem;
   pecaTipos: string[];
   ambienteTipo?: string;
+  stones?: any[];
   onChange: (field: keyof PecaItem, value: any) => void;
+  onChangeBatch?: (fields: Partial<PecaItem>) => void;
   onRemove: () => void;
   canRemove: boolean;
 }
 
-const PecaForm = ({ peca, pecaTipos, ambienteTipo, onChange, onRemove, canRemove }: Props) => {
+const PecaForm = ({ peca, pecaTipos, ambienteTipo, stones = [], onChange, onChangeBatch, onRemove, canRemove }: Props) => {
+  const applyBatch = (fields: Partial<PecaItem>) => {
+    if (onChangeBatch) onChangeBatch(fields);
+    else Object.entries(fields).forEach(([k, v]) => onChange(k as keyof PecaItem, v));
+  };
   const areaLiq = calcPecaAreaLiquida(peca);
   const areaCompra = calcPecaAreaCompra(peca);
   const mlBorda = calcMetrosLinearesBorda(peca);
