@@ -65,6 +65,41 @@ export default function SmartBudgetGenerator({
     reader.readAsDataURL(file);
   };
 
+  /** Lê PDF ou planilha enviada pelo cliente e prepara o conteúdo para a IA. */
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (!isSupportedBudgetFile(file)) {
+      toast.error('Formato não suportado. Envie PDF, XLSX, XLS ou CSV.');
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error('Arquivo muito grande (máximo 25 MB).');
+      return;
+    }
+
+    setFileParsing(true);
+    try {
+      const result = await parseBudgetFile(file);
+      if (!result.text && result.images.length === 0) {
+        toast.error('Não foi possível ler o conteúdo deste arquivo.');
+        return;
+      }
+      setParsedFile(result);
+      toast.success(
+        result.text
+          ? `"${result.fileName}" lido com sucesso.`
+          : `"${result.fileName}" é digitalizado — as páginas serão analisadas como imagem.`,
+      );
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao ler o arquivo');
+    } finally {
+      setFileParsing(false);
+    }
+  };
+
   const buildAmbientesFromAI = (aiAmbientes: any[]): Ambiente[] => {
     return aiAmbientes.map((aiAmb: any) => {
       const tipo = aiAmb.tipo || 'Ambiente Personalizado';
