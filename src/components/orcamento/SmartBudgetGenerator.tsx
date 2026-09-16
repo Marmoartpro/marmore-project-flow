@@ -201,15 +201,18 @@ export default function SmartBudgetGenerator({
         if (aiPeca.lTrecho2Largura) peca.lTrecho2Largura = String(aiPeca.lTrecho2Largura);
         if (aiPeca.lTrecho2Comprimento) peca.lTrecho2Comprimento = String(aiPeca.lTrecho2Comprimento);
 
-        return peca;
+          return peca;
+        });
+
+        if (amb.pecas.length === 0) {
+          amb.pecas = [newPeca(pecaTipos[0] || 'Bancada')];
+        }
+
+        result.push(amb);
       });
-
-      if (amb.pecas.length === 0) {
-        amb.pecas = [newPeca(pecaTipos[0] || 'Bancada')];
-      }
-
-      return amb;
     });
+
+    return result;
   };
 
   type BudgetSource = 'manual' | 'image' | 'file';
