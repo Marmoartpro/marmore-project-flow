@@ -26,7 +26,7 @@ serve(async (req) => {
     if (mode === 'chat') {
       // Chat mode: refine budget via conversation
       const { material_name, material_price, previous_result, chat_messages, measurements, chat_image_base64 } = body
-      model = chat_image_base64 ? "google/gemini-2.5-flash" : "google/gemini-3-flash-preview"
+      model = "google/gemini-3.8-flash"
 
       const contextStr = previous_result ? `\nOrçamento atual completo:\n${JSON.stringify(previous_result, null, 2)}` : ''
       const measureStr = measurements ? `\nDescrição original: ${measurements}` : ''
