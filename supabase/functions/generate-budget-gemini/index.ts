@@ -76,7 +76,7 @@ Se for APENAS uma pergunta sem alteração necessária:
       }
     } else if (mode === 'review') {
       const { ambientes, acessorios, totalGeral, margemLucro } = body
-      model = "google/gemini-3-flash-preview"
+      model = "google/gemini-3.8-flash"
       messages = [
         {
           role: "system",
