@@ -39,6 +39,13 @@ const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Prop
     });
   };
 
+  const updatePecaBatch = (pecaId: string, fields: Partial<PecaItem>) => {
+    onUpdate({
+      ...ambiente,
+      pecas: ambiente.pecas.map(p => p.id === pecaId ? { ...p, ...fields } : p),
+    });
+  };
+
   const addPeca = () => {
     onUpdate({ ...ambiente, pecas: [...ambiente.pecas, newPeca(pecaTipos[0])] });
   };
@@ -140,7 +147,9 @@ const AmbienteBlock = ({ ambiente, stones, onUpdate, onRemove, canRemove }: Prop
                 peca={peca}
                 pecaTipos={pecaTipos}
                 ambienteTipo={ambiente.tipo}
+                stones={stones}
                 onChange={(field, value) => updatePeca(peca.id, field, value)}
+                onChangeBatch={(fields) => updatePecaBatch(peca.id, fields)}
                 onRemove={() => removePeca(peca.id)}
                 canRemove={ambiente.pecas.length > 1}
               />

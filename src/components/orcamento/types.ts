@@ -220,6 +220,12 @@ export interface PecaItem {
   nivelSuperiorComLaterais: boolean;  // adiciona 2 tampas laterais fechando os cantos
   nivelSuperiorComEspelho: boolean;   // adiciona espelho/painel traseiro ligando bancada inferior ao tampo superior
   nivelSuperiorUniao45: boolean;      // junções em 45° (mitra) entre tampo, saia, laterais e espelho — soma ML auto
+  // Material próprio da peça (sobrepõe o material do ambiente)
+  materialOverride: boolean;
+  materialStoneId: string;
+  materialStoneName: string;
+  materialPricePerM2: number;
+  materialDoCliente: boolean;
   // Extras
   extras: ExtraItem[];
 }
@@ -491,6 +497,8 @@ export const newPeca = (tipo: string = 'Bancada'): PecaItem => ({
   nivelSuperior: false, nivelSuperiorLargura: '', nivelSuperiorComprimento: '',
   nivelSuperiorAltura: '', nivelSuperiorComSaia: true, nivelSuperiorComLaterais: false,
   nivelSuperiorComEspelho: false, nivelSuperiorUniao45: false,
+  materialOverride: false, materialStoneId: '', materialStoneName: '',
+  materialPricePerM2: 0, materialDoCliente: false,
   extras: [],
 });
 
@@ -1070,11 +1078,32 @@ export const calcAmbienteAreaCompra = (amb: Ambiente): number => {
   return ceilM2(Math.max(raw, MIN_AREA_M2_AMBIENTE));
 };
 
+/** True quando a peça tem pedra própria definida (sobrepõe o material do ambiente). */
+export const pecaTemMaterialProprio = (p: PecaItem): boolean =>
+  !!p.materialOverride && (!!p.materialStoneId || (p.materialPricePerM2 || 0) > 0 || !!p.materialDoCliente);
+
+/**
+ * Custo de material do ambiente.
+ * Peças sem material próprio usam o material do ambiente (com piso mínimo aplicado uma vez).
+ * Peças com material próprio são cobradas pela sua própria pedra/preço.
+ */
 export const calcAmbienteMaterialCost = (amb: Ambiente, optionIndex: number): number => {
   const opt = amb.materialOptions[optionIndex];
-  if (!opt || opt.materialDoCliente) return 0;
-  const areaCompra = calcAmbienteAreaCompra(amb);
-  return ceilMoney(areaCompra * opt.pricePerM2);
+  let total = 0;
+
+  const pecasBase = amb.pecas.filter(p => !pecaTemMaterialProprio(p));
+  if (opt && !opt.materialDoCliente && pecasBase.length > 0) {
+    const raw = pecasBase.reduce((s, p) => s + calcPecaAreaCompra(p), 0);
+    if (raw > 0) total += ceilM2(Math.max(raw, MIN_AREA_M2_AMBIENTE)) * opt.pricePerM2;
+  }
+
+  amb.pecas.filter(pecaTemMaterialProprio).forEach(p => {
+    if (p.materialDoCliente) return;
+    const area = calcPecaAreaCompra(p);
+    if (area > 0) total += ceilM2(area) * (p.materialPricePerM2 || 0);
+  });
+
+  return ceilMoney(total);
 };
 
 /** Calcula todos os custos de serviços/mão de obra */
@@ -1383,29 +1412,50 @@ export const calcResumoConsumo = (
 ): ResumoMaterial[] => {
   const map = new Map<string, ResumoMaterial>();
 
-  ambientes.forEach(amb => {
-    const idx = Math.min(optionIndex, amb.materialOptions.length - 1);
-    const opt = amb.materialOptions[idx];
-    if (!opt || opt.materialDoCliente || !opt.stoneId) return;
-
-    const key = opt.stoneId;
-    if (!map.has(key)) {
-      map.set(key, {
-        stoneName: opt.stoneName,
-        stoneId: opt.stoneId,
+  const add = (
+    stoneId: string, stoneName: string, pricePerM2: number,
+    liq: number, compra: number,
+  ) => {
+    if (!stoneId || compra <= 0) return;
+    if (!map.has(stoneId)) {
+      map.set(stoneId, {
+        stoneName, stoneId,
         totalM2Liquido: 0,
         totalM2Compra: 0,
-        pricePerM2: opt.pricePerM2,
+        pricePerM2,
         custoTotal: 0,
         chapasNecessarias: 0,
       });
     }
-    const entry = map.get(key)!;
-    const ambLiq = calcAmbienteArea(amb);
-    const ambCompra = calcAmbienteAreaCompra(amb);
-    entry.totalM2Liquido += ambLiq;
-    entry.totalM2Compra += ambCompra;
-    entry.custoTotal += ambCompra * opt.pricePerM2;
+    const entry = map.get(stoneId)!;
+    entry.totalM2Liquido += liq;
+    entry.totalM2Compra += compra;
+    entry.custoTotal += compra * pricePerM2;
+  };
+
+  ambientes.forEach(amb => {
+    const idx = Math.min(optionIndex, amb.materialOptions.length - 1);
+    const opt = amb.materialOptions[idx];
+
+    // Peças que usam o material do ambiente
+    const pecasBase = amb.pecas.filter(p => !pecaTemMaterialProprio(p));
+    if (opt && !opt.materialDoCliente && opt.stoneId && pecasBase.length > 0) {
+      const rawLiq = pecasBase.reduce((s, p) => s + calcPecaAreaLiquida(p), 0);
+      const rawCompra = pecasBase.reduce((s, p) => s + calcPecaAreaCompra(p), 0);
+      if (rawCompra > 0) {
+        add(opt.stoneId, opt.stoneName, opt.pricePerM2,
+          ceilM2(rawLiq), ceilM2(Math.max(rawCompra, MIN_AREA_M2_AMBIENTE)));
+      }
+    }
+
+    // Peças com pedra própria
+    amb.pecas.filter(pecaTemMaterialProprio).forEach(p => {
+      if (p.materialDoCliente || !p.materialStoneId) return;
+      const compra = calcPecaAreaCompra(p);
+      if (compra <= 0) return;
+      add(p.materialStoneId, p.materialStoneName, p.materialPricePerM2 || 0,
+        ceilM2(calcPecaAreaLiquida(p)), ceilM2(compra));
+    });
   });
 
   map.forEach(entry => {

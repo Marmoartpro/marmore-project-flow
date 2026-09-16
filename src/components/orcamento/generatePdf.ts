@@ -97,6 +97,12 @@ const buildPecaDescricao = (p: any): string => {
 
   if (q > 1) lines.push(`Quantidade: ${q} unidades`);
 
+  // Pedra própria desta peça (diferente do material do ambiente)
+  if (p.materialOverride) {
+    if (p.materialDoCliente) lines.push('Material: fornecido pelo cliente');
+    else if (p.materialStoneName) lines.push(`Material desta peça: ${p.materialStoneName}`);
+  }
+
   // Balcão Gourmet 2 Alturas — descrição clara do nível superior
   if (p.nivelSuperior) {
     const nW = parseFloat(p.nivelSuperiorLargura) || 0;
