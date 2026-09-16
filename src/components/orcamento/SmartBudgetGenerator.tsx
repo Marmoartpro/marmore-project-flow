@@ -261,7 +261,9 @@ export default function SmartBudgetGenerator({
         ambientes: ambientes.length,
         pecas: ambientes.reduce((s, a) => s + a.pecas.length, 0),
         lista: ambientes.map(a => ({
-          ambiente: a.tipo + (a.nomeCustom ? ` (${a.nomeCustom})` : ''),
+          ambiente:
+            (a.nomeCustom || a.tipo) +
+            (a.materialOptions?.[0]?.stoneName ? ` — ${a.materialOptions[0].stoneName}` : ' — material a definir'),
           pecas: a.pecas.map(p => `${p.nomePeca || p.tipo} ${p.largura}x${p.comprimento}cm`),
         })),
         resumo: data.resumo || '',
