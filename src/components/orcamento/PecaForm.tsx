@@ -263,7 +263,7 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, stones = [], onChange, onChan
                 value={peca.materialStoneId || ''}
                 onChange={e => {
                   const stone = stones.find((s: any) => s.id === e.target.value);
-                  onChange('materialStone', {
+                  applyBatch({
                     materialStoneId: stone?.id || '',
                     materialStoneName: stone?.name || '',
                     materialPricePerM2: Number(stone?.price_per_m2) || 0,
