@@ -429,9 +429,10 @@ export default function SmartBudgetGenerator({
             </p>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="manual">Por Medidas</TabsTrigger>
                 <TabsTrigger value="image">Por Planta/Foto</TabsTrigger>
+                <TabsTrigger value="file">Por Arquivo</TabsTrigger>
               </TabsList>
 
               <div className="space-y-2 mt-4">
