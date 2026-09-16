@@ -155,9 +155,11 @@ RETORNE APENAS JSON VÁLIDO com esta estrutura (sem markdown):
   "ambientes": [
     {
       "tipo": "Cozinha",
+      "material": "Nome do material deste ambiente (ou vazio)",
       "pecas": [
         {
           "nomePeca": "Bancada principal",
+          "material": "Nome do material desta peça, se diferente do ambiente (ou vazio)",
           "tipo": "Bancada",
           "formato": "retangular",
           "largura": "60",
