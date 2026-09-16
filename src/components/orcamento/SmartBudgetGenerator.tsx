@@ -218,7 +218,8 @@ export default function SmartBudgetGenerator({
   type BudgetSource = 'manual' | 'image' | 'file';
 
   const generateBudget = async (source: BudgetSource = 'manual') => {
-    if (!selectedMaterial) { toast.error('Selecione um material'); return; }
+    // No modo arquivo o material pode vir do próprio documento; nos demais é obrigatório.
+    if (source !== 'file' && !selectedMaterial) { toast.error('Selecione um material'); return; }
     if (source === 'manual' && !measurements) { toast.error('Preencha as medidas'); return; }
     if (source === 'image' && !uploadedImage) { toast.error('Envie uma imagem'); return; }
     if (source === 'file' && !parsedFile) { toast.error('Envie um PDF ou planilha'); return; }
