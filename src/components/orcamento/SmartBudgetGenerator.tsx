@@ -240,6 +240,8 @@ export default function SmartBudgetGenerator({
             : measurements || 'Analisar imagem anexa',
         service_type: 'Corte e Acabamento padrão',
         image_base64: source === 'image' ? uploadedImage : null,
+        // Catálogo do mostruário para a IA reconhecer os materiais citados no arquivo.
+        available_materials: stones.map((s) => ({ name: s.name, price: s.price_per_m2 || 0 })),
       };
 
       if (source === 'file' && parsedFile) {
