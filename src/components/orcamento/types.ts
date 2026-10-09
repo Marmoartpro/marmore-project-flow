@@ -1421,8 +1421,8 @@ export const calcResumoConsumo = (
     // agrupa pelo nome digitado para não misturar pedras diferentes.
     const key = stoneId === '__custom__' ? `__custom__:${stoneName.trim().toLowerCase()}` : stoneId;
     if (!map.has(key)) {
-      map.set(stoneId, {
-        stoneName, stoneId,
+      map.set(key, {
+        stoneName, stoneId: key,
         totalM2Liquido: 0,
         totalM2Compra: 0,
         pricePerM2,
