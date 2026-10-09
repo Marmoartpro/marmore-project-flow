@@ -68,6 +68,10 @@ const MaterialOptions = ({ ambiente, stones, onUpdateOption, onUpdateOptionBatch
                 <div className="flex items-center gap-2">
                   <select value={opt.stoneId}
                     onChange={e => {
+                      if (e.target.value === '__custom__') {
+                        onUpdateOptionBatch(i, { stoneId: '__custom__', stoneName: '', pricePerM2: 0 });
+                        return;
+                      }
                       const stone = stones.find(s => s.id === e.target.value);
                       onUpdateOptionBatch(i, {
                         stoneId: e.target.value,
@@ -82,8 +86,16 @@ const MaterialOptions = ({ ambiente, stones, onUpdateOption, onUpdateOptionBatch
                         {s.name} {s.price_per_m2 > 0 ? `(R$ ${fmt(Number(s.price_per_m2))}/m²)` : ''}
                       </option>
                     ))}
+                    <option value="__custom__">✏️ Pedra fora do mostruário (digitar nome)...</option>
                   </select>
                 </div>
+                {opt.stoneId === '__custom__' && (
+                  <input type="text"
+                    value={opt.stoneName}
+                    onChange={e => onUpdateOption(i, 'stoneName', e.target.value)}
+                    placeholder="Nome da pedra (ex.: Granito Verde Ubatuba)"
+                    className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs" />
+                )}
                 {opt.stoneId && (
                   <div className="flex items-center gap-2">
                     <label className="text-[10px] text-muted-foreground whitespace-nowrap">R$/m²:</label>
