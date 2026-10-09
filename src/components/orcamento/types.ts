@@ -1430,7 +1430,7 @@ export const calcResumoConsumo = (
         chapasNecessarias: 0,
       });
     }
-    const entry = map.get(stoneId)!;
+    const entry = map.get(key)!;
     entry.totalM2Liquido += liq;
     entry.totalM2Compra += compra;
     entry.custoTotal += compra * pricePerM2;
