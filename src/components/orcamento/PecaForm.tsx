@@ -262,6 +262,10 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, stones = [], onChange, onChan
               <select
                 value={peca.materialStoneId || ''}
                 onChange={e => {
+                  if (e.target.value === '__custom__') {
+                    applyBatch({ materialStoneId: '__custom__', materialStoneName: '', materialPricePerM2: 0 });
+                    return;
+                  }
                   const stone = stones.find((s: any) => s.id === e.target.value);
                   applyBatch({
                     materialStoneId: stone?.id || '',
@@ -275,7 +279,16 @@ const PecaForm = ({ peca, pecaTipos, ambienteTipo, stones = [], onChange, onChan
                 {stones.map((s: any) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
+                <option value="__custom__">✏️ Pedra fora do mostruário (digitar nome)…</option>
               </select>
+              {peca.materialStoneId === '__custom__' && (
+                <Input
+                  value={peca.materialStoneName || ''}
+                  onChange={e => onChange('materialStoneName', e.target.value)}
+                  placeholder="Nome da pedra (ex.: Granito Verde Ubatuba)"
+                  className="h-8 text-xs mt-1"
+                />
+              )}
             </div>
             <div>
               <Label className="text-[10px]">R$ / m²</Label>

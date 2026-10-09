@@ -1417,9 +1417,12 @@ export const calcResumoConsumo = (
     liq: number, compra: number,
   ) => {
     if (!stoneId || compra <= 0) return;
-    if (!map.has(stoneId)) {
-      map.set(stoneId, {
-        stoneName, stoneId,
+    // Pedras avulsas (fora do mostruário) compartilham o id '__custom__':
+    // agrupa pelo nome digitado para não misturar pedras diferentes.
+    const key = stoneId === '__custom__' ? `__custom__:${stoneName.trim().toLowerCase()}` : stoneId;
+    if (!map.has(key)) {
+      map.set(key, {
+        stoneName, stoneId: key,
         totalM2Liquido: 0,
         totalM2Compra: 0,
         pricePerM2,
@@ -1427,7 +1430,7 @@ export const calcResumoConsumo = (
         chapasNecessarias: 0,
       });
     }
-    const entry = map.get(stoneId)!;
+    const entry = map.get(key)!;
     entry.totalM2Liquido += liq;
     entry.totalM2Compra += compra;
     entry.custoTotal += compra * pricePerM2;
