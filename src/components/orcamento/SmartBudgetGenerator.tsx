@@ -178,6 +178,7 @@ export default function SmartBudgetGenerator({
         if (aiPeca.saiaFrontal) {
           peca.saiaFrontal = true;
           peca.saiaFrontalAltura = String(aiPeca.saiaFrontalAltura || '10');
+          if (SAIA_OPCOES.includes(aiPeca.saiaOpcao)) peca.saiaOpcao = aiPeca.saiaOpcao;
         }
         if (aiPeca.tipoCuba && aiPeca.tipoCuba !== 'Sem cuba') peca.tipoCuba = aiPeca.tipoCuba;
         if (aiPeca.furosTorneira && aiPeca.furosTorneira !== 'Nenhum') peca.furosTorneira = aiPeca.furosTorneira;
