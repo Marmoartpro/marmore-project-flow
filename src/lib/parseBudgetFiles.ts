@@ -27,7 +27,9 @@ export interface ParsedFileResult {
 }
 
 const MAX_PAGES_TEXT = 15;
-const MAX_PAGES_IMAGE = 3;
+const MAX_PAGES_IMAGE = 8;
+/** Páginas enviadas como imagem mesmo quando há texto (desenhos/tabelas). */
+const MAX_PAGES_VISUAL = 6;
 /** Abaixo disso consideramos que o PDF é digitalizado (imagem). */
 const MIN_TEXT_CHARS = 120;
 
@@ -57,10 +59,19 @@ async function parsePdf(file: File): Promise<ParsedFileResult> {
   for (let i = 1; i <= pageCount; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    const pageText = content.items
-      .map((item) => ("str" in item ? item.str : ""))
-      .join(" ")
-      .replace(/\s+/g, " ")
+    // Reconstrói linhas pela posição vertical para preservar TABELAS
+    // (células da mesma linha separadas por " | ").
+    const rows = new Map<number, { x: number; s: string }[]>();
+    for (const item of content.items) {
+      if (!("str" in item) || !item.str.trim()) continue;
+      const y = Math.round(item.transform[5] / 3) * 3;
+      if (!rows.has(y)) rows.set(y, []);
+      rows.get(y)!.push({ x: item.transform[4], s: item.str.trim() });
+    }
+    const pageText = [...rows.entries()]
+      .sort((a, b) => b[0] - a[0])
+      .map(([, cells]) => cells.sort((a, b) => a.x - b.x).map((c) => c.s).join(" | "))
+      .join("\n")
       .trim();
     if (pageText) chunks.push(`--- Página ${i} ---\n${pageText}`);
   }
@@ -68,13 +79,12 @@ async function parsePdf(file: File): Promise<ParsedFileResult> {
   const text = chunks.join("\n\n");
   const images: string[] = [];
 
-  if (text.length < MIN_TEXT_CHARS) {
-    // PDF provavelmente digitalizado: mandamos as páginas como imagem.
-    const limit = Math.min(pdf.numPages, MAX_PAGES_IMAGE);
-    for (let i = 1; i <= limit; i++) {
-      const dataUrl = await renderPdfPage(pdf, i);
-      if (dataUrl) images.push(dataUrl);
-    }
+  // Sempre enviamos as primeiras páginas como imagem também: assim a IA
+  // enxerga desenhos (espelhos, saias, rebaixos) e tabelas exatamente como estão.
+  const limit = Math.min(pdf.numPages, text.length < MIN_TEXT_CHARS ? MAX_PAGES_IMAGE : MAX_PAGES_VISUAL);
+  for (let i = 1; i <= limit; i++) {
+    const dataUrl = await renderPdfPage(pdf, i);
+    if (dataUrl) images.push(dataUrl);
   }
 
   return { fileName: file.name, text, images, kind: "pdf" };
