@@ -7,8 +7,10 @@
  *    renderiza as primeiras páginas como imagem para a IA "ler" visualmente.
  *  - Planilhas (xlsx/xls/csv): converte cada aba em CSV legível.
  */
-import * as pdfjsLib from "pdfjs-dist";
-import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+// Build "legacy" do pdf.js 4.x: compatível com Safari/iOS e navegadores
+// mais antigos (a v6 exige recursos JS muito recentes e quebrava no celular).
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import pdfWorker from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 import * as XLSX from "xlsx";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -42,7 +44,7 @@ async function renderPdfPage(
   if (!context) return null;
 
   const scaled = page.getViewport({ scale: canvas.width / page.getViewport({ scale: 1 }).width });
-  await page.render({ canvas, canvasContext: context, viewport: scaled }).promise;
+  await page.render({ canvasContext: context, viewport: scaled }).promise;
   return canvas.toDataURL("image/jpeg", 0.8);
 }
 
