@@ -143,12 +143,20 @@ Material base (padrão quando nada for citado): ${material_name || 'Não especif
 Serviço: ${service_type || 'Corte e Acabamento padrão'}
 Medidas/Descrição: ${measurements || (docText ? 'Ver conteúdo do arquivo abaixo' : 'Analisar imagem anexa')}${docBlock}${catalogBlock}
 
-REGRAS:
-1. Identifique todos os ambientes e peças do projeto.
-2. Para cada peça, informe medidas em CENTÍMETROS.
-3. Identifique o tipo correto de cada peça: Bancada, Ilha Gourmet, Lavatório, Bancada de Banheiro, Soleira, Peitoril, Rodapé/Filete, Borda de Piscina, Escada/Degrau, Nicho Embutido, Bancada Tanque, Revestimento de Parede, Piso, Tampo de Mesa, Box - Piso, Peça Personalizada.
-4. Identifique o ambiente correto: Cozinha, Banheiro Social, Banheiro Suíte, Lavatório Avulso, Bancada Tanque, Lavanderia, Área da Piscina, Acabamentos (Soleiras e Peitoris), Área Externa, Sala / Estar, Área Gourmet, Ambiente Personalizado.
-5. Se houver espelho/backsplash, saia, cuba, furos, recorte cooktop, informe.
+REGRAS (leia o arquivo/imagens INTEIROS, página por página, antes de responder):
+1. Identifique TODOS os ambientes e TODAS as peças. Não pule nada — é melhor listar a mais do que esquecer.
+2. Medidas sempre em CENTÍMETROS.
+3. Tipos de peça: Bancada, Ilha Gourmet, Lavatório, Bancada de Banheiro, Soleira, Peitoril, Rodapé/Filete, Borda de Piscina, Escada/Degrau, Nicho Embutido, Bancada Tanque, Revestimento de Parede, Piso, Tampo de Mesa, Box - Piso, Peça Personalizada.
+4. Ambientes: Cozinha, Banheiro Social, Banheiro Suíte, Lavatório Avulso, Bancada Tanque, Lavanderia, Área da Piscina, Acabamentos (Soleiras e Peitoris), Área Externa, Sala / Estar, Área Gourmet, Ambiente Personalizado.
+5. TABELAS: o texto do PDF vem com células separadas por " | ". Toda tabela de soleiras, peitoris, rodapés, filetes ou degraus deve virar peças — UMA peça por linha da tabela (respeite a quantidade de cada linha). Coloque soleiras e peitoris no ambiente "Acabamentos (Soleiras e Peitoris)" com tipo "Soleira" ou "Peitoril". Confira também as imagens das páginas: tabelas podem aparecer só nelas.
+6. DETALHES OBRIGATÓRIOS em cada bancada/lavatório (procure no texto, legendas, cotas e desenhos):
+   - ESPELHO (backsplash/rodabanca/frontão): espelhoBacksplash=true e a altura em espelhoBacksplashAltura (padrão 10 se não informado).
+   - SAIA (saia frontal/testeira/acabamento frontal): saiaFrontal=true, altura em saiaFrontalAltura e lados em saiaOpcao, um de: "Só frente", "Frente e lado direito", "Frente e lado esquerdo", "Frente e duas laterais", "Todas as 4 laterais".
+   - REBAIXO DE ÁREA MOLHADA (rebaixo da cuba/escoamento/área molhada): tipoRebaixo um de "Rebaixo americano", "Rebaixo italiano", "Rebaixo tradicional", com rebaixoComprimento e rebaixoLargura em cm. Se citar só "rebaixo", use "Rebaixo americano".
+   - CUBA: tipoCuba um de "Sem cuba", "Cuba de embutir", "Cuba esculpida", "Cuba colada por baixo (undermount)", "Cuba sobreposta", "Cuba flush".
+   - Furos de torneira ("Nenhum", "1 furo", "2 furos", "3 furos"), recorte de cooktop (rebaixoCooktop + medidas), pingadeira, acabamento de borda ("Reto", "Meia bola (boleado)", "Chanfrado 45°", "Ogiva", "Quadrado com filete").
+7. Bancada em L: formato "l_shape" e informe lTrecho2Largura/lTrecho2Comprimento.
+8. No "resumo", liste o que encontrou (quantas peças, espelhos, saias, rebaixos, soleiras e peitoris) e qualquer item com dúvida.
 
 RETORNE APENAS JSON VÁLIDO com esta estrutura (sem markdown):
 {
@@ -159,23 +167,35 @@ RETORNE APENAS JSON VÁLIDO com esta estrutura (sem markdown):
       "pecas": [
         {
           "nomePeca": "Bancada principal",
-          "material": "Nome do material desta peça, se diferente do ambiente (ou vazio)",
+          "material": "",
           "tipo": "Bancada",
           "formato": "retangular",
           "largura": "60",
           "comprimento": "250",
           "quantidade": "1",
           "descricao": "Bancada da pia",
-          "espelhoBacksplash": false,
-          "espelhoBacksplashAltura": "",
-          "saiaFrontal": false,
-          "saiaFrontalAltura": "",
-          "tipoCuba": "Sem cuba",
-          "furosTorneira": "Nenhum",
+          "espelhoBacksplash": true,
+          "espelhoBacksplashAltura": "10",
+          "saiaFrontal": true,
+          "saiaFrontalAltura": "4",
+          "saiaOpcao": "Só frente",
+          "tipoCuba": "Cuba esculpida",
+          "tipoRebaixo": "Rebaixo americano",
+          "rebaixoComprimento": "80",
+          "rebaixoLargura": "50",
+          "furosTorneira": "1 furo",
           "rebaixoCooktop": false,
+          "pingadeira": false,
           "acabamentoBorda": "Reto",
           "bordasComAcabamento": "Só frontal"
         }
+      ]
+    },
+    {
+      "tipo": "Acabamentos (Soleiras e Peitoris)",
+      "material": "",
+      "pecas": [
+        { "nomePeca": "Soleira quarto 1", "tipo": "Soleira", "formato": "retangular", "largura": "15", "comprimento": "82", "quantidade": "1" }
       ]
     }
   ],
