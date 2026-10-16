@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Upload, Sparkles, CheckCircle2, MessageCircle, Send, ImagePlus, X, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Ambiente, PecaItem, newPeca, newAmbiente, newMaterialOption, PECA_TIPOS } from './types';
+import { Ambiente, PecaItem, newPeca, newAmbiente, newMaterialOption, PECA_TIPOS, SAIA_OPCOES } from './types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { parseBudgetFile, isSupportedBudgetFile, type ParsedFileResult } from '@/lib/parseBudgetFiles';
 
@@ -178,6 +178,7 @@ export default function SmartBudgetGenerator({
         if (aiPeca.saiaFrontal) {
           peca.saiaFrontal = true;
           peca.saiaFrontalAltura = String(aiPeca.saiaFrontalAltura || '10');
+          if (SAIA_OPCOES.includes(aiPeca.saiaOpcao)) peca.saiaOpcao = aiPeca.saiaOpcao;
         }
         if (aiPeca.tipoCuba && aiPeca.tipoCuba !== 'Sem cuba') peca.tipoCuba = aiPeca.tipoCuba;
         if (aiPeca.furosTorneira && aiPeca.furosTorneira !== 'Nenhum') peca.furosTorneira = aiPeca.furosTorneira;
